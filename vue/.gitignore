@@ -1,6 +1,3 @@
-# Firebase konfiguration (indeholder API-nøgler)
-src/services/firebase.js
-
 # Miljøvariabler
 .env
 .env.local
