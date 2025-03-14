@@ -1,7 +1,5 @@
 # GameTrack v2.0
 
-![GameTrack Logo](https://via.placeholder.com/150x50?text=GameTrack)
-
 GameTrack er en webapp til at holde styr på din personlige spilsamling og spillehistorik. Applikationen giver dig mulighed for at kategorisere spil efter status, organisere dem efter platform, og holde styr på dine fremskridt.
 
 Dette er version 2.0 af GameTrack, en Vue.js-baseret portering af [den oprindelige GameTracker](https://github.com/Mikkelka/gametracker-v2), som bevarer den samme funktionalitet men nu er bygget med et moderne JavaScript-framework.
