@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useUserStore } from './user';
-import { useGameStore } from './game';
+import { useGameStore } from './game.store';
 import { db } from '@/services/firebase';
 import { 
   collection, query, where, getDocs, doc, 

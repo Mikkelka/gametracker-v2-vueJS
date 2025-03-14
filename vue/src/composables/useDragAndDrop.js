@@ -1,6 +1,6 @@
 // vue/src/composables/useDragAndDrop.js
 import { onMounted, onBeforeUnmount } from 'vue';
-import { useGameStore } from '../stores/game';
+import { useGameStore } from '../stores/game.store';
 
 export function useDragAndDrop() {
   const gameStore = useGameStore();

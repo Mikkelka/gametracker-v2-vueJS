@@ -1,7 +1,7 @@
 <!-- vue/src/views/HomeView.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import { useGameStore } from '../stores/game';
+import { useGameStore } from '../stores/game.store';
 import { usePlatformStore } from '../stores/platform';
 import { useDragAndDrop } from '../composables/useDragAndDrop';
 import AppHeader from '../components/layout/AppHeader.vue';

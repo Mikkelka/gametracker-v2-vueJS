@@ -1,7 +1,7 @@
 <!-- vue/src/components/game/ImportManager.vue -->
 <script setup>
 import { ref } from 'vue';
-import { useGameStore } from '../../stores/game';
+import { useGameStore } from '../../stores/game.store';
 
 const gameStore = useGameStore();
 const importFile = ref(null);

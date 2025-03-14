@@ -1,7 +1,7 @@
 <!-- vue/src/components/game/GameCard.vue -->
 <script setup>
 import { ref } from 'vue';
-import { useGameStore } from '../../stores/game';
+import { useGameStore } from '../../stores/game.store';
 import { usePlatformStore } from '../../stores/platform';
 
 const props = defineProps({

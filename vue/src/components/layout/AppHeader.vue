@@ -3,7 +3,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
-import { useGameStore } from '../../stores/game';
+import { useGameStore } from '../../stores/game.store';
 
 const props = defineProps({
   showSearchToggle: {

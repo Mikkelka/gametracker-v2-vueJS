@@ -1,7 +1,7 @@
 <!-- vue/src/views/StatisticsView.vue -->
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useGameStore } from '../stores/game';
+import { useGameStore } from '../stores/game.store';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppFooter from '../components/layout/AppFooter.vue';
 
