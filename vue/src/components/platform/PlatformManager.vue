@@ -7,12 +7,14 @@ const platformStore = usePlatformStore();
 const newPlatformName = ref('');
 const newPlatformColor = ref('#4caf50');
 
+const colorPreviewRef = ref(null);
+const colorInputRef = ref(null);
+
 const emit = defineEmits(['close']);
 
 function previewColor() {
-  const colorPreview = document.querySelector('.color-preview');
-  if (colorPreview) {
-    colorPreview.style.backgroundColor = newPlatformColor.value;
+  if (colorPreviewRef.value) {
+    colorPreviewRef.value.style.backgroundColor = newPlatformColor.value;
   }
 }
 
@@ -48,13 +50,14 @@ async function deletePlatform(platformId) {
     <div class="form-group color-picker">
       <label for="platformColor">Farve:</label>
       <input 
-        type="color" 
-        id="platformColor" 
-        v-model="newPlatformColor" 
-        @input="previewColor"
-        required 
-      />
-      <div class="color-preview" :style="{ backgroundColor: newPlatformColor }" @click="$refs.colorInput?.click()"></div>
+  type="color" 
+  id="platformColor" 
+  v-model="newPlatformColor" 
+  @input="previewColor"
+  required 
+  ref="colorInputRef"
+/>
+<div class="color-preview" :style="{ backgroundColor: newPlatformColor }" @click="colorInputRef?.click()" ref="colorPreviewRef"></div>
     </div>
     <button type="submit" class="btn btn-primary">Tilføj Platform</button>
   </form>
