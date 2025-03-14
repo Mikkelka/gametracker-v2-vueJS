@@ -7,6 +7,8 @@ import { useDragAndDrop } from '../composables/useDragAndDrop';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppFooter from '../components/layout/AppFooter.vue';
 import GameList from '../components/game/GameList.vue';
+import { computed } from 'vue';
+import { watch } from 'vue';
 
 
 const gameStore = useGameStore();
@@ -20,6 +22,7 @@ const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
 const newGameTitle = ref('');
 const selectedPlatform = ref('');
+const syncStatusDisplay = computed(() => gameStore.syncStatus);
 
 useDragAndDrop();
 
@@ -28,6 +31,10 @@ onMounted(async () => {
   await gameStore.loadGames();
   await platformStore.loadPlatforms();
 });
+
+watch(() => gameStore.syncStatus, (newStatus) => {
+  console.log('Sync status changed:', newStatus);
+}, { deep: true });
 
 // Søgefunktion
 function handleSearch(term) {
@@ -149,8 +156,16 @@ onBeforeUnmount(() => {
       @open-settings-modal="showSettingsModal = true"
       @open-import-modal="showImportModal = true"
     />
+
+    <!-- I HomeView.vue template -->
+<div v-if="gameStore.syncStatus.status !== 'idle'" 
+     class="sync-notification"
+     :class="gameStore.syncStatus.status">
+  {{ gameStore.syncStatus.message }}
+</div>
     
     <main id="app">
+
       <div id="listIndicator"></div>
       <div id="listsContainer">
        <!-- vue/src/views/HomeView.vue (fortsat) -->
@@ -437,5 +452,36 @@ onBeforeUnmount(() => {
     padding: 15px;
   }
 }
+
+/* sync message */
+
+.sync-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 15px;
+  border-radius: 4px;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  box-shadow: var(--shadow);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.sync-notification.syncing {
+  background-color: #2196F3;
+  color: white;
+}
+
+.sync-notification.success {
+  background-color: var(--button-bg);
+  color: white;
+}
+
+.sync-notification.error {
+  background-color: #f44336;
+  color: white;
+}
+
 </style>
         
