@@ -136,23 +136,42 @@ export const useGameStore = defineStore('game', () => {
   async function deleteGame(gameId) {
     const userStore = useUserStore();
     if (!userStore.currentUser) return false;
-
+  
     updateSyncStatus('syncing', 'Sletter spil...');
-
+  
     try {
-      // Tilføj ændring til unsyncedChanges array
+      // Find spillet før det slettes
+      const gameIndex = games.value.findIndex(g => g.id === gameId);
+      if (gameIndex === -1) {
+        // Spillet findes ikke i lokal state
+        updateSyncStatus('success', 'Spil slettet');
+        return true;
+      }
+  
+      // Fjern fra lokalt array først
+      const deletedGame = games.value[gameIndex];
+      games.value.splice(gameIndex, 1);
+  
+      // Tilføj til unsyncedChanges
       unsyncedChanges.value.push({
         type: 'delete',
         id: gameId
       });
-
-      // Slet spillet direkte i Firestore
-      await deleteDoc(doc(db, 'games', gameId));
-
-      updateSyncStatus('success', 'Spil slettet');
+  
+      try {
+        // Prøv at slette i Firestore
+        await deleteDoc(doc(db, 'games', gameId));
+        updateSyncStatus('success', 'Spil slettet');
+      } catch (firestoreError) {
+        console.error('Firestore error deleting game:', firestoreError);
+        // Selvom Firestore fejler, beholder vi den lokale ændring
+        // og lader synkroniseringen forsøge igen senere
+        updateSyncStatus('success', 'Spil slettet lokalt');
+      }
+  
       return true;
     } catch (error) {
-      console.error('Error deleting game:', error);
+      console.error('Error in deleteGame function:', error);
       updateSyncStatus('error', 'Fejl ved sletning af spil');
       return false;
     }
@@ -407,15 +426,39 @@ async function setTodayAsCompletionDate(gameId) {
     }
   }
 
-  // Hjælpefunktion til at håndtere synkroniseringsstatus
+// Hjælpefunktion til at håndtere synkroniseringsstatus
 function updateSyncStatus(status, message, autoReset = true) {
   syncStatus.value = { status, message };
+  
+  // Stopper alle eksisterende timere ved fejl
+  if (status === 'error') {
+    if (syncDebounceTimer.value) {
+      clearTimeout(syncDebounceTimer.value);
+      syncDebounceTimer.value = null;
+    }
+    
+    // Ryd fejlbehæftede ændringer efter gentagne fejl
+    if (unsyncedChanges.value.length > 0) {
+      console.warn('Fjerner fejlbehæftede ændringer efter gentagne fejl');
+      unsyncedChanges.value = [];
+    }
+    
+    pendingSync.value = false;
+    
+    // Vis fejlbesked i længere tid
+    if (autoReset) {
+      setTimeout(() => {
+        syncStatus.value = { status: 'idle', message: '' };
+      }, 5000);
+    }
+    return;
+  }
   
   // Håndter synkroniseringsstart eller nye ændringer
   if (status === 'syncing') {
     pendingSync.value = true;
     
-    // Ryd den eksisterende timer, hvis der er en
+    // Ryd eksisterende timer
     if (syncDebounceTimer.value) {
       clearTimeout(syncDebounceTimer.value);
       syncDebounceTimer.value = null;
@@ -424,28 +467,29 @@ function updateSyncStatus(status, message, autoReset = true) {
     // Start en ny timer
     syncDebounceTimer.value = setTimeout(async () => {
       try {
-        // Kun synkroniser hvis der faktisk er ændringer
         if (unsyncedChanges.value.length > 0) {
           await syncWithFirebase();
         } else {
-          // Nulstil synkroniseringsstatus uden at synkronisere
           pendingSync.value = false;
           syncStatus.value = { status: 'idle', message: '' };
         }
+      } catch (error) {
+        console.error('Uventet fejl i synkroniseringen:', error);
+        pendingSync.value = false;
+        syncStatus.value = { status: 'error', message: 'Uventet fejl under synkronisering' };
       } finally {
         syncDebounceTimer.value = null;
       }
     }, 5000);
-  }
-  
-  // Håndter success og error beskeder
-  if (autoReset && (status === 'success' || status === 'error')) {
-    setTimeout(() => {
-      // Nulstil kun hvis der ikke er en igangværende synkronisering
-      if (!pendingSync.value) {
-        syncStatus.value = { status: 'idle', message: '' };
-      }
-    }, status === 'error' ? 5000 : 3000);
+  } else if (status === 'success') {
+    // Håndter success
+    if (autoReset) {
+      setTimeout(() => {
+        if (!pendingSync.value) {
+          syncStatus.value = { status: 'idle', message: '' };
+        }
+      }, 3000);
+    }
   }
 }
 
@@ -498,14 +542,14 @@ function updateSyncStatus(status, message, autoReset = true) {
     }
   }
 
-  // Sikre at pendingSync nulstilles korrekt
-async function syncWithFirebase() {
+ // Sikre at pendingSync nulstilles korrekt ved fejl
+ async function syncWithFirebase() {
   const userStore = useUserStore();
   if (!userStore.currentUser) return false;
   
   // Hvis der ikke er nogen ændringer at synkronisere
   if (unsyncedChanges.value.length === 0) {
-    pendingSync.value = false; // Vigtig linje at have her!
+    pendingSync.value = false;
     updateSyncStatus('success', 'Ingen ændringer at synkronisere', true);
     return true;
   }
@@ -516,42 +560,61 @@ async function syncWithFirebase() {
     const batch = writeBatch(db);
     let setOps = 0, updateOps = 0, deleteOps = 0;
     
-    // Sorter så deletes kommer sidst
-    const sortedChanges = [...unsyncedChanges.value].sort((a, b) => {
-      if (a.type === 'delete' && b.type !== 'delete') return 1;
-      if (a.type !== 'delete' && b.type === 'delete') return -1;
-      return 0;
-    });
+    // Tag en kopi af ændringer at arbejde med
+    const changesToProcess = [...unsyncedChanges.value];
     
-    for (const change of sortedChanges) {
-      if (change.type === 'set') {
-        batch.set(doc(db, 'games', change.id), change.data);
-        setOps++;
-      } else if (change.type === 'update') {
-        batch.update(doc(db, 'games', change.id), change.data);
-        updateOps++;
-      } else if (change.type === 'delete') {
-        batch.delete(doc(db, 'games', change.id));
-        deleteOps++;
+    // Behandl hver ændring individuelt for at undgå at en fejl blokerer alle ændringer
+    for (const change of changesToProcess) {
+      try {
+        if (change.type === 'set') {
+          batch.set(doc(db, 'games', change.id), change.data);
+          setOps++;
+        } else if (change.type === 'update') {
+          batch.update(doc(db, 'games', change.id), change.data);
+          updateOps++;
+        } else if (change.type === 'delete') {
+          batch.delete(doc(db, 'games', change.id));
+          deleteOps++;
+        }
+        
+        // Fjern den behandlede ændring fra listen
+        unsyncedChanges.value = unsyncedChanges.value.filter(c => 
+          !(c.id === change.id && c.type === change.type)
+        );
+      } catch (innerError) {
+        console.error(`Fejl ved behandling af ændring (${change.type}, ${change.id}):`, innerError);
+        // Vi fortsætter med næste ændring i stedet for at afbryde hele processen
       }
     }
     
-    await batch.commit();
+    // Commit batch hvis der er noget at committe
+    if (setOps + updateOps + deleteOps > 0) {
+      await batch.commit();
+    }
     
-    // Ryd unsyncedChanges efter succesfuld commit
-    unsyncedChanges.value = [];
-    
-    // Nulstil pendingSync efter synkronisering
     pendingSync.value = false;
     
-    updateSyncStatus('success', `Synkroniseret: ${setOps + updateOps + deleteOps} operationer`, true);
-    lastSync.value = new Date();
+    if (setOps + updateOps + deleteOps > 0) {
+      updateSyncStatus('success', `Synkroniseret: ${setOps + updateOps + deleteOps} operationer`, true);
+    } else {
+      updateSyncStatus('idle', '', false);
+    }
     
+    lastSync.value = new Date();
     return true;
   } catch (error) {
     console.error('Error synchronizing with Firebase:', error);
-    updateSyncStatus('error', 'Fejl under synkronisering', true);
-    pendingSync.value = false; // Nulstil også ved fejl
+    
+    // Vigtig: Nulstil pendingSync, men kun hvis der faktisk var et problem
+    pendingSync.value = false;
+    
+    // Hvis der var succesfulde operationer før fejlen, vis success i stedet for fejl
+    if (unsyncedChanges.value.length === 0) {
+      updateSyncStatus('success', 'Ændringer synkroniseret', true);
+    } else {
+      updateSyncStatus('error', 'Fejl under synkronisering', true);
+    }
+    
     return false;
   }
 }

@@ -118,9 +118,23 @@ export const usePlatformStore = defineStore('platform', () => {
   // Slet en platform
   async function deletePlatform(platformId) {
     const userStore = useUserStore();
+    const gameStore = useGameStore();
+    
     if (!userStore.currentUser) return false;
     
     try {
+      // Find platform i den lokale liste
+      const platform = platforms.value.find(p => p.id === platformId);
+      if (!platform) return false;
+      
+      // Tjek om der er spil, der bruger denne platform
+      const gamesUsingPlatform = gameStore.games.filter(g => g.platform === platform.name);
+      
+      if (gamesUsingPlatform.length > 0) {
+        alert(`Kan ikke slette platformen "${platform.name}" da ${gamesUsingPlatform.length} spil bruger den. Fjern eller ændr disse spil først.`);
+        return false;
+      }
+      
       await deleteDoc(doc(db, 'platforms', platformId));
       
       // Opdater lokal liste
