@@ -1,22 +1,26 @@
-// vue/src/stores/user.js
+// stores/user.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { auth, db } from '@/services/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirebaseAuth } from '../firebase/auth.service';
 
 export const useUserStore = defineStore('user', () => {
+  // State
   const currentUser = ref(null);
   const displayName = ref(null);
   const isLoading = ref(true);
   
+  // Computed properties
   const isLoggedIn = computed(() => currentUser.value !== null);
+  
+  // Firebase auth service
+  const authService = useFirebaseAuth();
   
   // Indlæs bruger ved startup
   async function initUser() {
     return new Promise((resolve) => {
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      const unsubscribe = authService.initAuthListener(async (user) => {
         isLoading.value = true;
+        
         if (user) {
           currentUser.value = user;
           await loadUserProfile();
@@ -24,6 +28,7 @@ export const useUserStore = defineStore('user', () => {
           currentUser.value = null;
           displayName.value = null;
         }
+        
         isLoading.value = false;
         unsubscribe();
         resolve(user);
@@ -34,11 +39,15 @@ export const useUserStore = defineStore('user', () => {
   // Login med Google
   async function loginWithGoogle() {
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      currentUser.value = result.user;
-      await createOrUpdateUser();
-      return true;
+      const result = await authService.loginWithGoogle();
+      
+      if (result.success) {
+        currentUser.value = result.user;
+        await createOrUpdateUser();
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -48,10 +57,15 @@ export const useUserStore = defineStore('user', () => {
   // Log ud
   async function logout() {
     try {
-      await signOut(auth);
-      currentUser.value = null;
-      displayName.value = null;
-      return true;
+      const result = await authService.logout();
+      
+      if (result.success) {
+        currentUser.value = null;
+        displayName.value = null;
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Logout error:', error);
       return false;
@@ -62,31 +76,16 @@ export const useUserStore = defineStore('user', () => {
   async function createOrUpdateUser(newDisplayName = null) {
     if (!currentUser.value) return false;
     
-    const userRef = doc(db, 'users', currentUser.value.uid);
-    
     try {
-      const docSnap = await getDoc(userRef);
+      const profileData = newDisplayName ? { displayName: newDisplayName } : {};
+      const result = await authService.saveUserProfile(currentUser.value, profileData);
       
-      if (!docSnap.exists()) {
-        // Opret ny bruger
-        const userData = {
-          email: currentUser.value.email,
-          displayName: newDisplayName || currentUser.value.email.split('@')[0],
-          createdAt: serverTimestamp()
-        };
-        
-        await setDoc(userRef, userData);
-        displayName.value = userData.displayName;
-      } else if (newDisplayName) {
-        // Opdater eksisterende bruger
-        await setDoc(userRef, { displayName: newDisplayName }, { merge: true });
-        displayName.value = newDisplayName;
-      } else {
-        // Indlæs eksisterende display name
-        displayName.value = docSnap.data().displayName;
+      if (result.success) {
+        displayName.value = result.data.displayName;
+        return true;
       }
       
-      return true;
+      return false;
     } catch (error) {
       console.error('Error creating/updating user:', error);
       return false;
@@ -98,13 +97,13 @@ export const useUserStore = defineStore('user', () => {
     if (!currentUser.value) return null;
     
     try {
-      const userRef = doc(db, 'users', currentUser.value.uid);
-      const docSnap = await getDoc(userRef);
+      const result = await authService.getUserProfile(currentUser.value.uid);
       
-      if (docSnap.exists()) {
-        displayName.value = docSnap.data().displayName;
-        return docSnap.data();
+      if (result.success) {
+        displayName.value = result.data.displayName;
+        return result.data;
       }
+      
       return null;
     } catch (error) {
       console.error('Error loading user profile:', error);

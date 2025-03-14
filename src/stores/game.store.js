@@ -1,8 +1,8 @@
-// vue/src/stores/game.store.js
+// stores/game.store.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { gameActions } from './game.actions';
-import { gameSyncService } from './game.sync';
+import { useGameActions } from './game.actions';
+import { useGameSync } from './game.sync';
 
 export const useGameStore = defineStore('game', () => {
   // State
@@ -37,7 +37,7 @@ export const useGameStore = defineStore('game', () => {
   });
 
   // Importer actions og sync-funktionalitet
-  const actions = gameActions(
+  const actions = useGameActions(
     games, 
     syncStatus, 
     unsyncedChanges, 
@@ -45,7 +45,7 @@ export const useGameStore = defineStore('game', () => {
     pendingSync
   );
   
-  const syncService = gameSyncService(
+  const syncService = useGameSync(
     games, 
     isLoading, 
     syncStatus, 

@@ -1,17 +1,17 @@
-// vue/src/stores/platform.js
+// stores/platform.js
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useUserStore } from './user';
 import { useGameStore } from './game.store';
-import { db } from '@/services/firebase';
-import { 
-  collection, query, where, getDocs, doc, 
-  setDoc, deleteDoc, writeBatch
-} from 'firebase/firestore';
+import { useFirestoreCollection } from '../firebase/db.service';
 
 export const usePlatformStore = defineStore('platform', () => {
+  // State
   const platforms = ref([]);
   const isLoading = ref(true);
+  
+  // Firebase service
+  const platformsService = useFirestoreCollection('platforms');
   
   // Indlæs platforme for brugeren
   async function loadPlatforms() {
@@ -21,18 +21,16 @@ export const usePlatformStore = defineStore('platform', () => {
     isLoading.value = true;
     
     try {
-      const platformsCollection = collection(db, 'platforms');
-      const q = query(platformsCollection, where('userId', '==', userStore.currentUser.uid));
-      const snapshot = await getDocs(q);
+      const result = await platformsService.getItems(userStore.currentUser.uid);
       
-      platforms.value = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      isLoading.value = false;
+      if (result.success) {
+        platforms.value = result.data;
+      } else {
+        console.error('Error loading platforms:', result.error);
+      }
     } catch (error) {
-      console.error('Error loading platforms:', error);
+      console.error('Error in loadPlatforms:', error);
+    } finally {
       isLoading.value = false;
     }
   }
@@ -49,17 +47,15 @@ export const usePlatformStore = defineStore('platform', () => {
         userId: userStore.currentUser.uid
       };
       
-      const newDocRef = doc(collection(db, 'platforms'));
-      await setDoc(newDocRef, platformData);
+      const result = await platformsService.addItem(platformData);
       
-      // Opdater lokal liste
-      const newPlatform = {
-        id: newDocRef.id,
-        ...platformData
-      };
+      if (result.success) {
+        // Opdater lokal liste
+        platforms.value.push(result.data);
+        return result.data;
+      }
       
-      platforms.value.push(newPlatform);
-      return newPlatform;
+      return null;
     } catch (error) {
       console.error('Error adding platform:', error);
       return null;
@@ -79,34 +75,38 @@ export const usePlatformStore = defineStore('platform', () => {
       if (!platform) return false;
       
       // Opdater i Firestore
-      await setDoc(doc(db, 'platforms', platformId), { color: newColor }, { merge: true });
+      const updateResult = await platformsService.updateItem(platformId, { color: newColor });
       
-      // Opdater alle spil med denne platform
-      const batch = writeBatch(db);
-      const gamesCollection = collection(db, 'games');
-      const q = query(
-        gamesCollection, 
-        where('userId', '==', userStore.currentUser.uid),
-        where('platform', '==', platform.name)
-      );
+      if (!updateResult.success) {
+        return false;
+      }
       
-      const snapshot = await getDocs(q);
-      
-      snapshot.docs.forEach(gameDoc => {
-        batch.update(gameDoc.ref, { platformColor: newColor });
-      });
-      
-      await batch.commit();
-      
-      // Opdater lokal platforms-liste
+      // Opdater lokalt objekt
       platform.color = newColor;
       
-      // Opdater også spil i gameStore
-      gameStore.games.forEach(game => {
-        if (game.platform === platform.name) {
-          game.platformColor = newColor;
-        }
-      });
+      // Opdater alle spil med denne platform
+      const gamesWithPlatform = gameStore.games.filter(
+        game => game.platform === platform.name
+      );
+      
+      if (gamesWithPlatform.length > 0) {
+        // Opret batch operations til at opdatere alle berørte spil
+        const gamesService = useFirestoreCollection('games');
+        const batchOperations = gamesWithPlatform.map(game => ({
+          type: 'update',
+          id: game.id,
+          data: { platformColor: newColor }
+        }));
+        
+        await gamesService.batchUpdate(batchOperations);
+        
+        // Opdater også spil i gameStore
+        gameStore.games.forEach(game => {
+          if (game.platform === platform.name) {
+            game.platformColor = newColor;
+          }
+        });
+      }
       
       return true;
     } catch (error) {
@@ -135,11 +135,16 @@ export const usePlatformStore = defineStore('platform', () => {
         return false;
       }
       
-      await deleteDoc(doc(db, 'platforms', platformId));
+      // Slet fra Firestore
+      const result = await platformsService.deleteItem(platformId);
       
-      // Opdater lokal liste
-      platforms.value = platforms.value.filter(p => p.id !== platformId);
-      return true;
+      if (result.success) {
+        // Opdater lokal liste
+        platforms.value = platforms.value.filter(p => p.id !== platformId);
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Error deleting platform:', error);
       return false;

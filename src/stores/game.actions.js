@@ -1,17 +1,17 @@
-// vue/src/stores/game.actions.js
+// stores/game.actions.js
 import { useUserStore } from './user';
-import { db } from '@/services/firebase';
-import {
-  collection, doc, deleteDoc, setDoc
-} from 'firebase/firestore';
+import { useFirestoreCollection } from '../firebase/db.service';
 
-export function gameActions(
+export function useGameActions(
   games, 
   syncStatus, 
   unsyncedChanges, 
   syncDebounceTimer, 
   pendingSync
 ) {
+  // Database service
+  const gamesService = useFirestoreCollection('games');
+  
   // Hjælpefunktion til at håndtere synkroniseringsstatus
   function updateSyncStatus(status, message, autoReset = true) {
     syncStatus.value = { status, message };
@@ -97,7 +97,9 @@ export function gameActions(
       };
 
       if (!gameData.id) {
-        gameData.id = doc(collection(db, 'games')).id;
+        // Generer et nyt ID hvis det ikke findes
+        const newDocRef = await gamesService.addItem(gameData);
+        gameData.id = newDocRef.data.id;
       }
 
       // Konverter order til et nummer
@@ -154,7 +156,7 @@ export function gameActions(
   
       try {
         // Prøv at slette i Firestore
-        await deleteDoc(doc(db, 'games', gameId));
+        await gamesService.deleteItem(gameId);
         updateSyncStatus('success', 'Spil slettet');
       } catch (firestoreError) {
         console.error('Firestore error deleting game:', firestoreError);
@@ -452,17 +454,22 @@ export function gameActions(
         userId: userStore.currentUser.uid
       }));
 
-      // Gem importerede spil i Firestore via batch
-      const batch = writeBatch(db);
+      // Brug vores nye batchUpdate funktion til at importere spil
+      const batchOperations = updatedGames.map(game => ({
+        type: 'set',
+        id: game.id,
+        data: game
+      }));
 
-      updatedGames.forEach(game => {
-        const gameRef = doc(db, 'games', game.id || doc(collection(db, 'games')).id);
-        batch.set(gameRef, game);
-      });
+      const result = await gamesService.batchUpdate(batchOperations);
 
-      await batch.commit();
-      updateSyncStatus('success', `${updatedGames.length} spil importeret`);
-      return true;
+      if (result.success) {
+        updateSyncStatus('success', `${updatedGames.length} spil importeret`);
+        return true;
+      } else {
+        updateSyncStatus('error', 'Fejl ved import af spil');
+        return false;
+      }
     } catch (error) {
       console.error('Error importing games:', error);
       updateSyncStatus('error', 'Fejl ved import af spil');
