@@ -89,187 +89,220 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // Modificer saveGame til ikke at gemme direkte til Firebase
-async function saveGame(game) {
-  const userStore = useUserStore();
-  if (!userStore.currentUser) return null;
-  
-  updateSyncStatus('syncing', 'Gemmer ændringer...');
-  
-  try {
-    // Tilføj bruger-ID og sikre at spillets ID er sat
-    const gameData = { 
-      ...game,
-      userId: userStore.currentUser.uid
-    };
-    
-    if (!gameData.id) {
-      gameData.id = doc(collection(db, 'games')).id;
+  async function saveGame(game) {
+    const userStore = useUserStore();
+    if (!userStore.currentUser) return null;
+
+    updateSyncStatus('syncing', 'Gemmer ændringer...');
+
+    try {
+      // Tilføj bruger-ID og sikre at spillets ID er sat
+      const gameData = {
+        ...game,
+        userId: userStore.currentUser.uid
+      };
+
+      if (!gameData.id) {
+        gameData.id = doc(collection(db, 'games')).id;
+      }
+
+      // Konverter order til et nummer
+      gameData.order = Number(gameData.order) || 0;
+
+      // Tilføj ændring til unsyncedChanges array
+      unsyncedChanges.value.push({
+        type: 'set',
+        id: gameData.id,
+        data: gameData
+      });
+
+      // Opdater lokalt i stedet for at gemme direkte
+      const existingIndex = games.value.findIndex(g => g.id === gameData.id);
+      if (existingIndex >= 0) {
+        games.value[existingIndex] = gameData;
+      } else {
+        games.value.push(gameData);
+      }
+
+      return gameData;
+    } catch (error) {
+      console.error('Error saving game:', error);
+      updateSyncStatus('error', 'Fejl ved gemning');
+      return null;
     }
-    
-    // Konverter order til et nummer
-    gameData.order = Number(gameData.order) || 0;
-    
-    // Tilføj ændring til unsyncedChanges array
-    unsyncedChanges.value.push({
-      type: 'set',
-      id: gameData.id,
-      data: gameData
-    });
-    
-    // Opdater lokalt i stedet for at gemme direkte
-    const existingIndex = games.value.findIndex(g => g.id === gameData.id);
-    if (existingIndex >= 0) {
-      games.value[existingIndex] = gameData;
-    } else {
-      games.value.push(gameData);
-    }
-    
-    return gameData;
-  } catch (error) {
-    console.error('Error saving game:', error);
-    updateSyncStatus('error', 'Fejl ved gemning');
-    return null;
   }
-}
 
- // Slet et spil
-async function deleteGame(gameId) {
-  const userStore = useUserStore();
-  if (!userStore.currentUser) return false;
-  
-  updateSyncStatus('syncing', 'Sletter spil...');
-  
-  try {
-    // Tilføj ændring til unsyncedChanges array
-    unsyncedChanges.value.push({
-      type: 'delete',
-      id: gameId
-    });
-    
-    // Slet spillet direkte i Firestore
-    await deleteDoc(doc(db, 'games', gameId));
-    
-    updateSyncStatus('success', 'Spil slettet');
-    return true;
-  } catch (error) {
-    console.error('Error deleting game:', error);
-    updateSyncStatus('error', 'Fejl ved sletning af spil');
-    return false;
-  }
-}
+  // Slet et spil
+  async function deleteGame(gameId) {
+    const userStore = useUserStore();
+    if (!userStore.currentUser) return false;
 
- // Tilføj et nyt spil
-async function addGame(title, platformData) {
-  updateSyncStatus('syncing', 'Tilføjer nyt spil...');
-  
-  const maxOrder = Math.max(
-    ...games.value
-      .filter(g => g.status === 'willplay')
-      .map(g => g.order || 0),
-    -1
-  );
-  
-  const newGame = {
-    title,
-    platform: platformData.name,
-    platformColor: platformData.color,
-    status: 'willplay',
-    favorite: false,
-    createdAt: Date.now(),
-    order: maxOrder + 1,
-  };
-  
-  try {
-    const result = await saveGame(newGame);
-    updateSyncStatus('success', 'Nyt spil tilføjet');
-    return result;
-  } catch (error) {
-    updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
-    return null;
-  }
-}
+    updateSyncStatus('syncing', 'Sletter spil...');
 
-  // Flyt et spil til en ny status
-  async function moveGameToStatus(gameId, newStatus) {
-    updateSyncStatus('syncing', 'Flytter spil...');
+    try {
+      // Tilføj ændring til unsyncedChanges array
+      unsyncedChanges.value.push({
+        type: 'delete',
+        id: gameId
+      });
 
-    const game = games.value.find(g => g.id === gameId);
-    if (!game || game.status === newStatus) {
-      updateSyncStatus('idle', '', false);
+      // Slet spillet direkte i Firestore
+      await deleteDoc(doc(db, 'games', gameId));
+
+      updateSyncStatus('success', 'Spil slettet');
+      return true;
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      updateSyncStatus('error', 'Fejl ved sletning af spil');
       return false;
     }
+  }
 
+  // Tilføj et nyt spil
+  async function addGame(title, platformData) {
+    updateSyncStatus('syncing', 'Tilføjer nyt spil...');
+
+    const maxOrder = Math.max(
+      ...games.value
+        .filter(g => g.status === 'willplay')
+        .map(g => g.order || 0),
+      -1
+    );
+
+    const newGame = {
+      title,
+      platform: platformData.name,
+      platformColor: platformData.color,
+      status: 'willplay',
+      favorite: false,
+      createdAt: Date.now(),
+      order: maxOrder + 1,
+    };
+
+    try {
+      const result = await saveGame(newGame);
+      updateSyncStatus('success', 'Nyt spil tilføjet');
+      return result;
+    } catch (error) {
+      updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
+      return null;
+    }
+  }
+
+  // Flyt et spil til en ny status med en specifik position
+async function moveGameToStatus(gameId, newStatus, specificPosition = null) {
+  updateSyncStatus('syncing', 'Flytter spil...');
+
+  const game = games.value.find(g => g.id === gameId);
+  if (!game || game.status === newStatus) {
+    updateSyncStatus('idle', '', false);
+    return false;
+  }
+
+  let newOrder;
+  if (specificPosition !== null) {
+    // Brug den specificerede position
+    newOrder = specificPosition;
+  } else {
+    // Fallback til at placere det sidst i listen
     const maxOrder = Math.max(
       ...games.value
         .filter(g => g.status === newStatus)
         .map(g => g.order || 0),
       -1
     );
+    newOrder = maxOrder + 1;
+  }
+
+  const updatedGame = {
+    ...game,
+    status: newStatus,
+    order: newOrder
+  };
+
+  try {
+    const result = await saveGame(updatedGame);
+    
+    // Hvis vi har en specifik position, skal vi også opdatere de andre spil i listen
+    if (specificPosition !== null) {
+      // Sortér og lav numerisk orden (1, 2, 3...)
+      const gamesInSameList = games.value
+        .filter(g => g.status === newStatus && g.id !== gameId) // Ekskluder det spil vi lige har flyttet
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      
+      // Indsæt det nye spil på den rette position
+      let updatedOrders = [];
+      
+      // Reorder alle spil for at få hele tal orden
+      [...gamesInSameList, updatedGame]
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .forEach((g, index) => {
+          if (g.id !== gameId) { // Vi har allerede opdateret det flyttede spil
+            updatedOrders.push({ id: g.id, order: index, status: newStatus });
+          }
+        });
+      
+      if (updatedOrders.length > 0) {
+        await updateGameOrder(updatedOrders);
+      }
+    }
+    
+    updateSyncStatus('success', 'Spil flyttet');
+    return result;
+  } catch (error) {
+    updateSyncStatus('error', 'Fejl ved flytning af spil');
+    return false;
+  }
+}
+
+  // Toggle favorit-status for et spil
+  async function toggleFavorite(gameId) {
+    const game = games.value.find(g => g.id === gameId);
+    if (!game) return false;
+
+    updateSyncStatus('syncing', 'Opdaterer favorit-status...');
 
     const updatedGame = {
       ...game,
-      status: newStatus,
-      order: maxOrder + 1
+      favorite: !game.favorite
     };
 
     try {
       const result = await saveGame(updatedGame);
-      updateSyncStatus('success', 'Spil flyttet');
+      updateSyncStatus('success', game.favorite ? 'Fjernet fra favoritter' : 'Markeret som favorit');
       return result;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved flytning af spil');
+      updateSyncStatus('error', 'Fejl ved opdatering af favorit-status');
       return false;
     }
   }
 
-  // Toggle favorit-status for et spil
-async function toggleFavorite(gameId) {
-  const game = games.value.find(g => g.id === gameId);
-  if (!game) return false;
-  
-  updateSyncStatus('syncing', 'Opdaterer favorit-status...');
-  
-  const updatedGame = {
-    ...game,
-    favorite: !game.favorite
-  };
-  
-  try {
-    const result = await saveGame(updatedGame);
-    updateSyncStatus('success', game.favorite ? 'Fjernet fra favoritter' : 'Markeret som favorit');
-    return result;
-  } catch (error) {
-    updateSyncStatus('error', 'Fejl ved opdatering af favorit-status');
-    return false;
-  }
-}
+  // Sæt gennemførelsesdato for et spil
+  async function setCompletionDate(gameId, date) {
+    const game = games.value.find(g => g.id === gameId);
+    if (!game) return false;
 
- // Sæt gennemførelsesdato for et spil
-async function setCompletionDate(gameId, date) {
-  const game = games.value.find(g => g.id === gameId);
-  if (!game) return false;
-  
-  updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
-  
-  const updatedGame = { ...game };
-  
-  if (date && date.trim() !== "") {
-    updatedGame.completionDate = date.trim();
-  } else {
-    delete updatedGame.completionDate;
-  }
-  
-  try {
-    const result = await saveGame(updatedGame);
-    updateSyncStatus('success', 'Gennemførelsesdato opdateret');
-    return result;
-  } catch (error) {
-    updateSyncStatus('error', 'Fejl ved opdatering af dato');
-    return false;
-  }
-}
+    updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
 
-// Sæt dagens dato som gennemførelsesdato
+    const updatedGame = { ...game };
+
+    if (date && date.trim() !== "") {
+      updatedGame.completionDate = date.trim();
+    } else {
+      delete updatedGame.completionDate;
+    }
+
+    try {
+      const result = await saveGame(updatedGame);
+      updateSyncStatus('success', 'Gennemførelsesdato opdateret');
+      return result;
+    } catch (error) {
+      updateSyncStatus('error', 'Fejl ved opdatering af dato');
+      return false;
+    }
+  }
+
+ // Sæt dagens dato som gennemførelsesdato
 async function setTodayAsCompletionDate(gameId) {
   const game = games.value.find(g => g.id === gameId);
   if (!game) return false;
@@ -283,7 +316,7 @@ async function setTodayAsCompletionDate(gameId) {
   
   const updatedGame = {
     ...game,
-    completionDate: formattedDatesaveGame
+    completionDate: formattedDate
   };
   
   try {
@@ -297,27 +330,27 @@ async function setTodayAsCompletionDate(gameId) {
 }
 
   // Skift platform for et spil
-async function changePlatform(gameId, platformData) {
-  const game = games.value.find(g => g.id === gameId);
-  if (!game) return false;
-  
-  updateSyncStatus('syncing', 'Skifter platform...');
-  
-  const updatedGame = {
-    ...game,
-    platform: platformData.name,
-    platformColor: platformData.color
-  };
-  
-  try {
-    const result = await saveGame(updatedGame);
-    updateSyncStatus('success', `Platform ændret til ${platformData.name}`);
-    return result;
-  } catch (error) {
-    updateSyncStatus('error', 'Fejl ved skift af platform');
-    return false;
+  async function changePlatform(gameId, platformData) {
+    const game = games.value.find(g => g.id === gameId);
+    if (!game) return false;
+
+    updateSyncStatus('syncing', 'Skifter platform...');
+
+    const updatedGame = {
+      ...game,
+      platform: platformData.name,
+      platformColor: platformData.color
+    };
+
+    try {
+      const result = await saveGame(updatedGame);
+      updateSyncStatus('success', `Platform ændret til ${platformData.name}`);
+      return result;
+    } catch (error) {
+      updateSyncStatus('error', 'Fejl ved skift af platform');
+      return false;
+    }
   }
-}
 
   // Opdater rækkefølgen for spil
   async function updateGameOrder(changedGames) {
@@ -327,25 +360,25 @@ async function changePlatform(gameId, platformData) {
     updateSyncStatus('syncing', 'Opdaterer rækkefølge...');
 
     try {
-      const batch = writeBatch(db);
-
-      // Opdater hvert spil
+      // I stedet for direkte batch-operation, lav ændringer lokalt og tilføj til unsyncedChanges
       changedGames.forEach(game => {
-        const gameRef = doc(db, 'games', game.id);
-        batch.update(gameRef, {
-          order: Number(game.order) || 0,
-          status: game.status
-        });
-
-        // Opdater det lokale spil også
+        // Opdater det lokale spil
         const index = games.value.findIndex(g => g.id === game.id);
         if (index >= 0) {
           games.value[index].order = Number(game.order) || 0;
           games.value[index].status = game.status;
         }
-      });
 
-      await batch.commit();
+        // Tilføj ændring til unsyncedChanges
+        unsyncedChanges.value.push({
+          type: 'update',
+          id: game.id,
+          data: {
+            order: Number(game.order) || 0,
+            status: game.status
+          }
+        });
+      });
 
       // Sortér listen igen
       games.value.sort((a, b) => {
@@ -374,8 +407,8 @@ async function changePlatform(gameId, platformData) {
     }
   }
 
- // Hjælpefunktion til at håndtere synkroniseringsstatus
- function updateSyncStatus(status, message, autoReset = true) {
+  // Hjælpefunktion til at håndtere synkroniseringsstatus
+function updateSyncStatus(status, message, autoReset = true) {
   syncStatus.value = { status, message };
   
   // Håndter synkroniseringsstart eller nye ændringer
@@ -432,46 +465,47 @@ async function changePlatform(gameId, platformData) {
   }
 
   // Importér spilliste fra JSON
-async function importGames(jsonData) {
-  const userStore = useUserStore();
-  if (!userStore.currentUser) return false;
-  
-  updateSyncStatus('syncing', 'Importerer spil...');
-  
-  try {
-    const importedGames = JSON.parse(jsonData);
-    
-    // Tilføj bruger-ID til importerede spil
-    const updatedGames = importedGames.map(game => ({
-      ...game,
-      userId: userStore.currentUser.uid
-    }));
-    
-    // Gem importerede spil i Firestore
-    const batch = writeBatch(db);
-    
-    updatedGames.forEach(game => {
-      const gameRef = doc(db, 'games', game.id || doc(collection(db, 'games')).id);
-      batch.set(gameRef, game);
-    });
-    
-    await batch.commit();
-    updateSyncStatus('success', `${updatedGames.length} spil importeret`);
-    return true;
-  } catch (error) {
-    console.error('Error importing games:', error);
-    updateSyncStatus('error', 'Fejl ved import af spil');
-    return false;
-  }
-}
+  async function importGames(jsonData) {
+    const userStore = useUserStore();
+    if (!userStore.currentUser) return false;
 
-  // Synkronisér med Firebase
+    updateSyncStatus('syncing', 'Importerer spil...');
+
+    try {
+      const importedGames = JSON.parse(jsonData);
+
+      // Tilføj bruger-ID til importerede spil
+      const updatedGames = importedGames.map(game => ({
+        ...game,
+        userId: userStore.currentUser.uid
+      }));
+
+      // Gem importerede spil i Firestore
+      const batch = writeBatch(db);
+
+      updatedGames.forEach(game => {
+        const gameRef = doc(db, 'games', game.id || doc(collection(db, 'games')).id);
+        batch.set(gameRef, game);
+      });
+
+      await batch.commit();
+      updateSyncStatus('success', `${updatedGames.length} spil importeret`);
+      return true;
+    } catch (error) {
+      console.error('Error importing games:', error);
+      updateSyncStatus('error', 'Fejl ved import af spil');
+      return false;
+    }
+  }
+
+  // Sikre at pendingSync nulstilles korrekt
 async function syncWithFirebase() {
   const userStore = useUserStore();
   if (!userStore.currentUser) return false;
   
   // Hvis der ikke er nogen ændringer at synkronisere
   if (unsyncedChanges.value.length === 0) {
+    pendingSync.value = false; // Vigtig linje at have her!
     updateSyncStatus('success', 'Ingen ændringer at synkronisere', true);
     return true;
   }
@@ -507,16 +541,17 @@ async function syncWithFirebase() {
     // Ryd unsyncedChanges efter succesfuld commit
     unsyncedChanges.value = [];
     
-    updateSyncStatus('success', `Synkroniseret: ${setOps + updateOps + deleteOps} operationer`, true);
-    lastSync.value = new Date();
-
     // Nulstil pendingSync efter synkronisering
     pendingSync.value = false;
+    
+    updateSyncStatus('success', `Synkroniseret: ${setOps + updateOps + deleteOps} operationer`, true);
+    lastSync.value = new Date();
     
     return true;
   } catch (error) {
     console.error('Error synchronizing with Firebase:', error);
     updateSyncStatus('error', 'Fejl under synkronisering', true);
+    pendingSync.value = false; // Nulstil også ved fejl
     return false;
   }
 }
