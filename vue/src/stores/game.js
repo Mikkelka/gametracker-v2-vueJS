@@ -297,29 +297,33 @@ async function moveGameToStatus(gameId, newStatus, specificPosition = null) {
   }
 
   // Sæt gennemførelsesdato for et spil
-  async function setCompletionDate(gameId, date) {
-    const game = games.value.find(g => g.id === gameId);
-    if (!game) return false;
+async function setCompletionDate(gameId, date) {
+  const game = games.value.find(g => g.id === gameId);
+  if (!game) return false;
 
-    updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
+  updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
 
-    const updatedGame = { ...game };
+  const updatedGame = { ...game };
 
-    if (date && date.trim() !== "") {
-      updatedGame.completionDate = date.trim();
-    } else {
-      delete updatedGame.completionDate;
-    }
-
-    try {
-      const result = await saveGame(updatedGame);
-      updateSyncStatus('success', 'Gennemførelsesdato opdateret');
-      return result;
-    } catch (error) {
-      updateSyncStatus('error', 'Fejl ved opdatering af dato');
-      return false;
-    }
+  if (date && date.trim() !== "") {
+    updatedGame.completionDate = date.trim();
+  } else {
+    delete updatedGame.completionDate;
   }
+
+  try {
+    const result = await saveGame(updatedGame);
+    
+    // Modificeret her: Vi viser stadig en succesbesked, men præciserer at synkronisering afventer
+    updateSyncStatus('syncing', 'Gennemførelsesdato opdateret lokalt (synkroniserer...)');
+    
+    // Vi trigger ikke automatisk reset, så meldingen forbliver indtil synkronisering er færdig
+    return result;
+  } catch (error) {
+    updateSyncStatus('error', 'Fejl ved opdatering af dato');
+    return false;
+  }
+}
 
  // Sæt dagens dato som gennemførelsesdato
 async function setTodayAsCompletionDate(gameId) {
