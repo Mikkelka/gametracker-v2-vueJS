@@ -120,6 +120,7 @@ const shouldShow = computed(() => {
 
 .list h2 {
   margin-top: 0;
+  margin-bottom: .5rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--text-color);
   font-size: 1.2rem;

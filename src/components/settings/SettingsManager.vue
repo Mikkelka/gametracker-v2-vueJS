@@ -47,6 +47,11 @@ function saveSettings() {
 </template>
 
 <style scoped>
+
+#settingsForm {
+  margin-top: 1.5rem;
+}
+
 .form-group {
   margin-bottom: 15px;
   padding-bottom: 15px;
@@ -62,6 +67,7 @@ function saveSettings() {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  width: 100%;
 }
 
 .toggle-switch {
