@@ -44,47 +44,53 @@ function handleSearch(term) {
   searchTerm.value = term;
 }
 
-// Håndter edit menu
+// Generisk funktion til at vise kontekstmenuer
+function showContextMenu(menuType, ...args) {
+  // Luk eksisterende menuer
+  activeEditMenu.value = null;
+  activePlatformMenu.value = null;
+
+  // Åbn ny menu
+  nextTick(() => {
+    if (menuType === 'edit') {
+      const [gameId, x, y] = args;
+      activeEditMenu.value = { gameId, x, y };
+    } else if (menuType === 'platform') {
+      const [gameId, platform, x, y] = args;
+      activePlatformMenu.value = { gameId, platform, x, y };
+    }
+  });
+}
+
+// Wrapper-funktion for edit menu
 function showEditMenu(gameId, x, y) {
-  // Luk eksisterende menu
-  activeEditMenu.value = null;
-  activePlatformMenu.value = null;
-  
-  // Åbn ny menu
-  nextTick(() => {
-    activeEditMenu.value = {
-      gameId,
-      x,
-      y
-    };
-  });
+  showContextMenu('edit', gameId, x, y);
 }
 
-// Håndter platform menu
+// Wrapper-funktion for platform menu
 function showPlatformMenu(gameId, platform, x, y) {
-  // Luk eksisterende menu
-  activeEditMenu.value = null;
-  activePlatformMenu.value = null;
-  
-  // Åbn ny menu
-  nextTick(() => {
-    activePlatformMenu.value = {
-      gameId,
-      platform,
-      x,
-      y
-    };
-  });
+  showContextMenu('platform', gameId, platform, x, y);
 }
 
-// Luk alle menus ved klik udenfor
+// Luk alle menus og modaler ved klik udenfor
 function handleClickOutside(event) {
+  // Håndterer Edit Menu
   if (activeEditMenu.value && !event.target.closest('.edit-menu') && !event.target.classList.contains('edit-btn')) {
     activeEditMenu.value = null;
   }
-  
+
+  // Håndterer Platform Menu
   if (activePlatformMenu.value && !event.target.closest('.platform-tag-menu') && !event.target.classList.contains('platform-pill')) {
     activePlatformMenu.value = null;
+  }
+
+  // Håndterer alle modaler
+  if (event.target.classList.contains('modal')) {
+    // Luk alle modaler
+    showAddGameModal.value = false;
+    showPlatformModal.value = false;
+    showSettingsModal.value = false;
+    showImportModal.value = false;
   }
 }
 
@@ -92,7 +98,7 @@ function handleClickOutside(event) {
 function performEditMenuAction(action, gameId) {
   const game = gameStore.games.find(g => g.id === gameId);
   if (!game) return;
-  
+
   switch (action) {
     case 'favorite':
       gameStore.toggleFavorite(gameId);
@@ -113,7 +119,7 @@ function performEditMenuAction(action, gameId) {
       }
       break;
   }
-  
+
   activeEditMenu.value = null;
 }
 
@@ -129,12 +135,12 @@ function changePlatform(gameId, platformId) {
 // Tilføj nyt spil
 async function addGame() {
   if (!newGameTitle.value || !selectedPlatform.value) return;
-  
+
   const platform = platformStore.platforms.find(p => p.id === selectedPlatform.value);
   if (!platform) return;
-  
+
   await gameStore.addGame(newGameTitle.value, platform);
-  
+
   newGameTitle.value = '';
   selectedPlatform.value = '';
   showAddGameModal.value = false;
@@ -152,36 +158,23 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="game-track-app">
-    <AppHeader 
-      @search="handleSearch"
-      @open-add-game-modal="showAddGameModal = true"
-      @open-platform-modal="showPlatformModal = true"
-      @open-settings-modal="showSettingsModal = true"
-      @open-import-modal="showImportModal = true"
-    />
+    <AppHeader @search="handleSearch" @open-add-game-modal="showAddGameModal = true"
+      @open-platform-modal="showPlatformModal = true" @open-settings-modal="showSettingsModal = true"
+      @open-import-modal="showImportModal = true" />
 
     <!-- I HomeView.vue template -->
-<div v-if="gameStore.syncStatus.status !== 'idle'" 
-     class="sync-notification"
-     :class="gameStore.syncStatus.status">
-  {{ gameStore.syncStatus.message }}
-</div>
-    
+    <div v-if="gameStore.syncStatus.status !== 'idle'" class="sync-notification" :class="gameStore.syncStatus.status">
+      {{ gameStore.syncStatus.message }}
+    </div>
+
     <main id="app">
 
       <div id="listIndicator"></div>
       <div id="listsContainer">
-       <!-- vue/src/views/HomeView.vue (fortsat) -->
-       <GameList 
-          v-for="status in gameStore.statusList"
-          :key="status.id"
-          :title="status.name"
-          :status="status.id"
-          :games="gameStore.gamesByStatus[status.id] || []"
-          :search-term="searchTerm"
-          @edit-menu="showEditMenu"
-          @platform-menu="showPlatformMenu"
-        />
+        <!-- vue/src/views/HomeView.vue (fortsat) -->
+        <GameList v-for="status in gameStore.statusList" :key="status.id" :title="status.name" :status="status.id"
+          :games="gameStore.gamesByStatus[status.id] || []" :search-term="searchTerm" @edit-menu="showEditMenu"
+          @platform-menu="showPlatformMenu" />
       </div>
     </main>
 
@@ -194,30 +187,18 @@ onBeforeUnmount(() => {
       top: `${activeEditMenu.y + 30}px`,
       zIndex: 1000
     }">
-      <button 
-        class="favorite-btn"
-        @click="performEditMenuAction('favorite', activeEditMenu.gameId)"
-      >
-        {{ gameStore.games.find(g => g.id === activeEditMenu.gameId)?.favorite 
-          ? 'Fjern favorit' 
-          : 'Marker som favorit' }}
+      <button class="favorite-btn" @click="performEditMenuAction('favorite', activeEditMenu.gameId)">
+        {{gameStore.games.find(g => g.id === activeEditMenu.gameId)?.favorite
+          ? 'Fjern favorit'
+          : 'Marker som favorit'}}
       </button>
-      <button 
-        class="edit-date-btn"
-        @click="performEditMenuAction('edit-date', activeEditMenu.gameId)"
-      >
+      <button class="edit-date-btn" @click="performEditMenuAction('edit-date', activeEditMenu.gameId)">
         Rediger dato
       </button>
-      <button 
-        class="today-date-btn"
-        @click="performEditMenuAction('today-date', activeEditMenu.gameId)"
-      >
+      <button class="today-date-btn" @click="performEditMenuAction('today-date', activeEditMenu.gameId)">
         Dagens dato
       </button>
-      <button 
-        class="delete-btn"
-        @click="performEditMenuAction('delete', activeEditMenu.gameId)"
-      >
+      <button class="delete-btn" @click="performEditMenuAction('delete', activeEditMenu.gameId)">
         Slet
       </button>
     </div>
@@ -229,12 +210,8 @@ onBeforeUnmount(() => {
       top: `${activePlatformMenu.y + 30}px`,
       zIndex: 1000
     }">
-      <button 
-        v-for="platform in platformStore.platforms" 
-        :key="platform.id"
-        class="change-platform-btn"
-        @click="changePlatform(activePlatformMenu.gameId, platform.id)"
-      >
+      <button v-for="platform in platformStore.platforms" :key="platform.id" class="change-platform-btn"
+        @click="changePlatform(activePlatformMenu.gameId, platform.id)">
         {{ platform.name }}
       </button>
     </div>
@@ -429,7 +406,7 @@ onBeforeUnmount(() => {
   #app {
     padding: 10px;
   }
-  
+
   #listsContainer {
     display: grid;
     grid-auto-flow: column;
@@ -441,7 +418,7 @@ onBeforeUnmount(() => {
     gap: 1rem;
     width: 100%;
   }
-  
+
   .modal-content {
     margin: 30% auto 15% auto;
     width: 90%;
@@ -485,6 +462,4 @@ onBeforeUnmount(() => {
   background-color: #f44336;
   color: white;
 }
-
 </style>
-        
