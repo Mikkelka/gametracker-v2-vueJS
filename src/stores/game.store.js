@@ -1,4 +1,3 @@
-// stores/game.store.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useGameActions } from './game.actions';
@@ -66,7 +65,7 @@ export const useGameStore = defineStore('game', () => {
     // Getters
     gamesByStatus,
     
-    // Exported from actions.js
+    // Eksporteret fra actions.js
     addGame: actions.addGame,
     saveGame: actions.saveGame,
     deleteGame: actions.deleteGame,
@@ -81,7 +80,7 @@ export const useGameStore = defineStore('game', () => {
     importGames: actions.importGames,
     updateSyncStatus: actions.updateSyncStatus,
     
-    // Exported from sync.js
+    // Eksporteret fra sync.js
     loadGames: syncService.loadGames,
     syncWithFirebase: syncService.syncWithFirebase
   };

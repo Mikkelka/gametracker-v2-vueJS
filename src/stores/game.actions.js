@@ -1,4 +1,3 @@
-// stores/game.actions.js
 import { useUserStore } from './user';
 import { useFirestoreCollection } from '../firebase/db.service';
 
@@ -54,8 +53,7 @@ export function useGameActions(
       syncDebounceTimer.value = setTimeout(async () => {
         try {
           if (unsyncedChanges.value.length > 0) {
-            // Denne funktion er importeret fra sync.js og vil blive tilgængelig via useGameStore
-            // og kaldes derfor direkte
+            // Denne funktion bliver tilgængelig via useGameStore efter import
             const gameStore = useGameStore();
             await gameStore.syncWithFirebase();
           } else {
@@ -454,7 +452,7 @@ export function useGameActions(
         userId: userStore.currentUser.uid
       }));
 
-      // Brug vores nye batchUpdate funktion til at importere spil
+      // Brug batchUpdate funktion til at importere spil
       const batchOperations = updatedGames.map(game => ({
         type: 'set',
         id: game.id,
@@ -495,5 +493,5 @@ export function useGameActions(
   };
 }
 
-// Tilføj import af useGameStore for at undgå cirkelsreferencer
+// Importer useGameStore i stedet for at have en cirkulær import
 import { useGameStore } from './game.store';

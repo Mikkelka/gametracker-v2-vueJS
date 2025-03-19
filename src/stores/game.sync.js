@@ -1,4 +1,3 @@
-// stores/game.sync.js
 import { useUserStore } from './user';
 import { useFirestoreCollection } from '../firebase/db.service';
 
@@ -74,13 +73,11 @@ export function useGameSync(
     // Hvis der ikke er nogen ændringer at synkronisere
     if (unsyncedChanges.value.length === 0) {
       pendingSync.value = false;
-      // Opdater status via den importerede funktion
       const gameStore = useGameStore();
       gameStore.updateSyncStatus('success', 'Ingen ændringer at synkronisere', true);
       return true;
     }
     
-    // Opdater status via den importerede funktion
     const gameStore = useGameStore();
     gameStore.updateSyncStatus('syncing', 'Synkroniserer...', false);
     
@@ -88,7 +85,7 @@ export function useGameSync(
       // Tag en kopi af ændringer at arbejde med
       const changesToProcess = [...unsyncedChanges.value];
       
-      // Brug vores nye batchUpdate funktion til at synkronisere ændringer
+      // Brug batchUpdate funktion til at synkronisere ændringer
       const batchOperations = changesToProcess.map(change => ({
         type: change.type,
         id: change.id,
@@ -116,7 +113,7 @@ export function useGameSync(
     } catch (error) {
       console.error('Error synchronizing with Firebase:', error);
       
-      // Vigtig: Nulstil pendingSync, men kun hvis der faktisk var et problem
+      // Nulstil pendingSync, men kun hvis der faktisk var et problem
       pendingSync.value = false;
       
       // Hvis der var succesfulde operationer før fejlen, vis success i stedet for fejl
@@ -136,5 +133,5 @@ export function useGameSync(
   };
 }
 
-// Importer useGameStore for at undgå cirkelsreferencer
+// Importer useGameStore for at undgå cirkulære afhængigheder
 import { useGameStore } from './game.store';
