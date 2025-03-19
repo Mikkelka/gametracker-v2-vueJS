@@ -1,6 +1,7 @@
 import { useUserStore } from './user';
 import { useFirestoreCollection } from '../firebase/db.service';
 import { games, syncStatus, unsyncedChanges, syncDebounceTimer, pendingSync } from './game.state';
+import { deleteField } from 'firebase/firestore';
 
 export function useGameActions() {
  // Database service
@@ -101,7 +102,7 @@ export function useGameActions() {
 
       // Tilføj ændring til unsyncedChanges array
       unsyncedChanges.value.push({
-        type: 'set',
+        type: 'update',
         id: gameData.id,
         data: gameData
       });
@@ -290,25 +291,47 @@ export function useGameActions() {
   async function setCompletionDate(gameId, date) {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
-
+  
     updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
-
+  
+    // Valider dato-format hvis den ikke er tom
+    if (date && date.trim() !== "") {
+      // Regex for DD-MM-ÅÅÅÅ format
+      const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/;
+      if (!dateRegex.test(date.trim())) {
+        updateSyncStatus('error', 'Forkert datoformat. Brug DD-MM-ÅÅÅÅ');
+        return false;
+      }
+    }
+  
+    // Opdater spil og håndter tomt input korrekt
     const updatedGame = { ...game };
-
+    const updateData = {};
+  
     if (date && date.trim() !== "") {
       updatedGame.completionDate = date.trim();
+      updateData.completionDate = date.trim();
     } else {
       delete updatedGame.completionDate;
+      updateData.completionDate = deleteField();
     }
-
+  
     try {
-      const result = await saveGame(updatedGame);
-      
-      // Modificeret her: Vi viser stadig en succesbesked, men præciserer at synkronisering afventer
+      // Opdater lokalt spil
+      const index = games.value.findIndex(g => g.id === gameId);
+      if (index >= 0) {
+        games.value[index] = updatedGame;
+      }
+  
+      // Tilføj til unsyncedChanges
+      unsyncedChanges.value.push({
+        type: 'update',
+        id: gameId,
+        data: updateData
+      });
+  
       updateSyncStatus('syncing', 'Gennemførelsesdato opdateret lokalt (synkroniserer...)');
-      
-      // Vi trigger ikke automatisk reset, så meldingen forbliver indtil synkronisering er færdig
-      return result;
+      return updatedGame;
     } catch (error) {
       updateSyncStatus('error', 'Fejl ved opdatering af dato');
       return false;
