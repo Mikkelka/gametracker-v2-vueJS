@@ -1,17 +1,12 @@
 import { useUserStore } from './user';
 import { useFirestoreCollection } from '../firebase/db.service';
+import { games, syncStatus, unsyncedChanges, syncDebounceTimer, pendingSync } from './game.state';
 
-export function useGameActions(
-  games, 
-  syncStatus, 
-  unsyncedChanges, 
-  syncDebounceTimer, 
-  pendingSync
-) {
-  // Database service
-  const gamesService = useFirestoreCollection('games');
-  
-  // Hjælpefunktion til at håndtere synkroniseringsstatus
+export function useGameActions() {
+ // Database service
+ const gamesService = useFirestoreCollection('games');
+
+   // Hjælpefunktion til at håndtere synkroniseringsstatus
   function updateSyncStatus(status, message, autoReset = true) {
     syncStatus.value = { status, message };
     
@@ -39,8 +34,8 @@ export function useGameActions(
       return;
     }
     
-    // Håndter synkroniseringsstart eller nye ændringer
-    if (status === 'syncing') {
+     // Håndter synkroniseringsstart eller nye ændringer
+     if (status === 'syncing') {
       pendingSync.value = true;
       
       // Ryd eksisterende timer
@@ -53,7 +48,8 @@ export function useGameActions(
       syncDebounceTimer.value = setTimeout(async () => {
         try {
           if (unsyncedChanges.value.length > 0) {
-            // Denne funktion bliver tilgængelig via useGameStore efter import
+            // Vi importerer useGameStore inde i funktionen for at undgå cirkulære afhængigheder
+            const { useGameStore } = await import('./game.store');
             const gameStore = useGameStore();
             await gameStore.syncWithFirebase();
           } else {
@@ -171,8 +167,8 @@ export function useGameActions(
     }
   }
 
-  // Tilføj et nyt spil
-  async function addGame(title, platformData) {
+   // Tilføj et nyt spil
+   async function addGame(title, platformData) {
     updateSyncStatus('syncing', 'Tilføjer nyt spil...');
 
     const maxOrder = Math.max(

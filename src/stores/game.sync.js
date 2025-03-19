@@ -1,16 +1,8 @@
 import { useUserStore } from './user';
 import { useFirestoreCollection } from '../firebase/db.service';
+import { games, isLoading, syncStatus, lastSync, unsyncedChanges, unsubscribe, syncDebounceTimer, pendingSync } from './game.state';
 
-export function useGameSync(
-  games, 
-  isLoading, 
-  syncStatus, 
-  lastSync, 
-  unsyncedChanges, 
-  unsubscribe, 
-  syncDebounceTimer, 
-  pendingSync
-) {
+export function useGameSync() {
   // Database service
   const gamesService = useFirestoreCollection('games');
   
@@ -73,11 +65,14 @@ export function useGameSync(
     // Hvis der ikke er nogen ændringer at synkronisere
     if (unsyncedChanges.value.length === 0) {
       pendingSync.value = false;
+      // Vi importerer useGameStore inde i funktionen for at undgå cirkulære afhængigheder
+      const { useGameStore } = await import('./game.store');
       const gameStore = useGameStore();
       gameStore.updateSyncStatus('success', 'Ingen ændringer at synkronisere', true);
       return true;
     }
     
+    const { useGameStore } = await import('./game.store');
     const gameStore = useGameStore();
     gameStore.updateSyncStatus('syncing', 'Synkroniserer...', false);
     
@@ -132,6 +127,3 @@ export function useGameSync(
     syncWithFirebase
   };
 }
-
-// Importer useGameStore for at undgå cirkulære afhængigheder
-import { useGameStore } from './game.store';

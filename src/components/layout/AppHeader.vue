@@ -29,7 +29,7 @@ function clearSearch() {
 }
 
 // Emit search events når søgefeltet ændres
-const emit = defineEmits(['search']);
+const emit = defineEmits(['search', 'openAddGameModal', 'openPlatformModal', 'openSettingsModal', 'openImportModal']);
 function handleSearchInput() {
   emit('search', searchInput.value);
 }
