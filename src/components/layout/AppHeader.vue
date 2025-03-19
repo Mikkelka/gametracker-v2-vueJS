@@ -211,8 +211,7 @@ h1 {
 
 .version {
   font-size: 0.6em;
-  vertical-align: super;
-  margin-left: 5px;
+  margin-left: 0px;
   opacity: 0.7;
   font-weight: normal;
 }
