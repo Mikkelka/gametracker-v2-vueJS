@@ -488,6 +488,3 @@ export function useGameActions() {
     updateSyncStatus
   };
 }
-
-// Importer useGameStore i stedet for at have en cirkulær import
-import { useGameStore } from './game.store';
