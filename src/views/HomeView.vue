@@ -1,4 +1,3 @@
-<!-- vue/src/views/HomeView.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useGameStore } from '../stores/game.store';
@@ -10,9 +9,9 @@ import GameList from '../components/game/GameList.vue';
 import PlatformManager from '../components/platform/PlatformManager.vue';
 import SettingsManager from '../components/settings/SettingsManager.vue';
 import ImportManager from '../components/game/ImportManager.vue';
+import Modal from '../components/ui/Modal.vue'; // Importér Modal-komponenten
 import { computed } from 'vue';
 import { watch } from 'vue';
-
 
 const gameStore = useGameStore();
 const platformStore = usePlatformStore();
@@ -72,7 +71,7 @@ function showPlatformMenu(gameId, platform, x, y) {
   showContextMenu('platform', gameId, platform, x, y);
 }
 
-// Luk alle menus og modaler ved klik udenfor
+// Luk alle menus ved klik udenfor
 function handleClickOutside(event) {
   // Håndterer Edit Menu
   if (activeEditMenu.value && !event.target.closest('.edit-menu') && !event.target.classList.contains('edit-btn')) {
@@ -82,15 +81,6 @@ function handleClickOutside(event) {
   // Håndterer Platform Menu
   if (activePlatformMenu.value && !event.target.closest('.platform-tag-menu') && !event.target.classList.contains('platform-pill')) {
     activePlatformMenu.value = null;
-  }
-
-  // Håndterer alle modaler
-  if (event.target.classList.contains('modal')) {
-    // Luk alle modaler
-    showAddGameModal.value = false;
-    showPlatformModal.value = false;
-    showSettingsModal.value = false;
-    showImportModal.value = false;
   }
 }
 
@@ -162,16 +152,14 @@ onBeforeUnmount(() => {
       @open-platform-modal="showPlatformModal = true" @open-settings-modal="showSettingsModal = true"
       @open-import-modal="showImportModal = true" />
 
-    <!-- I HomeView.vue template -->
+    <!-- Sync notification -->
     <div v-if="gameStore.syncStatus.status !== 'idle'" class="sync-notification" :class="gameStore.syncStatus.status">
       {{ gameStore.syncStatus.message }}
     </div>
 
     <main id="app">
-
       <div id="listIndicator"></div>
       <div id="listsContainer">
-        <!-- vue/src/views/HomeView.vue (fortsat) -->
         <GameList v-for="status in gameStore.statusList" :key="status.id" :title="status.name" :status="status.id"
           :games="gameStore.gamesByStatus[status.id] || []" :search-term="searchTerm" @edit-menu="showEditMenu"
           @platform-menu="showPlatformMenu" />
@@ -216,56 +204,44 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
+    <!-- Modaler med det nye Modal-komponent -->
     <!-- Add Game Modal -->
-    <div v-if="showAddGameModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="showAddGameModal = false">&times;</span>
-        <h2>Tilføj nyt spil</h2>
-        <form @submit.prevent="addGame" class="game-form">
-          <div class="form-group">
-            <label for="gameTitle">Spiltitel:</label>
-            <input type="text" id="gameTitle" v-model="newGameTitle" required />
-          </div>
-          <div class="form-group">
-            <label for="gamePlatform">Platform:</label>
-            <select id="gamePlatform" v-model="selectedPlatform" required>
-              <option value="" disabled>Vælg platform</option>
-              <option v-for="platform in platformStore.platforms" :key="platform.id" :value="platform.id">
-                {{ platform.name }}
-              </option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary">Tilføj Spil</button>
-        </form>
+    <Modal :isOpen="showAddGameModal" title="Tilføj nyt spil" @close="showAddGameModal = false">
+      <form @submit.prevent="addGame" class="game-form">
+        <div class="form-group">
+          <label for="gameTitle">Spiltitel:</label>
+          <input type="text" id="gameTitle" v-model="newGameTitle" required />
+        </div>
+        <div class="form-group">
+          <label for="gamePlatform">Platform:</label>
+          <select id="gamePlatform" v-model="selectedPlatform" required>
+            <option value="" disabled>Vælg platform</option>
+            <option v-for="platform in platformStore.platforms" :key="platform.id" :value="platform.id">
+              {{ platform.name }}
+            </option>
+          </select>
+        </div>
+      </form>
+      
+      <div slot="footer">
+        <button @click="addGame" class="btn btn-primary">Tilføj Spil</button>
       </div>
-    </div>
+    </Modal>
 
     <!-- Platform Modal -->
-    <div v-if="showPlatformModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="showPlatformModal = false">&times;</span>
-        <h2>Administrer Platforme</h2>
-        <PlatformManager @close="showPlatformModal = false" />
-      </div>
-    </div>
+    <Modal :isOpen="showPlatformModal" title="Administrer Platforme" @close="showPlatformModal = false">
+      <PlatformManager @close="showPlatformModal = false" />
+    </Modal>
 
     <!-- Settings Modal -->
-    <div v-if="showSettingsModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="showSettingsModal = false">&times;</span>
-        <h2>Indstillinger</h2>
-        <SettingsManager @close="showSettingsModal = false" />
-      </div>
-    </div>
+    <Modal :isOpen="showSettingsModal" title="Indstillinger" @close="showSettingsModal = false">
+      <SettingsManager @close="showSettingsModal = false" />
+    </Modal>
 
     <!-- Import Modal -->
-    <div v-if="showImportModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="showImportModal = false">&times;</span>
-        <h2>Importér spilliste</h2>
-        <ImportManager @close="showImportModal = false" />
-      </div>
-    </div>
+    <Modal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
+      <ImportManager @close="showImportModal = false" />
+    </Modal>
   </div>
 </template>
 
@@ -317,45 +293,7 @@ onBeforeUnmount(() => {
   background-color: var(--list-bg);
 }
 
-/* Modal styling */
-.modal {
-  display: block;
-  position: fixed;
-  z-index: 1001;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
-  background-color: var(--list-bg);
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  width: 80%;
-  max-width: 500px;
-  box-shadow: var(--shadow);
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.close:hover,
-.close:focus {
-  color: var(--text-color);
-  text-decoration: none;
-  cursor: pointer;
-}
-
+/* Form styling */
 .form-group {
   margin-bottom: 15px;
 }
@@ -387,54 +325,14 @@ onBeforeUnmount(() => {
 .btn-primary {
   background-color: var(--button-bg);
   color: white;
-  width: 100%;
+  min-width: 120px;
 }
 
 .btn-primary:hover {
   background-color: var(--button-hover);
 }
 
-/* Responsiv design for listerne */
-@media (min-width: 769px) {
-  #listsContainer {
-    display: flex;
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 768px) {
-  #app {
-    padding: 10px;
-  }
-
-  #listsContainer {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 100%;
-    justify-content: space-between;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    gap: 1rem;
-    width: 100%;
-  }
-
-  .modal-content {
-    margin: 30% auto 15% auto;
-    width: 90%;
-    max-width: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .modal-content {
-    margin: 40% auto 15% auto;
-    padding: 15px;
-  }
-}
-
-/* sync message */
-
+/* Sync notification */
 .sync-notification {
   position: fixed;
   bottom: 20px;
@@ -461,5 +359,31 @@ onBeforeUnmount(() => {
 .sync-notification.error {
   background-color: #f44336;
   color: white;
+}
+
+/* Responsiv design */
+@media (min-width: 769px) {
+  #listsContainer {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  #app {
+    padding: 10px;
+  }
+
+  #listsContainer {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1rem;
+    width: 100%;
+  }
 }
 </style>

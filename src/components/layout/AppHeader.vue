@@ -1,9 +1,10 @@
-<!-- vue/src/components/layout/AppHeader.vue -->
+
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
 import { useGameStore } from '../../stores/game.store';
+import Modal from '../ui/Modal.vue';
 
 const props = defineProps({
   showSearchToggle: {
@@ -160,20 +161,19 @@ onBeforeUnmount(() => {
     </div>
   </header>
   
-  <!-- Edit name modal -->
-  <div v-if="showEditNameModal" class="modal">
-    <div class="modal-content">
-      <span class="close" @click="showEditNameModal = false">&times;</span>
-      <h2>Rediger dit navn</h2>
-      <form @submit.prevent="updateName">
-        <div class="form-group">
-          <label for="newName">Nyt navn:</label>
-          <input type="text" id="newName" v-model="newName" required />
-        </div>
-        <button type="submit" class="btn btn-primary">Gem</button>
-      </form>
+  <!-- Edit name modal med Modal-komponenten -->
+  <Modal :isOpen="showEditNameModal" title="Rediger dit navn" @close="showEditNameModal = false">
+    <form @submit.prevent="updateName">
+      <div class="form-group">
+        <label for="newName">Nyt navn:</label>
+        <input type="text" id="newName" v-model="newName" required />
+      </div>
+    </form>
+    
+    <div slot="footer">
+      <button @click="updateName" class="btn btn-primary">Gem</button>
     </div>
-  </div>
+  </Modal>
 </template>
 
 <style scoped>
@@ -186,7 +186,7 @@ header {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 100;
   transition: background-color 0.3s ease;
 }
 
@@ -379,45 +379,7 @@ h1 {
   transition: background-color 0.3s ease;
 }
 
-/* Modal styling */
-.modal {
-  display: block;
-  position: fixed;
-  z-index: 1001;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
-  background-color: var(--list-bg);
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  width: 80%;
-  max-width: 500px;
-  box-shadow: var(--shadow);
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.close:hover,
-.close:focus {
-  color: var(--text-color);
-  text-decoration: none;
-  cursor: pointer;
-}
-
+/* Form styling */
 .form-group {
   margin-bottom: 15px;
 }
@@ -448,7 +410,7 @@ h1 {
 .btn-primary {
   background-color: var(--button-bg);
   color: white;
-  width: 100%;
+  min-width: 120px;
 }
 
 .btn-primary:hover {
