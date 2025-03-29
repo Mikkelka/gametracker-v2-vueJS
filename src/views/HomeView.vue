@@ -9,7 +9,7 @@ import GameList from '../components/game/GameList.vue';
 import PlatformManager from '../components/platform/PlatformManager.vue';
 import SettingsManager from '../components/settings/SettingsManager.vue';
 import ImportManager from '../components/game/ImportManager.vue';
-import Modal from '../components/ui/Modal.vue'; // Importér Modal-komponenten
+import Modal from '../components/ui/Modal.vue';
 import { computed } from 'vue';
 import { watch } from 'vue';
 
