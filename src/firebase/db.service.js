@@ -1,4 +1,3 @@
-// firebase/db.service.js
 import { db } from './firebase';
 import { 
   collection, 
@@ -17,36 +16,57 @@ import {
   limit
 } from 'firebase/firestore';
 
-/**
- * Generiske Firestore collection operationer
- * @param {string} collectionName - Navnet på Firestore collection
- * @returns {Object} CRUD operationer for collection
- */
 export function useFirestoreCollection(collectionName) {
-  /**
-   * Henter alle dokumenter for en bruger
-   * @param {string} userId - Bruger ID
-   * @param {Object} options - Ekstra query options (sortering, filtrering)
-   * @returns {Promise<Array>} Array af dokumenter
-   */
-  async function getItems(userId, options = {}) {
+  const requestStats = {
+    lastRequestTime: Date.now(),
+    requestsThisHour: 0,
+    hourlyLimit: parseInt(import.meta.env.VITE_MAX_OPERATIONS_PER_HOUR)
+  };
+
+  function checkRateLimit() {
+    const now = Date.now();
+    const hourInMs = 60 * 60 * 1000;
+    
+    if (now - requestStats.lastRequestTime > hourInMs) {
+      requestStats.requestsThisHour = 0;
+      requestStats.lastRequestTime = now;
+    }
+    
+    if (requestStats.requestsThisHour >= requestStats.hourlyLimit) {
+      return false;
+    }
+    
+    requestStats.requestsThisHour++;
+    return true;
+  }
+  
+  async function safeOperation(operation, errorMsg) {
+    if (!checkRateLimit()) {
+      return { success: false, error: `For mange forespørgsler. Prøv igen senere.` };
+    }
+    
     try {
+      const result = await operation();
+      return { success: true, data: result };
+    } catch (error) {
+      console.error(errorMsg, error);
+      return { success: false, error: error.message || errorMsg };
+    }
+  }
+  
+  async function getItems(userId, options = {}) {
+    return safeOperation(async () => {
       const collectionRef = collection(db, collectionName);
-      
-      // Opbyg query med filters
       let queryConstraints = [where('userId', '==', userId)];
       
-      // Tilføj sortering hvis angivet
       if (options.orderBy) {
         queryConstraints.push(orderBy(options.orderBy.field, options.orderBy.direction || 'asc'));
       }
       
-      // Tilføj limit hvis angivet
       if (options.limit) {
         queryConstraints.push(limit(options.limit));
       }
       
-      // Tilføj ekstra where-betingelser
       if (options.where && Array.isArray(options.where)) {
         options.where.forEach(condition => {
           queryConstraints.push(where(condition.field, condition.operator, condition.value));
@@ -56,62 +76,37 @@ export function useFirestoreCollection(collectionName) {
       const q = query(collectionRef, ...queryConstraints);
       const snapshot = await getDocs(q);
       
-      return { 
-        success: true, 
-        data: snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-      };
-    } catch (error) {
-      console.error(`Error getting items from ${collectionName}:`, error);
-      return { success: false, error };
-    }
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    }, `Error getting items from ${collectionName}`);
   }
   
-  /**
-   * Henter et enkelt dokument
-   * @param {string} id - Dokument ID
-   * @returns {Promise<Object>} Dokumentet
-   */
   async function getItem(id) {
-    try {
+    return safeOperation(async () => {
       const docRef = doc(db, collectionName, id);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return { 
-          success: true, 
-          data: {
-            id: docSnap.id,
-            ...docSnap.data()
-          }
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
         };
       }
       
-      return { success: false, error: 'Document not found' };
-    } catch (error) {
-      console.error(`Error getting item from ${collectionName}:`, error);
-      return { success: false, error };
-    }
+      throw new Error('Document not found');
+    }, `Error getting item from ${collectionName}`);
   }
   
-  /**
-   * Tilføjer et nyt dokument
-   * @param {Object} data - Dokumentdata
-   * @param {string} id - Valgfrit ID (autogenereres hvis ikke angivet)
-   * @returns {Promise<Object>} Det nye dokument
-   */
   async function addItem(data, id = null) {
-    try {
-      // Tilføj timestamp
+    return safeOperation(async () => {
       const itemData = {
         ...data,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
       
-      // Brug angivet ID eller generer et nyt
       const docRef = id 
         ? doc(db, collectionName, id) 
         : doc(collection(db, collectionName));
@@ -119,33 +114,18 @@ export function useFirestoreCollection(collectionName) {
       await setDoc(docRef, itemData);
       
       return { 
-        success: true, 
-        data: { 
-          id: docRef.id,
-          ...itemData,
-          // Erstat server timestamps med aktuelle timestamps i returdata
-          createdAt: itemData.createdAt || new Date(),
-          updatedAt: itemData.updatedAt || new Date()
-        }
+        id: docRef.id,
+        ...itemData,
+        createdAt: itemData.createdAt || new Date(),
+        updatedAt: itemData.updatedAt || new Date()
       };
-    } catch (error) {
-      console.error(`Error adding item to ${collectionName}:`, error);
-      return { success: false, error };
-    }
+    }, `Error adding item to ${collectionName}`);
   }
   
-  /**
-   * Opdaterer et eksisterende dokument
-   * @param {string} id - Dokument ID
-   * @param {Object} data - Data der skal opdateres
-   * @param {boolean} merge - Om data skal merges (true) eller erstatte (false)
-   * @returns {Promise<Object>} Det opdaterede dokument
-   */
   async function updateItem(id, data, merge = true) {
-    try {
+    return safeOperation(async () => {
       const docRef = doc(db, collectionName, id);
       
-      // Tilføj opdateringstidspunkt
       const updateData = {
         ...data,
         updatedAt: serverTimestamp()
@@ -158,103 +138,80 @@ export function useFirestoreCollection(collectionName) {
       }
       
       return { 
-        success: true, 
-        data: { 
-          id,
-          ...updateData,
-          // Erstat server timestamp med aktuel timestamp i returdata
-          updatedAt: updateData.updatedAt || new Date()
-        }
+        id,
+        ...updateData,
+        updatedAt: updateData.updatedAt || new Date()
       };
-    } catch (error) {
-      console.error(`Error updating item in ${collectionName}:`, error);
-      return { success: false, error };
-    }
+    }, `Error updating item in ${collectionName}`);
   }
   
-  /**
-   * Sletter et dokument
-   * @param {string} id - Dokument ID
-   * @returns {Promise<Object>} Success status
-   */
   async function deleteItem(id) {
-    try {
+    return safeOperation(async () => {
       await deleteDoc(doc(db, collectionName, id));
-      return { success: true, id };
-    } catch (error) {
-      console.error(`Error deleting item from ${collectionName}:`, error);
-      return { success: false, error };
-    }
+      return { id };
+    }, `Error deleting item from ${collectionName}`);
   }
   
-  /**
-   * Udfører batch operationer
-   * @param {Array} operations - Array af operationer { type, id, data }
-   * @returns {Promise<Object>} Success status
-   */
   async function batchUpdate(operations) {
     if (!operations || !operations.length) {
       return { success: true, count: 0 };
     }
     
-    try {
-      const batch = writeBatch(db);
-      let setCount = 0, updateCount = 0, deleteCount = 0;
+    const MAX_BATCH_SIZE = 500;
+    
+    return safeOperation(async () => {
+      let totalCount = 0;
+      let successCount = 0;
       
-      operations.forEach(op => {
-        const docRef = doc(db, collectionName, op.id);
+      for (let i = 0; i < operations.length; i += MAX_BATCH_SIZE) {
+        const batchChunk = operations.slice(i, i + MAX_BATCH_SIZE);
+        const batch = writeBatch(db);
         
-        if (op.type === 'set') {
-          batch.set(docRef, {
-            ...op.data,
-            updatedAt: serverTimestamp()
-          }, { merge: op.merge !== false });
-          setCount++;
-        } else if (op.type === 'update') {
-          batch.update(docRef, {
-            ...op.data,
-            updatedAt: serverTimestamp()
-          });
-          updateCount++;
-        } else if (op.type === 'delete') {
-          batch.delete(docRef);
-          deleteCount++;
-        }
-      });
-      
-      await batch.commit();
+        batchChunk.forEach(op => {
+          const docRef = doc(db, collectionName, op.id);
+          
+          if (op.type === 'set') {
+            batch.set(docRef, {
+              ...op.data,
+              updatedAt: serverTimestamp()
+            }, { merge: op.merge !== false });
+          } else if (op.type === 'update') {
+            batch.update(docRef, {
+              ...op.data,
+              updatedAt: serverTimestamp()
+            });
+          } else if (op.type === 'delete') {
+            batch.delete(docRef);
+          }
+          
+          totalCount++;
+        });
+        
+        await batch.commit();
+        successCount += batchChunk.length;
+      }
       
       return { 
-        success: true, 
-        count: operations.length,
-        stats: { setCount, updateCount, deleteCount }
+        count: totalCount, 
+        successCount,
+        stats: { 
+          totalOperations: totalCount,
+          successfulOperations: successCount
+        }
       };
-    } catch (error) {
-      console.error(`Error in batch operation for ${collectionName}:`, error);
-      return { success: false, error };
-    }
+    }, `Error in batch operation for ${collectionName}`);
   }
   
-  /**
-   * Opsætter realtime listener for dokumenter
-   * @param {string} userId - Bruger ID
-   * @param {Function} callback - Callback funktion der kaldes ved ændringer
-   * @param {Object} options - Ekstra query options
-   * @returns {Function} Unsubscribe funktion
-   */
   function subscribeToItems(userId, callback, options = {}) {
     try {
       const collectionRef = collection(db, collectionName);
       
-      // Opbyg query med filters
       let queryConstraints = [where('userId', '==', userId)];
       
-      // Tilføj sortering hvis angivet
       if (options.orderBy) {
         queryConstraints.push(orderBy(options.orderBy.field, options.orderBy.direction || 'asc'));
       }
       
-      // Tilføj ekstra where-betingelser
       if (options.where && Array.isArray(options.where)) {
         options.where.forEach(condition => {
           queryConstraints.push(where(condition.field, condition.operator, condition.value));
@@ -277,7 +234,7 @@ export function useFirestoreCollection(collectionName) {
     } catch (error) {
       console.error(`Error setting up listener for ${collectionName}:`, error);
       callback({ success: false, error });
-      return () => {}; // Returner en no-op unsubscribe funktion
+      return () => {};
     }
   }
   
@@ -288,16 +245,11 @@ export function useFirestoreCollection(collectionName) {
     updateItem,
     deleteItem,
     batchUpdate,
-    subscribeToItems
+    subscribeToItems,
+    getRequestStats: () => ({ ...requestStats })
   };
 }
 
-/**
- * Hjælpefunktion til fejlhåndtering
- * @param {Function} operation - Asynkron operation der skal køres
- * @param {string} errorMsg - Fejlmeddelelse hvis operationen fejler
- * @returns {Promise<Object>} Resultat med success flag
- */
 export async function handleFirestoreOperation(operation, errorMsg) {
   try {
     const result = await operation();

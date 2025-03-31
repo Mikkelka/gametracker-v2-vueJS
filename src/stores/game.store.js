@@ -19,7 +19,7 @@ export const useGameStore = defineStore('game', () => {
   // Service
   const gamesService = useFirestoreCollection('games');
   const userStore = useUserStore();
-  
+
   // Statusliste
   const statusList = [
     { id: "upcoming", name: "Ser frem til" },
@@ -224,48 +224,55 @@ export const useGameStore = defineStore('game', () => {
   }
   
   // Tilføj et nyt spil
-  async function addGame(title, platformData) {
-    updateSyncStatus('syncing', 'Tilføjer nyt spil...');
+async function addGame(title, platformData) {
+  // Tjek miljøvariablen for maksimalt antal spil
+  const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
   
-    const maxOrder = Math.max(
-      ...games.value
-        .filter(g => g.status === 'willplay')
-        .map(g => g.order || 0),
-      -1
-    );
-  
-    // FJERN det tempId vi lavede før
-    const newGame = {
-      // Fjern id-feltet herfra
-      title,
-      platform: platformData.name,
-      platformColor: platformData.color,
-      status: 'willplay',
-      favorite: false,
-      createdAt: Date.now(),
-      order: maxOrder + 1,
-      userId: userStore.currentUser.uid
-    };
-  
-    try {
-      // Brug direkte Firebase addItem for nye spil
-      const result = await gamesService.addItem(newGame);
-      
-      if (result.success) {
-        // Tilføj det nye spil med Firebase-genereret ID til lokal state
-        games.value.push(result.data);
-        updateSyncStatus('success', 'Nyt spil tilføjet');
-        return result.data;
-      } else {
-        updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error adding game:', error);
+  // Kun tjek hvis miljøvariablen er defineret og gyldig
+  if (!isNaN(maxGames) && games.value.length >= maxGames) {
+    updateSyncStatus('error', `Du har nået grænsen på ${maxGames} spil i den gratis plan.`);
+    return null;
+  }
+
+  updateSyncStatus('syncing', 'Tilføjer nyt spil...');
+
+  const maxOrder = Math.max(
+    ...games.value
+      .filter(g => g.status === 'willplay')
+      .map(g => g.order || 0),
+    -1
+  );
+
+  const newGame = {
+    title,
+    platform: platformData.name,
+    platformColor: platformData.color,
+    status: 'willplay',
+    favorite: false,
+    createdAt: Date.now(),
+    order: maxOrder + 1,
+    userId: userStore.currentUser.uid
+  };
+
+  try {
+    // Brug direkte Firebase addItem for nye spil
+    const result = await gamesService.addItem(newGame);
+    
+    if (result.success) {
+      // Tilføj det nye spil med Firebase-genereret ID til lokal state
+      games.value.push(result.data);
+      updateSyncStatus('success', 'Nyt spil tilføjet');
+      return result.data;
+    } else {
       updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
       return null;
     }
+  } catch (error) {
+    console.error('Error adding game:', error);
+    updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
+    return null;
   }
+}
 
   // Slet et spil
   async function deleteGame(gameId) {
