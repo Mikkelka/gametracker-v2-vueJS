@@ -170,4 +170,46 @@ function showPlatformMenu(event) {
   border-bottom: solid 10px var(--button-bg);
 }
 
+.move-arrows {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+}
+
+.move-arrows button {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-size: 18px;
+  box-shadow: var(--shadow);
+}
+
+.move-arrows button:hover {
+  background-color: var(--button-bg);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .move-arrows {
+    right: 10px;
+    bottom: 15px;
+  }
+  
+  .move-arrows button {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+}
+
 </style>
