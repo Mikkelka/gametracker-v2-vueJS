@@ -371,7 +371,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   #app {
-    padding: 10px;
+    padding: 0px;
   }
 
   #listsContainer {
@@ -385,5 +385,14 @@ onBeforeUnmount(() => {
     gap: 1rem;
     width: 100%;
   }
+
+  .edit-menu
+ {
+  position: absolute;
+  left: auto !important;
+    right: 20px !important;
+    top: 40.2031px !important;
+  }
+
 }
 </style>

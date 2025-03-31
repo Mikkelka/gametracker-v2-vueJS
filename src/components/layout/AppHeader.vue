@@ -432,6 +432,13 @@ h1 {
   
   h1 {
     font-size: 1.2rem;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-separator {
+    display: none;
   }
   
   .search-container {
@@ -468,7 +475,7 @@ h1 {
   
   .header-buttons {
     display: grid;
-    grid-template-columns: 40% 40% 20%;
+    grid-template-columns: 30% 33% 33%;
     gap: 8px;
   }
 }
