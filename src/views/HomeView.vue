@@ -44,7 +44,7 @@ function handleSearch(term) {
 }
 
 // Generisk funktion til at vise kontekstmenuer
-function showContextMenu(menuType, ...args) {
+function showContextMenu(menuType, gameId, x, y, element) {
   // Luk eksisterende menuer
   activeEditMenu.value = null;
   activePlatformMenu.value = null;
@@ -52,18 +52,16 @@ function showContextMenu(menuType, ...args) {
   // Åbn ny menu
   nextTick(() => {
     if (menuType === 'edit') {
-      const [gameId, x, y] = args;
-      activeEditMenu.value = { gameId, x, y };
+      activeEditMenu.value = { gameId, x, y, element };
     } else if (menuType === 'platform') {
-      const [gameId, platform, x, y] = args;
-      activePlatformMenu.value = { gameId, platform, x, y };
+      activePlatformMenu.value = { gameId, platform: x, x: y, y: element };
     }
   });
 }
 
 // Wrapper-funktion for edit menu
-function showEditMenu(gameId, x, y) {
-  showContextMenu('edit', gameId, x, y);
+function showEditMenu(gameId, x, y, element) {
+  showContextMenu('edit', gameId, x, y, element);
 }
 
 // Wrapper-funktion for platform menu
@@ -386,12 +384,36 @@ onBeforeUnmount(() => {
     width: 100%;
   }
 
-  .edit-menu
- {
-  position: absolute;
-  left: auto !important;
-    right: 20px !important;
-    top: 40.2031px !important;
+  .edit-menu,
+  .platform-tag-menu {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 12px 12px 0 0;
+    padding: 15px 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+  }
+  
+  .edit-menu button,
+  .platform-tag-menu button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  
+  .edit-menu button:last-child,
+  .platform-tag-menu button:last-child {
+    border-bottom: none;
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
   }
 
 }

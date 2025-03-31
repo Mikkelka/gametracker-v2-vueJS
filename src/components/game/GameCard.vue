@@ -18,7 +18,7 @@ const platformStore = usePlatformStore();
 // Håndter klik på redigeringsknappen
 function showEditMenu(event) {
   const rect = event.target.getBoundingClientRect();
-  emit('edit-menu', props.game.id, rect.left, rect.top);
+  emit('edit-menu', props.game.id, rect.left, rect.top, event.target);
 }
 
 // Håndter klik på platform-badge
