@@ -222,6 +222,31 @@ export const useGameStore = defineStore('game', () => {
       return null;
     }
   }
+
+  async function updateGameTitle(gameId, newTitle) {
+    const game = games.value.find(g => g.id === gameId);
+    if (!game) return false;
+  
+    updateSyncStatus('syncing', 'Opdaterer spiltitel...');
+  
+    try {
+      // Opdater lokalt først
+      game.title = newTitle.trim();
+      game.updatedAt = Date.now();
+      
+      // Queue ændringen til batch-synkronisering
+      queueChange('update', gameId, {
+        title: newTitle.trim(),
+        updatedAt: Date.now()
+      });
+      
+      updateSyncStatus('syncing', 'Titel opdateret lokalt...', false);
+      return game;
+    } catch (error) {
+      updateSyncStatus('error', 'Fejl ved opdatering af titel');
+      return false;
+    }
+  }
   
   // Tilføj et nyt spil
 async function addGame(title, platformData) {
@@ -637,6 +662,7 @@ async function addGame(title, platformData) {
   exportGames,
   importGames,
   updateSyncStatus,
-  syncWithFirebase  
+  syncWithFirebase,
+  updateGameTitle
   };
 });

@@ -98,7 +98,15 @@ function performEditMenuAction(action, gameId) {
   switch (action) {
     case 'favorite':
       gameStore.toggleFavorite(gameId);
-      break;
+    break;
+    case 'edit-title':
+      const gameToEdit = gameStore.games.find(g => g.id === gameId);
+      const currentTitle = game.title || '';
+      const newTitle = prompt('Indtast ny titel:', currentTitle);
+      if (newTitle !== null && newTitle.trim() !== '') {
+        gameStore.updateGameTitle(gameId, newTitle);
+      }
+    break;
     case 'edit-date':
       const currentDate = game.completionDate || '';
       const newDate = prompt('Indtast gennemførelsesdato (DD-MM-ÅÅÅÅ):', currentDate);
@@ -328,6 +336,9 @@ onBeforeUnmount(() => {
           ? 'Fjern favorit'
           : 'Marker som favorit'}}
       </button>
+      <button class="edit-title-btn" @click="performEditMenuAction('edit-title', activeEditMenu.gameId)">
+  Rediger titel
+</button>
       <button class="edit-date-btn" @click="performEditMenuAction('edit-date', activeEditMenu.gameId)">
         Rediger dato
       </button>
