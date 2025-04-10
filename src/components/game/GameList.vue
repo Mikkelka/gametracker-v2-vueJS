@@ -140,6 +140,7 @@ const shouldShow = computed(() => {
     scroll-snap-align: center;
     width: 100%;
     min-width: 280px;
+    border-radius: 0;
   }
 }
 </style>

@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
   <header>
     <h1>
       <span class="logo-container">
-        GameTrack <span class="version">v2.0</span>
+        GameTrack <span class="version">v2.1</span>
       </span>
 
       <span class="header-separator">|</span>
@@ -478,5 +478,10 @@ h1 {
     grid-template-columns: 30% 33% 33%;
     gap: 8px;
   }
+
+  #userNameDisplay {
+  font-size: 16px;
+}
+
 }
 </style>
