@@ -10,14 +10,14 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         name: 'GameTrack',
         short_name: 'GameTrack',
         description: 'Hold styr på din spilsamling',
         theme_color: '#1a1a1a',
         background_color: '#1a1a1a',
-        display: 'fullscreen',
+        display: 'standalone',
         lang: 'da',
         icons: [
           {
@@ -48,7 +48,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 år
+                maxAgeSeconds: 60 * 60 * 24 * 365 
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -62,7 +62,7 @@ export default defineConfig({
               cacheName: 'firebase-storage-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 dage
+                maxAgeSeconds: 60 * 60 * 24 * 7 
               }
             }
           }
