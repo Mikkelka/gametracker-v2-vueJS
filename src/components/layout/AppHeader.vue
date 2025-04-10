@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
   <header>
     <h1>
       <span class="logo-container">
-        GameTrack <span class="version">v2.0</span>
+        GameTrack <span class="version">v2.1</span>
       </span>
 
       <span class="header-separator">|</span>
