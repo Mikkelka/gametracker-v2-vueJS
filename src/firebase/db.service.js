@@ -1,3 +1,4 @@
+// src/firebase/db.service.js 
 import { db } from './firebase';
 import { 
   collection, 
@@ -15,6 +16,7 @@ import {
   orderBy,
   limit
 } from 'firebase/firestore';
+import { useMediaTypeStore } from '../stores/mediaType';
 
 export function useFirestoreCollection(collectionName) {
   const requestStats = {
@@ -22,6 +24,31 @@ export function useFirestoreCollection(collectionName) {
     requestsThisHour: 0,
     hourlyLimit: parseInt(import.meta.env.VITE_MAX_OPERATIONS_PER_HOUR)
   };
+
+  function getCollectionPath() {
+    try {
+      const mediaTypeStore = useMediaTypeStore();
+      const mediaType = mediaTypeStore.currentType;
+      const collectionType = mediaTypeStore.getCollectionType(collectionName);
+      
+      // For originalstrukturen (game medietype)
+      if (mediaType === 'game') {
+        // Hvis det er platforme, så brug platforms-collection i roden
+        if (collectionName === 'platforms') {
+          return collectionName;
+        } 
+        // Ellers er det games-collection i roden
+        return collectionName;
+      } 
+      // For film og bøger, brug den nye struktur
+      else {
+        return `mediaTypes/${mediaType}/${collectionName}`;
+      }
+    } catch (error) {
+      console.warn('MediaTypeStore not available, defaulting to original structure', error);
+      return collectionName;
+    }
+  }
 
   function checkRateLimit() {
     const now = Date.now();
@@ -56,7 +83,8 @@ export function useFirestoreCollection(collectionName) {
   
   async function getItems(userId, options = {}) {
     return safeOperation(async () => {
-      const collectionRef = collection(db, collectionName);
+      const collectionPath = getCollectionPath();
+      const collectionRef = collection(db, collectionPath);
       let queryConstraints = [where('userId', '==', userId)];
       
       if (options.orderBy) {
@@ -80,12 +108,14 @@ export function useFirestoreCollection(collectionName) {
         id: doc.id,
         ...doc.data()
       }));
-    }, `Error getting items from ${collectionName}`);
+    }, `Error getting items from ${getCollectionPath()}`);
   }
   
+  // Opdater resten af funktionerne på samme måde
   async function getItem(id) {
     return safeOperation(async () => {
-      const docRef = doc(db, collectionName, id);
+      const collectionPath = getCollectionPath();
+      const docRef = doc(db, collectionPath, id);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
@@ -96,11 +126,12 @@ export function useFirestoreCollection(collectionName) {
       }
       
       throw new Error('Document not found');
-    }, `Error getting item from ${collectionName}`);
+    }, `Error getting item from ${getCollectionPath()}`);
   }
   
   async function addItem(data, id = null) {
     return safeOperation(async () => {
+      const collectionPath = getCollectionPath();
       const itemData = {
         ...data,
         createdAt: serverTimestamp(),
@@ -108,8 +139,8 @@ export function useFirestoreCollection(collectionName) {
       };
       
       const docRef = id 
-        ? doc(db, collectionName, id) 
-        : doc(collection(db, collectionName));
+        ? doc(db, collectionPath, id) 
+        : doc(collection(db, collectionPath));
       
       await setDoc(docRef, itemData);
       
@@ -119,12 +150,13 @@ export function useFirestoreCollection(collectionName) {
         createdAt: itemData.createdAt || new Date(),
         updatedAt: itemData.updatedAt || new Date()
       };
-    }, `Error adding item to ${collectionName}`);
+    }, `Error adding item to ${getCollectionPath()}`);
   }
   
   async function updateItem(id, data, merge = true) {
     return safeOperation(async () => {
-      const docRef = doc(db, collectionName, id);
+      const collectionPath = getCollectionPath();
+      const docRef = doc(db, collectionPath, id);
       
       const updateData = {
         ...data,
@@ -142,14 +174,15 @@ export function useFirestoreCollection(collectionName) {
         ...updateData,
         updatedAt: updateData.updatedAt || new Date()
       };
-    }, `Error updating item in ${collectionName}`);
+    }, `Error updating item in ${getCollectionPath()}`);
   }
   
   async function deleteItem(id) {
     return safeOperation(async () => {
-      await deleteDoc(doc(db, collectionName, id));
+      const collectionPath = getCollectionPath();
+      await deleteDoc(doc(db, collectionPath, id));
       return { id };
-    }, `Error deleting item from ${collectionName}`);
+    }, `Error deleting item from ${getCollectionPath()}`);
   }
   
   async function batchUpdate(operations) {
@@ -158,6 +191,7 @@ export function useFirestoreCollection(collectionName) {
     }
     
     const MAX_BATCH_SIZE = 500;
+    const collectionPath = getCollectionPath();
     
     return safeOperation(async () => {
       let totalCount = 0;
@@ -168,7 +202,7 @@ export function useFirestoreCollection(collectionName) {
         const batch = writeBatch(db);
         
         batchChunk.forEach(op => {
-          const docRef = doc(db, collectionName, op.id);
+          const docRef = doc(db, collectionPath, op.id);
           
           if (op.type === 'set') {
             batch.set(docRef, {
@@ -199,12 +233,13 @@ export function useFirestoreCollection(collectionName) {
           successfulOperations: successCount
         }
       };
-    }, `Error in batch operation for ${collectionName}`);
+    }, `Error in batch operation for ${getCollectionPath()}`);
   }
   
   function subscribeToItems(userId, callback, options = {}) {
     try {
-      const collectionRef = collection(db, collectionName);
+      const collectionPath = getCollectionPath();
+      const collectionRef = collection(db, collectionPath);
       
       let queryConstraints = [where('userId', '==', userId)];
       
@@ -228,11 +263,11 @@ export function useFirestoreCollection(collectionName) {
         
         callback({ success: true, data: items });
       }, error => {
-        console.error(`Error in snapshot listener for ${collectionName}:`, error);
+        console.error(`Error in snapshot listener for ${collectionPath}:`, error);
         callback({ success: false, error });
       });
     } catch (error) {
-      console.error(`Error setting up listener for ${collectionName}:`, error);
+      console.error(`Error setting up listener for ${getCollectionPath()}:`, error);
       callback({ success: false, error });
       return () => {};
     }
@@ -248,14 +283,4 @@ export function useFirestoreCollection(collectionName) {
     subscribeToItems,
     getRequestStats: () => ({ ...requestStats })
   };
-}
-
-export async function handleFirestoreOperation(operation, errorMsg) {
-  try {
-    const result = await operation();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error(errorMsg, error);
-    return { success: false, error };
-  }
 }

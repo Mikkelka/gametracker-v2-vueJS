@@ -1,8 +1,9 @@
-// vue/src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '@/stores/user';
+import { useMediaTypeStore } from '@/stores/mediaType';
 
-// Lazy load komponenter for bedre performance
+// Lazy load komponenter
+const DashboardView = () => import('@/views/DashboardView.vue');
 const HomeView = () => import('@/views/HomeView.vue');
 const LoginView = () => import('@/views/LoginView.vue');
 const StatisticsView = () => import('@/views/StatisticsView.vue');
@@ -10,6 +11,12 @@ const StatisticsView = () => import('@/views/StatisticsView.vue');
 const routes = [
   {
     path: '/',
+    name: 'dashboard',
+    component: DashboardView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/home',
     name: 'home',
     component: HomeView,
     meta: { requiresAuth: true }
@@ -28,7 +35,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: { name: 'home' }
+    redirect: { name: 'dashboard' }
   }
 ];
 

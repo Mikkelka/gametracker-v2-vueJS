@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useMediaTypeStore } from '../stores/mediaType';
 import { useGameStore } from '../stores/game.store';
-import { usePlatformStore } from '../stores/platform';
+import { useCategoryStore } from '../stores/category';
 import { useDragAndDrop } from '../composables/useDragAndDrop';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppFooter from '../components/layout/AppFooter.vue';
@@ -13,8 +14,10 @@ import Modal from '../components/ui/Modal.vue';
 import { computed } from 'vue';
 import { watch } from 'vue';
 
+
+const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
-const platformStore = usePlatformStore();
+const categoryStore = useCategoryStore();
 const searchTerm = ref('');
 const showAddGameModal = ref(false);
 const showPlatformModal = ref(false);
@@ -31,9 +34,8 @@ const cardToMove = ref(null);
 useDragAndDrop();
 
 onMounted(async () => {
-  document.title = 'GameTrack';
+  document.title = mediaTypeStore.config.name;
   await gameStore.loadGames();
-  await platformStore.loadPlatforms();
 });
 
 watch(() => gameStore.syncStatus, (newStatus) => {
@@ -98,7 +100,7 @@ function performEditMenuAction(action, gameId) {
   switch (action) {
     case 'favorite':
       gameStore.toggleFavorite(gameId);
-    break;
+      break;
     case 'edit-title':
       const gameToEdit = gameStore.games.find(g => g.id === gameId);
       const currentTitle = game.title || '';
@@ -106,7 +108,7 @@ function performEditMenuAction(action, gameId) {
       if (newTitle !== null && newTitle.trim() !== '') {
         gameStore.updateGameTitle(gameId, newTitle);
       }
-    break;
+      break;
     case 'edit-date':
       const currentDate = game.completionDate || '';
       const newDate = prompt('Indtast gennemførelsesdato (DD-MM-ÅÅÅÅ):', currentDate);
@@ -271,7 +273,7 @@ async function moveCard(gameId, direction) {
 
 // Platform menu action
 function changePlatform(gameId, platformId) {
-  const platform = platformStore.platforms.find(p => p.id === platformId);
+  const platform = categoryStore.categories.find(p => p.id === platformId);
   if (platform) {
     gameStore.changePlatform(gameId, platform);
   }
@@ -282,7 +284,7 @@ function changePlatform(gameId, platformId) {
 async function addGame() {
   if (!newGameTitle.value || !selectedPlatform.value) return;
 
-  const platform = platformStore.platforms.find(p => p.id === selectedPlatform.value);
+  const platform = categoryStore.categories.find(p => p.id === selectedPlatform.value);
   if (!platform) return;
 
   await gameStore.addGame(newGameTitle.value, platform);
@@ -316,9 +318,10 @@ onBeforeUnmount(() => {
     <main id="app">
       <div id="listIndicator"></div>
       <div id="listsContainer">
-        <GameList v-for="status in gameStore.statusList" :key="status.id" :title="status.name" :status="status.id"
-          :games="gameStore.gamesByStatus[status.id] || []" :search-term="searchTerm" @edit-menu="showEditMenu"
-          @platform-menu="showPlatformMenu" />
+        <!-- Brug statusList fra mediaTypeStore -->
+        <GameList v-for="status in mediaTypeStore.config.statusList" :key="status.id" :title="status.name"
+          :status="status.id" :games="gameStore.gamesByStatus[status.id] || []" :search-term="searchTerm"
+          @edit-menu="showEditMenu" @platform-menu="showPlatformMenu" />
       </div>
     </main>
 
@@ -337,8 +340,8 @@ onBeforeUnmount(() => {
           : 'Marker som favorit'}}
       </button>
       <button class="edit-title-btn" @click="performEditMenuAction('edit-title', activeEditMenu.gameId)">
-  Rediger titel
-</button>
+        Rediger titel
+      </button>
       <button class="edit-date-btn" @click="performEditMenuAction('edit-date', activeEditMenu.gameId)">
         Rediger dato
       </button>
@@ -360,7 +363,7 @@ onBeforeUnmount(() => {
       top: `${activePlatformMenu.y + 30}px`,
       zIndex: 1000
     }">
-      <button v-for="platform in platformStore.platforms" :key="platform.id" class="change-platform-btn"
+      <button v-for="platform in categoryStore.categories" :key="platform.id" class="change-platform-btn"
         @click="changePlatform(activePlatformMenu.gameId, platform.id)">
         {{ platform.name }}
       </button>
@@ -368,27 +371,27 @@ onBeforeUnmount(() => {
 
     <!-- Modaler med det nye Modal-komponent -->
     <!-- Add Game Modal -->
-    <Modal :isOpen="showAddGameModal" title="Tilføj nyt spil" @close="showAddGameModal = false">
-      <form @submit.prevent="addGame" class="game-form">
-        <div class="form-group">
-          <label for="gameTitle">Spiltitel:</label>
-          <input type="text" id="gameTitle" v-model="newGameTitle" required />
-        </div>
-        <div class="form-group">
-          <label for="gamePlatform">Platform:</label>
-          <select id="gamePlatform" v-model="selectedPlatform" required>
-            <option value="" disabled>Vælg platform</option>
-            <option v-for="platform in platformStore.platforms" :key="platform.id" :value="platform.id">
-              {{ platform.name }}
-            </option>
-          </select>
-        </div>
-      </form>
+    <Modal :isOpen="showAddGameModal" :title="`Tilføj nyt ${mediaTypeStore.config.itemName}`" @close="showAddGameModal = false">
+  <form @submit.prevent="addGame" class="game-form">
+    <div class="form-group">
+      <label :for="mediaTypeStore.config.itemName + 'Title'">{{ mediaTypeStore.config.itemName }}-titel:</label>
+      <input type="text" :id="mediaTypeStore.config.itemName + 'Title'" v-model="newGameTitle" required />
+    </div>
+    <div class="form-group">
+      <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
+      <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
+        <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
+        <option v-for="platform in categoryStore.categories" :key="platform.id" :value="platform.id">
+          {{ platform.name }}
+        </option>
+      </select>
+    </div>
+  </form>
 
-      <div slot="footer">
-        <button @click="addGame" class="btn btn-primary">Tilføj Spil</button>
-      </div>
-    </Modal>
+  <div slot="footer">
+    <button @click="addGame" class="btn btn-primary">{{ mediaTypeStore.config.addButtonText }}</button>
+  </div>
+</Modal>
 
     <!-- Platform Modal -->
     <Modal :isOpen="showPlatformModal" title="Administrer Platforme" @close="showPlatformModal = false">

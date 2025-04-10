@@ -1,7 +1,7 @@
 <!-- vue/src/components/platform/PlatformManager.vue -->
 <script setup>
 import { ref } from 'vue';
-import { usePlatformStore } from '../../stores/platform';
+import { usePlatformStore } from '../../stores/category';
 
 const platformStore = usePlatformStore();
 const newPlatformName = ref('');

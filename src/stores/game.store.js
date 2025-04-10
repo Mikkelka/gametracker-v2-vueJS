@@ -2,8 +2,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { useUserStore } from './user';
+import { useMediaTypeStore } from './mediaType';
 import { useFirestoreCollection } from '../firebase/db.service';
-import { deleteField } from 'firebase/firestore';
 
 export const useGameStore = defineStore('game', () => {
   // State
@@ -11,43 +11,49 @@ export const useGameStore = defineStore('game', () => {
   const isLoading = ref(true);
   const syncStatus = ref({ status: 'idle', message: '' });
   const isSyncing = ref(false);
+  const mediaTypeStore = useMediaTypeStore();
 
   const pendingChanges = ref([]);
   let syncTimer = null;
   const SYNC_DELAY = 5000; // 5 sekunder mellem synkroniseringer
-  
+
   // Service
   const gamesService = useFirestoreCollection('games');
   const userStore = useUserStore();
 
   // Statusliste
-  const statusList = [
-    { id: "upcoming", name: "Ser frem til" },
-    { id: "willplay", name: "Vil spille" },
-    { id: "playing", name: "Spiller nu" },
-    { id: "completed", name: "Gennemført" },
-    { id: "paused", name: "På pause" },
-    { id: "dropped", name: "Droppet" }
-  ];
-  
+  const statusList = computed(() => mediaTypeStore.config.statusList);
+
+  // Filtrerer spil baseret på den aktuelle medietype
+  const filteredGames = computed(() => {
+    // For spil, brug alle games
+    if (mediaTypeStore.currentType === 'game') {
+      return games.value;
+    }
+
+    // For andre medietyper, vi har ingen data endnu
+    // Dette håndterer vi, når vi implementerer movie.store.js og book.store.js
+    return [];
+  });
+
   // Computed
   const gamesByStatus = computed(() => {
     const grouped = {};
-    statusList.forEach(status => {
-      grouped[status.id] = games.value
+    statusList.value.forEach(status => {
+      grouped[status.id] = filteredGames.value
         .filter(game => game.status === status.id)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
     });
     return grouped;
   });
-  
+
   // Unsubscribe reference
   let unsubscribe = null;
 
   // Hjælpefunktion til at håndtere synkroniseringsstatus
   function updateSyncStatus(status, message, autoHide = true) {
     syncStatus.value = { status, message };
-    
+
     if (autoHide && status !== 'error') {
       setTimeout(() => {
         // Opdater kun hvis status ikke er ændret i mellemtiden
@@ -60,20 +66,20 @@ export const useGameStore = defineStore('game', () => {
 
   function queueChange(type, id, data) {
     console.log(`Queuing ${type} operation for id: ${id}`);
-    
+
     // Special case for 'add' operations - these should skip the queue
     // and be handled directly to get a Firebase-generated ID
     if (type === 'add') {
       console.warn('Add operations should not use queueChange. Use gamesService.addItem directly.');
       return;
     }
-    
+
     // Find eksisterende ændring til samme dokument
     const existingIndex = pendingChanges.value.findIndex(change => change.id === id);
-    
+
     if (existingIndex >= 0) {
       const existingChange = pendingChanges.value[existingIndex];
-      
+
       if (type === 'delete') {
         // Hvis det er en sletning overskriver vi alt
         pendingChanges.value[existingIndex] = { type, id };
@@ -82,9 +88,9 @@ export const useGameStore = defineStore('game', () => {
         return;
       } else if (type === 'update') {
         // Update operation - sammenlæg data
-        pendingChanges.value[existingIndex] = { 
-          type: existingChange.type, 
-          id, 
+        pendingChanges.value[existingIndex] = {
+          type: existingChange.type,
+          id,
           data: { ...existingChange.data, ...data }
         };
       }
@@ -92,50 +98,50 @@ export const useGameStore = defineStore('game', () => {
       // Tilføj ny ændring
       pendingChanges.value.push({ type, id, data });
     }
-    
+
     // Klar og sæt ny timer
     if (syncTimer) {
       clearTimeout(syncTimer);
     }
-    
+
     syncTimer = setTimeout(() => {
       console.log('Sync timer triggered');
       syncWithFirebase();
     }, SYNC_DELAY);
   }
-  
+
   async function syncWithFirebase() {
     if (pendingChanges.value.length === 0) {
       console.log('No pending changes to sync');
       return;
     }
-    
+
     if (!userStore.currentUser) {
       console.log('No user logged in');
       return;
     }
-    
+
     console.log(`Syncing ${pendingChanges.value.length} changes`);
     updateSyncStatus('syncing', 'Synkroniserer ændringer...', false);
-    
+
     try {
       // Tag en kopi af ændringer og tøm listen
       const changesToProcess = [...pendingChanges.value];
       pendingChanges.value = [];
-      
+
       // Nulstil timer
       syncTimer = null;
-      
+
       // Konverter til batch operations format
       const batchOperations = changesToProcess.map(change => ({
         type: change.type,
         id: change.id,
         data: change.data
       }));
-      
+
       // Udfør batch operation
       const result = await gamesService.batchUpdate(batchOperations);
-      
+
       if (result.success) {
         console.log(`Successfully synced ${result.count} changes`);
         updateSyncStatus('success', `Synkroniseret: ${result.count} ændringer`);
@@ -149,20 +155,20 @@ export const useGameStore = defineStore('game', () => {
       updateSyncStatus('error', 'Fejl under synkronisering');
     }
   }
-  
+
   // Firebase integration
   async function loadGames() {
     if (!userStore.currentUser) return;
-    
+
     isLoading.value = true;
-    
+
     try {
       // Afbryd tidligere lytter hvis den findes
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
-      
+
       // Opsæt realtime lytter
       unsubscribe = gamesService.subscribeToItems(
         userStore.currentUser.uid,
@@ -187,22 +193,22 @@ export const useGameStore = defineStore('game', () => {
       isLoading.value = false;
     }
   }
-  
+
   // Game operations
   async function saveGame(gameData) {
     if (!userStore.currentUser) return null;
-    
+
     try {
       const game = {
         ...gameData,
         userId: userStore.currentUser.uid,
         updatedAt: Date.now()
       };
-      
+
       // Opdater lokalt først
       const index = games.value.findIndex(g => g.id === game.id);
       if (index >= 0) {
-        games.value[index] = {...games.value[index], ...game};
+        games.value[index] = { ...games.value[index], ...game };
       } else {
         // For nye spil uden ID, brug midlertidigt ID der erstattes efter synkronisering
         if (!game.id) {
@@ -210,10 +216,10 @@ export const useGameStore = defineStore('game', () => {
         }
         games.value.push(game);
       }
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange(game.id.startsWith('temp_') ? 'add' : 'update', game.id, game);
-      
+
       updateSyncStatus('syncing', 'Ændringer planlagt...', false);
       return game;
     } catch (error) {
@@ -226,20 +232,20 @@ export const useGameStore = defineStore('game', () => {
   async function updateGameTitle(gameId, newTitle) {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
-  
+
     updateSyncStatus('syncing', 'Opdaterer spiltitel...');
-  
+
     try {
       // Opdater lokalt først
       game.title = newTitle.trim();
       game.updatedAt = Date.now();
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, {
         title: newTitle.trim(),
         updatedAt: Date.now()
       });
-      
+
       updateSyncStatus('syncing', 'Titel opdateret lokalt...', false);
       return game;
     } catch (error) {
@@ -247,74 +253,74 @@ export const useGameStore = defineStore('game', () => {
       return false;
     }
   }
-  
+
   // Tilføj et nyt spil
-async function addGame(title, platformData) {
-  // Tjek miljøvariablen for maksimalt antal spil
-  const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
-  
-  // Kun tjek hvis miljøvariablen er defineret og gyldig
-  if (!isNaN(maxGames) && games.value.length >= maxGames) {
-    updateSyncStatus('error', `Du har nået grænsen på ${maxGames} spil i den gratis plan.`);
-    return null;
-  }
+  async function addGame(title, platformData) {
+    // Tjek miljøvariablen for maksimalt antal spil
+    const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
 
-  updateSyncStatus('syncing', 'Tilføjer nyt spil...');
+    // Kun tjek hvis miljøvariablen er defineret og gyldig
+    if (!isNaN(maxGames) && games.value.length >= maxGames) {
+      updateSyncStatus('error', `Du har nået grænsen på ${maxGames} spil i den gratis plan.`);
+      return null;
+    }
 
-  const maxOrder = Math.max(
-    ...games.value
-      .filter(g => g.status === 'willplay')
-      .map(g => g.order || 0),
-    -1
-  );
+    updateSyncStatus('syncing', 'Tilføjer nyt spil...');
 
-  const newGame = {
-    title,
-    platform: platformData.name,
-    platformColor: platformData.color,
-    status: 'willplay',
-    favorite: false,
-    createdAt: Date.now(),
-    order: maxOrder + 1,
-    userId: userStore.currentUser.uid
-  };
+    const maxOrder = Math.max(
+      ...games.value
+        .filter(g => g.status === 'willplay')
+        .map(g => g.order || 0),
+      -1
+    );
 
-  try {
-    // Brug direkte Firebase addItem for nye spil
-    const result = await gamesService.addItem(newGame);
-    
-    if (result.success) {
-      // Tilføj det nye spil med Firebase-genereret ID til lokal state
-      games.value.push(result.data);
-      updateSyncStatus('success', 'Nyt spil tilføjet');
-      return result.data;
-    } else {
+    const newGame = {
+      title,
+      platform: platformData.name,
+      platformColor: platformData.color,
+      status: 'willplay',
+      favorite: false,
+      createdAt: Date.now(),
+      order: maxOrder + 1,
+      userId: userStore.currentUser.uid
+    };
+
+    try {
+      // Brug direkte Firebase addItem for nye spil
+      const result = await gamesService.addItem(newGame);
+
+      if (result.success) {
+        // Tilføj det nye spil med Firebase-genereret ID til lokal state
+        games.value.push(result.data);
+        updateSyncStatus('success', 'Nyt spil tilføjet');
+        return result.data;
+      } else {
+        updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error adding game:', error);
       updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
       return null;
     }
-  } catch (error) {
-    console.error('Error adding game:', error);
-    updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
-    return null;
   }
-}
 
   // Slet et spil
   async function deleteGame(gameId) {
     if (!userStore.currentUser) return false;
-    
+
     updateSyncStatus('syncing', 'Sletter spil...');
-    
+
     try {
       // Fjern fra lokal state først
       const index = games.value.findIndex(g => g.id === gameId);
       if (index >= 0) {
         games.value.splice(index, 1);
       }
-      
+
       // Queue sletning til batch-synkronisering
       queueChange('delete', gameId);
-      
+
       updateSyncStatus('syncing', 'Sletning planlagt...', false);
       return true;
     } catch (error) {
@@ -327,13 +333,13 @@ async function addGame(title, platformData) {
   // Flyt et spil til en ny status med en specifik position
   async function moveGameToStatus(gameId, newStatus, specificPosition = null) {
     updateSyncStatus('syncing', 'Flytter spil...');
-  
+
     const game = games.value.find(g => g.id === gameId);
     if (!game || game.status === newStatus) {
       updateSyncStatus('idle', '', false);
       return false;
     }
-  
+
     let newOrder;
     if (specificPosition !== null) {
       // Brug den specificerede position
@@ -348,27 +354,27 @@ async function addGame(title, platformData) {
       );
       newOrder = maxOrder + 1;
     }
-  
+
     try {
       // Opdater lokal state først
       game.status = newStatus;
       game.order = newOrder;
       game.updatedAt = Date.now();
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, {
         status: newStatus,
         order: newOrder,
         updatedAt: Date.now()
       });
-      
+
       // Hvis vi har en specifik position, skal vi også opdatere de andre spil i listen
       if (specificPosition !== null) {
         // Sortér og lav numerisk orden (1, 2, 3...)
         const gamesInSameList = games.value
           .filter(g => g.status === newStatus && g.id !== gameId)
           .sort((a, b) => (a.order || 0) - (b.order || 0));
-        
+
         // Reorder alle spil for at få hele tal orden
         [...gamesInSameList, game]
           .sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -382,7 +388,7 @@ async function addGame(title, platformData) {
             }
           });
       }
-      
+
       updateSyncStatus('syncing', 'Spil flyttet lokalt...', false);
       return game;
     } catch (error) {
@@ -395,20 +401,20 @@ async function addGame(title, platformData) {
   async function toggleFavorite(gameId) {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
-  
+
     updateSyncStatus('syncing', 'Opdaterer favorit-status...');
-  
+
     try {
       // Opdater lokalt først
       game.favorite = !game.favorite;
       game.updatedAt = Date.now();
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, {
         favorite: game.favorite,
         updatedAt: Date.now()
       });
-      
+
       updateSyncStatus('syncing', game.favorite ? 'Markeret som favorit lokalt...' : 'Fjernet fra favoritter lokalt...', false);
       return game;
     } catch (error) {
@@ -421,9 +427,9 @@ async function addGame(title, platformData) {
   async function setCompletionDate(gameId, date) {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
-  
+
     updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
-  
+
     // Valider dato-format hvis den ikke er tom
     if (date && date.trim() !== "") {
       // Regex for DD-MM-ÅÅÅÅ format
@@ -433,13 +439,13 @@ async function addGame(title, platformData) {
         return false;
       }
     }
-  
+
     try {
       // Opdater lokalt først
       const updateData = {
         updatedAt: Date.now()
       };
-      
+
       if (date && date.trim() !== "") {
         game.completionDate = date.trim();
         updateData.completionDate = date.trim();
@@ -447,10 +453,10 @@ async function addGame(title, platformData) {
         delete game.completionDate;
         updateData.completionDate = deleteField();
       }
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, updateData);
-      
+
       updateSyncStatus('syncing', 'Gennemførelsesdato opdateret lokalt...', false);
       return game;
     } catch (error) {
@@ -463,25 +469,25 @@ async function addGame(title, platformData) {
   async function setTodayAsCompletionDate(gameId) {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
-    
+
     updateSyncStatus('syncing', 'Tilføjer gennemførelsesdato...');
-    
+
     const today = new Date();
     const formattedDate = `${today.getDate().toString().padStart(2, "0")}-${(
       today.getMonth() + 1
     ).toString().padStart(2, "0")}-${today.getFullYear()}`;
-    
+
     try {
       // Opdater lokalt først
       game.completionDate = formattedDate;
       game.updatedAt = Date.now();
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, {
         completionDate: formattedDate,
         updatedAt: Date.now()
       });
-      
+
       updateSyncStatus('syncing', 'Dagens dato tilføjet lokalt...', false);
       return game;
     } catch (error) {
@@ -494,22 +500,22 @@ async function addGame(title, platformData) {
   async function changePlatform(gameId, platformData) {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
-  
+
     updateSyncStatus('syncing', 'Skifter platform...');
-  
+
     try {
       // Opdater lokalt først
       game.platform = platformData.name;
       game.platformColor = platformData.color;
       game.updatedAt = Date.now();
-      
+
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, {
         platform: platformData.name,
         platformColor: platformData.color,
         updatedAt: Date.now()
       });
-      
+
       updateSyncStatus('syncing', `Platform ændret lokalt til ${platformData.name}...`, false);
       return game;
     } catch (error) {
@@ -521,9 +527,9 @@ async function addGame(title, platformData) {
   // Opdater rækkefølgen for spil
   async function updateGameOrder(changedGames) {
     if (!userStore.currentUser) return false;
-  
+
     updateSyncStatus('syncing', 'Opdaterer rækkefølge...');
-  
+
     try {
       // Opdater lokalt først og queue ændringer
       changedGames.forEach(change => {
@@ -531,7 +537,7 @@ async function addGame(title, platformData) {
         if (index >= 0) {
           games.value[index].order = Number(change.order) || 0;
           games.value[index].status = change.status;
-          
+
           // Queue ændringen
           queueChange('update', change.id, {
             order: Number(change.order) || 0,
@@ -540,7 +546,7 @@ async function addGame(title, platformData) {
           });
         }
       });
-      
+
       // Sortér listen igen
       games.value.sort((a, b) => {
         const statusOrder = ["upcoming", "willplay", "playing", "completed", "paused", "dropped"];
@@ -549,7 +555,7 @@ async function addGame(title, platformData) {
         }
         return (a.order || 0) - (b.order || 0);
       });
-      
+
       updateSyncStatus('syncing', `Rækkefølge opdateret lokalt: ${changedGames.length} spil...`, false);
       return true;
     } catch (error) {
@@ -563,12 +569,12 @@ async function addGame(title, platformData) {
   function clearGames() {
     games.value = [];
     pendingChanges.value = [];
-    
+
     if (unsubscribe) {
       unsubscribe();
       unsubscribe = null;
     }
-    
+
     if (syncTimer) {
       clearTimeout(syncTimer);
       syncTimer = null;
@@ -593,27 +599,27 @@ async function addGame(title, platformData) {
   // Importér spilliste fra JSON
   async function importGames(jsonData) {
     if (!userStore.currentUser) return false;
-  
+
     updateSyncStatus('syncing', 'Importerer spil...');
-  
+
     try {
       const importedGames = JSON.parse(jsonData);
-  
+
       // Tilføj bruger-ID til importerede spil
       const updatedGames = importedGames.map(game => ({
         ...game,
         userId: userStore.currentUser.uid
       }));
-  
+
       // For import bruger vi stadig direkte batch operation da det kan være mange spil på én gang
       const batchOperations = updatedGames.map(game => ({
         type: 'set',
         id: game.id,
         data: game
       }));
-  
+
       const result = await gamesService.batchUpdate(batchOperations);
-  
+
       if (result.success) {
         // Opdater lokal state
         await loadGames(); // Genindlæs spil efter import
@@ -639,30 +645,31 @@ async function addGame(title, platformData) {
 
   return {
     // State
-  games,
-  isLoading,
-  syncStatus,
-  statusList,
-  
-  // Getters
-  gamesByStatus,
-  
-  // Methods
-  loadGames,
-  saveGame,
-  addGame,
-  deleteGame,
-  moveGameToStatus,
-  toggleFavorite,
-  setCompletionDate,
-  setTodayAsCompletionDate,
-  changePlatform,
-  updateGameOrder,
-  clearGames,
-  exportGames,
-  importGames,
-  updateSyncStatus,
-  syncWithFirebase,
-  updateGameTitle
+    games,
+    isLoading,
+    syncStatus,
+    statusList,
+    filteredGames,
+
+    // Getters
+    gamesByStatus,
+
+    // Methods
+    loadGames,
+    saveGame,
+    addGame,
+    deleteGame,
+    moveGameToStatus,
+    toggleFavorite,
+    setCompletionDate,
+    setTodayAsCompletionDate,
+    changePlatform,
+    updateGameOrder,
+    clearGames,
+    exportGames,
+    importGames,
+    updateSyncStatus,
+    syncWithFirebase,
+    updateGameTitle
   };
 });

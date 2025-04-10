@@ -1,9 +1,9 @@
-
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
 import { useGameStore } from '../../stores/game.store';
+import { useMediaTypeStore } from '../../stores/mediaType';
 import Modal from '../ui/Modal.vue';
 
 const props = defineProps({
@@ -15,6 +15,7 @@ const props = defineProps({
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
+const mediaTypeStore = useMediaTypeStore();
 const router = useRouter();
 
 const isDropdownOpen = ref(false);
@@ -27,6 +28,10 @@ const newName = ref('');
 function clearSearch() {
   searchInput.value = '';
   emit('search', '');
+}
+
+function goToDashboard() {
+  router.push({ name: 'dashboard' });
 }
 
 // Emit search events når søgefeltet ændres
@@ -92,57 +97,36 @@ onBeforeUnmount(() => {
 <template>
   <header>
     <h1>
-      <span class="logo-container">
-        GameTrack <span class="version">v2.1</span>
+      <span class="logo-container" @click="goToDashboard" role="button" tabindex="0">
+        {{ mediaTypeStore.config.name }} <span class="version">v2.1</span>
       </span>
 
       <span class="header-separator">|</span>
 
       <!-- Søgeknap på mobil -->
-      <button 
-        v-if="showSearchToggle" 
-        id="searchToggleBtn" 
-        class="search-toggle-btn" 
-        aria-label="Vis søgning"
-        @click="toggleSearch"
-      >
+      <button v-if="showSearchToggle" id="searchToggleBtn" class="search-toggle-btn" aria-label="Vis søgning"
+        @click="toggleSearch">
         🔍
       </button>
 
       <span class="user-name-container" v-if="userStore.isLoggedIn">
         <span id="userNameDisplay">{{ userStore.displayName }}</span>
-        <button 
-          id="editNameBtn" 
-          class="edit-name-btn" 
-          title="Rediger navn"
-          @click="openEditNameModal"
-        >
+        <button id="editNameBtn" class="edit-name-btn" title="Rediger navn" @click="openEditNameModal">
           ✏️
         </button>
       </span>
     </h1>
-    
+
     <!-- Søgefelt -->
     <div class="search-container" :class="{ active: isSearchActive }">
-      <input 
-        type="text" 
-        id="searchInput" 
-        v-model="searchInput"
-        @input="handleSearchInput"
-        placeholder="Søg efter spil eller 'favorit'" 
-        aria-label="Søg efter spil"
-      >
-      <button 
-        id="clearSearchBtn" 
-        v-show="searchInput"
-        class="clear-search-btn" 
-        aria-label="Ryd søgning"
-        @click="clearSearch"
-      >
+      <input type="text" id="searchInput" v-model="searchInput" @input="handleSearchInput"
+        placeholder="Søg efter spil eller 'favorit'" aria-label="Søg efter spil">
+      <button id="clearSearchBtn" v-show="searchInput" class="clear-search-btn" aria-label="Ryd søgning"
+        @click="clearSearch">
         ✕
       </button>
     </div>
-    
+
     <!-- Header knapper -->
     <div class="header-buttons">
       <button id="platformBtn" @click="$emit('openPlatformModal')">Platforme</button>
@@ -151,7 +135,11 @@ onBeforeUnmount(() => {
         <button id="dropdownBtn" class="dropbtn" @click="toggleDropdown">
           Mere {{ isDropdownOpen ? '▲' : '▼' }}
         </button>
-        <div id="dropdownContent" class="dropdown-content" :class="{ show: isDropdownOpen }">
+        <div class="dropdown-content" :class="{ show: isDropdownOpen }">
+          <!-- Tilføj Dashboard som første menuvalg -->
+          <button id="dashboardBtn" class="dropdown-btn" @click="goToDashboard">
+            Dashboard
+          </button>
           <button id="exportBtn" class="dropdown-btn" @click="gameStore.exportGames()">Eksportér</button>
           <button id="importBtn" class="dropdown-btn" @click="$emit('openImportModal')">Importér</button>
           <button id="settingsBtn" class="dropdown-btn" @click="$emit('openSettingsModal')">Indstillinger</button>
@@ -160,7 +148,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </header>
-  
+
   <!-- Edit name modal med Modal-komponenten -->
   <Modal :isOpen="showEditNameModal" title="Rediger dit navn" @close="showEditNameModal = false">
     <form @submit.prevent="updateName">
@@ -169,7 +157,7 @@ onBeforeUnmount(() => {
         <input type="text" id="newName" v-model="newName" required />
       </div>
     </form>
-    
+
     <div slot="footer">
       <button @click="updateName" class="btn btn-primary">Gem</button>
     </div>
@@ -417,6 +405,16 @@ h1 {
   background-color: var(--button-hover);
 }
 
+.logo-container {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.logo-container:hover {
+  opacity: 0.8;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .search-toggle-btn {
@@ -429,7 +427,7 @@ h1 {
     flex-wrap: wrap;
     padding: 10px;
   }
-  
+
   h1 {
     font-size: 1.2rem;
     display: flex;
@@ -440,28 +438,28 @@ h1 {
   .header-separator {
     display: none;
   }
-  
+
   .search-container {
     display: none;
     width: 100%;
     margin: 10px 0 0;
     order: 3;
   }
-  
+
   .search-container.active {
     display: flex;
   }
-  
+
   #searchInput {
     width: 100%;
   }
-  
+
   .header-buttons {
     width: 100%;
     margin-top: 10px;
     justify-content: space-between;
   }
-  
+
   #addGameBtn,
   #platformBtn,
   .dropbtn {
@@ -472,7 +470,7 @@ h1 {
     text-overflow: ellipsis;
     width: 100%;
   }
-  
+
   .header-buttons {
     display: grid;
     grid-template-columns: 30% 33% 33%;
@@ -480,8 +478,8 @@ h1 {
   }
 
   #userNameDisplay {
-  font-size: 16px;
-}
+    font-size: 16px;
+  }
 
 }
 </style>
