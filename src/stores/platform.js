@@ -213,6 +213,7 @@ export const usePlatformStore = defineStore('platform', () => {
     isLoading,
     error,
     categoryLabel, 
+    // categories,
     loadPlatforms,
     addPlatform,
     updatePlatformColor,

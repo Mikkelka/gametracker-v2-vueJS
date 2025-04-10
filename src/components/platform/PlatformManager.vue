@@ -1,6 +1,5 @@
-<!-- vue/src/components/platform/PlatformManager.vue -->
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { usePlatformStore } from '../../stores/category';
 
 const platformStore = usePlatformStore();
@@ -11,6 +10,10 @@ const colorPreviewRef = ref(null);
 const colorInputRef = ref(null);
 
 const emit = defineEmits(['close']);
+
+onMounted(async () => {
+  await platformStore.loadPlatforms();
+});
 
 function previewColor() {
   if (colorPreviewRef.value) {

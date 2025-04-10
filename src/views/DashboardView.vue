@@ -59,6 +59,7 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  min-height: calc(100vh - 60px - 83px - 1rem);
 }
 
 .tracker-grid {

@@ -18,23 +18,23 @@ export const useGameStore = defineStore('game', () => {
   const SYNC_DELAY = 5000; // 5 sekunder mellem synkroniseringer
 
   // Service
-  const gamesService = useFirestoreCollection('games');
+  const gamesService = computed(() => {
+    const collectionName = mediaTypeStore.currentType === 'game' 
+      ? 'games' 
+      : mediaTypeStore.config.collections.items;
+    return useFirestoreCollection(collectionName);
+  });
+
   const userStore = useUserStore();
 
   // Statusliste
   const statusList = computed(() => mediaTypeStore.config.statusList);
 
   // Filtrerer spil baseret på den aktuelle medietype
-  const filteredGames = computed(() => {
-    // For spil, brug alle games
-    if (mediaTypeStore.currentType === 'game') {
-      return games.value;
-    }
-
-    // For andre medietyper, vi har ingen data endnu
-    // Dette håndterer vi, når vi implementerer movie.store.js og book.store.js
-    return [];
-  });
+const filteredGames = computed(() => {
+  // Returnér alle spil uanset mediaType for nu
+  return games.value;
+});
 
   // Computed
   const gamesByStatus = computed(() => {
@@ -140,7 +140,7 @@ export const useGameStore = defineStore('game', () => {
       }));
 
       // Udfør batch operation
-      const result = await gamesService.batchUpdate(batchOperations);
+      const result = await gamesService.value.batchUpdate(batchOperations);
 
       if (result.success) {
         console.log(`Successfully synced ${result.count} changes`);
@@ -159,23 +159,25 @@ export const useGameStore = defineStore('game', () => {
   // Firebase integration
   async function loadGames() {
     if (!userStore.currentUser) return;
-
+  
     isLoading.value = true;
-
+  
     try {
       // Afbryd tidligere lytter hvis den findes
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
-
-      // Opsæt realtime lytter
-      unsubscribe = gamesService.subscribeToItems(
+  
+      // Opsæt realtime lytter - BEMÆRK .value her
+      unsubscribe = gamesService.value.subscribeToItems(
         userStore.currentUser.uid,
         (result) => {
           if (result.success) {
+            // Få statuslisten fra den aktuelle mediaType
+            const statusOrder = statusList.value.map(status => status.id);
+            
             games.value = result.data.sort((a, b) => {
-              const statusOrder = ["upcoming", "willplay", "playing", "completed", "paused", "dropped"];
               if (a.status !== b.status) {
                 return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
               }
@@ -258,37 +260,50 @@ export const useGameStore = defineStore('game', () => {
   async function addGame(title, platformData) {
     // Tjek miljøvariablen for maksimalt antal spil
     const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
-
+  
     // Kun tjek hvis miljøvariablen er defineret og gyldig
     if (!isNaN(maxGames) && games.value.length >= maxGames) {
       updateSyncStatus('error', `Du har nået grænsen på ${maxGames} spil i den gratis plan.`);
       return null;
     }
-
+  
     updateSyncStatus('syncing', 'Tilføjer nyt spil...');
-
+  
+    // Find den korrekte "vil" status baseret på mediaType
+    const mediaType = mediaTypeStore.currentType;
+    let statusId = 'willplay'; // Default (game)
+    
+    // Find den korrekte "Vil" status fra statusListen for denne mediaType
+    const willStatus = mediaTypeStore.config.statusList.find(s => 
+      s.name.toLowerCase().startsWith('vil ')
+    );
+    
+    if (willStatus) {
+      statusId = willStatus.id;
+    }
+  
     const maxOrder = Math.max(
       ...games.value
-        .filter(g => g.status === 'willplay')
+        .filter(g => g.status === statusId)
         .map(g => g.order || 0),
       -1
     );
-
+  
     const newGame = {
       title,
       platform: platformData.name,
       platformColor: platformData.color,
-      status: 'willplay',
+      status: statusId, // Brug den korrekte mediaType status
       favorite: false,
       createdAt: Date.now(),
       order: maxOrder + 1,
       userId: userStore.currentUser.uid
     };
-
+  
     try {
       // Brug direkte Firebase addItem for nye spil
-      const result = await gamesService.addItem(newGame);
-
+      const result = await gamesService.value.addItem(newGame);
+  
       if (result.success) {
         // Tilføj det nye spil med Firebase-genereret ID til lokal state
         games.value.push(result.data);
@@ -549,7 +564,7 @@ export const useGameStore = defineStore('game', () => {
 
       // Sortér listen igen
       games.value.sort((a, b) => {
-        const statusOrder = ["upcoming", "willplay", "playing", "completed", "paused", "dropped"];
+        const statusOrder = statusList.value.map(status => status.id);
         if (a.status !== b.status) {
           return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
         }
@@ -618,7 +633,7 @@ export const useGameStore = defineStore('game', () => {
         data: game
       }));
 
-      const result = await gamesService.batchUpdate(batchOperations);
+      const result = await gamesService.value.batchUpdate(batchOperations);
 
       if (result.success) {
         // Opdater lokal state

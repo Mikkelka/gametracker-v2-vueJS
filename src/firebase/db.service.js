@@ -29,20 +29,22 @@ export function useFirestoreCollection(collectionName) {
     try {
       const mediaTypeStore = useMediaTypeStore();
       const mediaType = mediaTypeStore.currentType;
-      const collectionType = mediaTypeStore.getCollectionType(collectionName);
       
       // For originalstrukturen (game medietype)
       if (mediaType === 'game') {
-        // Hvis det er platforme, så brug platforms-collection i roden
-        if (collectionName === 'platforms') {
-          return collectionName;
-        } 
-        // Ellers er det games-collection i roden
         return collectionName;
       } 
       // For film og bøger, brug den nye struktur
       else {
-        return `mediaTypes/${mediaType}/${collectionName}`;
+        // Map collection name based on media type
+        let mappedCollection = collectionName;
+        if (collectionName === 'games') {
+          mappedCollection = mediaTypeStore.config.collections.items;
+        } else if (collectionName === 'platforms') {
+          mappedCollection = mediaTypeStore.config.collections.categories;
+        }
+        
+        return `mediaTypes/${mediaType}/${mappedCollection}`;
       }
     } catch (error) {
       console.warn('MediaTypeStore not available, defaulting to original structure', error);

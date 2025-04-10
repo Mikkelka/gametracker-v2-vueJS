@@ -36,6 +36,7 @@ useDragAndDrop();
 onMounted(async () => {
   document.title = mediaTypeStore.config.name;
   await gameStore.loadGames();
+  await categoryStore.loadPlatforms();
 });
 
 watch(() => gameStore.syncStatus, (newStatus) => {
@@ -284,7 +285,8 @@ function changePlatform(gameId, platformId) {
 async function addGame() {
   if (!newGameTitle.value || !selectedPlatform.value) return;
 
-  const platform = categoryStore.categories.find(p => p.id === selectedPlatform.value);
+  // Skift fra .categories til .platforms
+  const platform = categoryStore.platforms.find(p => p.id === selectedPlatform.value);
   if (!platform) return;
 
   await gameStore.addGame(newGameTitle.value, platform);
@@ -380,11 +382,11 @@ onBeforeUnmount(() => {
     <div class="form-group">
       <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
       <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
-        <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
-        <option v-for="platform in categoryStore.categories" :key="platform.id" :value="platform.id">
-          {{ platform.name }}
-        </option>
-      </select>
+  <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
+  <option v-for="platform in categoryStore.platforms" :key="platform.id" :value="platform.id">
+    {{ platform.name }}
+  </option>
+</select>
     </div>
   </form>
 
