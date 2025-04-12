@@ -22,7 +22,6 @@ async function handleFileSelect(event) {
         const success = await gameStore.importGames(e.target.result);
         if (success) {
           importStatus.value = 'Import gennemført!';
-          // Luk modal efter et par sekunder
           setTimeout(() => {
             emit('close');
           }, 2000);

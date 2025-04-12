@@ -10,12 +10,9 @@ import GameList from '../components/game/GameList.vue';
 import PlatformManager from '../components/platform/PlatformManager.vue';
 import SettingsManager from '../components/settings/SettingsManager.vue';
 import ImportManager from '../components/game/ImportManager.vue';
-// import Modal from '../components/ui/Modal.vue';
 import { computed } from 'vue';
 import { watch } from 'vue';
-
 import SimplerModal from '../components/ui/SimplerModal.vue';
-
 
 const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
@@ -309,24 +306,13 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 
-
 function openAddGameModal() {
-  console.log('Open add game modal event received');
   showAddGameModal.value = true;
 }
 
 function openPlatformModal() {
-  console.log('Open platform modal event received');
   showPlatformModal.value = true;
 }
-
-watch(showAddGameModal, (newVal) => {
-  console.log('showAddGameModal changed to:', newVal);
-});
-
-watch(showPlatformModal, (newVal) => {
-  console.log('showPlatformModal changed to:', newVal);
-});
 
 </script>
 

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
 import { useGameStore } from '../../stores/game.store';
 import { useMediaTypeStore } from '../../stores/mediaType';
-import Modal from '../ui/Modal.vue';
+
 
 const props = defineProps({
   showSearchToggle: {
@@ -12,7 +12,7 @@ const props = defineProps({
     default: true
   },
   dashboardMode: {
-    type: Boolean, 
+    type: Boolean,
     default: false
   }
 });
@@ -102,15 +102,15 @@ onBeforeUnmount(() => {
   <header>
     <h1>
       <span class="logo-container" @click="goToDashboard" role="button" tabindex="0">
-        {{ dashboardMode ? 'Dashboard' : mediaTypeStore.config.name }} 
+        {{ dashboardMode ? 'Dashboard' : mediaTypeStore.config.name }}
         <span v-if="!dashboardMode" class="version">v2.1</span>
       </span>
 
       <span class="header-separator" v-if="!dashboardMode">|</span>
 
       <!-- Søgeknap på mobil - kun hvis ikke dashboard -->
-      <button v-if="showSearchToggle && !dashboardMode" id="searchToggleBtn" class="search-toggle-btn" aria-label="Vis søgning"
-        @click="toggleSearch">
+      <button v-if="showSearchToggle && !dashboardMode" id="searchToggleBtn" class="search-toggle-btn"
+        aria-label="Vis søgning" @click="toggleSearch">
         🔍
       </button>
 
@@ -135,14 +135,15 @@ onBeforeUnmount(() => {
     <!-- Header knapper - kun hvis ikke dashboard -->
     <div v-if="!dashboardMode" class="header-buttons">
       <button id="platformBtn" @click="() => {
-  console.log('Platform button clicked');
-  $emit('open-platform-modal');
-}">{{ mediaTypeStore.config.categoryNamePlural }}</button>
+        $emit('open-platform-modal');
+      }">{{ mediaTypeStore.config.categoryNamePlural }}
+      </button>
 
-<button id="addGameBtn" @click="() => {
-  console.log('Add game button clicked');
-  $emit('open-add-game-modal');
-}">{{ mediaTypeStore.config.addButtonText }}</button>
+      <button id="addGameBtn" @click="() => {
+        $emit('open-add-game-modal');
+      }">{{ mediaTypeStore.config.addButtonText }}
+      </button>
+
       <div class="dropdown">
         <button id="dropdownBtn" class="dropbtn" @click="toggleDropdown">
           Mere {{ isDropdownOpen ? '▲' : '▼' }}
@@ -158,7 +159,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    
+
     <!-- Simpel header knap til dashboard view -->
     <div v-if="dashboardMode" class="header-buttons">
       <div class="dropdown">
@@ -172,10 +173,6 @@ onBeforeUnmount(() => {
     </div>
   </header>
   
-  <!-- Modal for redigering af navn forbliver uændret -->
-  <Modal :isOpen="showEditNameModal" title="Rediger dit navn" @close="showEditNameModal = false">
-    <!-- ... eksisterende modal-indhold ... -->
-  </Modal>
 </template>
 
 <style scoped>
