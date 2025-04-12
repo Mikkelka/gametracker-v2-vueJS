@@ -17,13 +17,13 @@ function navigateTo(type) {
 }
 
 onMounted(() => {
-  document.title = 'Media Tracker Dashboard';
+  document.title = 'Dashboard';
 });
 </script>
 
 <template>
   <div class="dashboard-page">
-    <AppHeader :showSearchToggle="false" />
+    <AppHeader :showSearchToggle="false" :dashboardMode="true" />
     
     <main class="dashboard-container">
       <h1>Velkommen, {{ userStore.displayName }}</h1>
