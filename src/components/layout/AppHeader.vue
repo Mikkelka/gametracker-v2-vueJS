@@ -125,7 +125,8 @@ onBeforeUnmount(() => {
     <!-- Søgefelt - kun hvis ikke dashboard -->
     <div v-if="!dashboardMode" class="search-container" :class="{ active: isSearchActive }">
       <input type="text" id="searchInput" v-model="searchInput" @input="handleSearchInput"
-        placeholder="Søg efter spil eller 'favorit'" aria-label="Søg efter spil">
+  :placeholder="`Søg efter ${mediaTypeStore.config.itemNamePlural} eller 'favorit'`" 
+  :aria-label="`Søg efter ${mediaTypeStore.config.itemNamePlural}`">
       <button id="clearSearchBtn" v-show="searchInput" class="clear-search-btn" aria-label="Ryd søgning"
         @click="clearSearch">
         ✕
@@ -172,7 +173,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </header>
-  
+
 </template>
 
 <style scoped>
