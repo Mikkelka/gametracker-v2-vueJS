@@ -10,19 +10,18 @@ import GameList from '../components/game/GameList.vue';
 import PlatformManager from '../components/platform/PlatformManager.vue';
 import SettingsManager from '../components/settings/SettingsManager.vue';
 import ImportManager from '../components/game/ImportManager.vue';
-import Modal from '../components/ui/Modal.vue';
+// import Modal from '../components/ui/Modal.vue';
 import { computed } from 'vue';
 import { watch } from 'vue';
+
+import SimplerModal from '../components/ui/SimplerModal.vue';
 
 
 const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
 const categoryStore = useCategoryStore();
 const searchTerm = ref('');
-const showAddGameModal = ref(false);
-const showPlatformModal = ref(false);
-const showSettingsModal = ref(false);
-const showImportModal = ref(false);
+
 const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
 const newGameTitle = ref('');
@@ -30,6 +29,11 @@ const selectedPlatform = ref('');
 const syncStatusDisplay = computed(() => gameStore.syncStatus);
 const moveMode = ref(null);
 const cardToMove = ref(null);
+
+const showAddGameModal = ref(false);
+const showPlatformModal = ref(false);
+const showSettingsModal = ref(false);
+const showImportModal = ref(false);
 
 useDragAndDrop();
 
@@ -304,13 +308,33 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
+
+
+function openAddGameModal() {
+  console.log('Open add game modal event received');
+  showAddGameModal.value = true;
+}
+
+function openPlatformModal() {
+  console.log('Open platform modal event received');
+  showPlatformModal.value = true;
+}
+
+watch(showAddGameModal, (newVal) => {
+  console.log('showAddGameModal changed to:', newVal);
+});
+
+watch(showPlatformModal, (newVal) => {
+  console.log('showPlatformModal changed to:', newVal);
+});
+
 </script>
 
 <template>
+
   <div class="game-track-app">
-    <AppHeader @search="handleSearch" @open-add-game-modal="showAddGameModal = true"
-      @open-platform-modal="showPlatformModal = true" @open-settings-modal="showSettingsModal = true"
-      @open-import-modal="showImportModal = true" />
+    <AppHeader @search="handleSearch" @open-add-game-modal="openAddGameModal" @open-platform-modal="openPlatformModal"
+      @open-settings-modal="showSettingsModal = true" @open-import-modal="showImportModal = true" />
 
     <!-- Sync notification -->
     <div v-if="gameStore.syncStatus.status !== 'idle'" class="sync-notification" :class="gameStore.syncStatus.status">
@@ -371,44 +395,66 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- Modaler med det nye Modal-komponent -->
-    <!-- Add Game Modal -->
-    <Modal :isOpen="showAddGameModal" :title="`Tilføj nyt ${mediaTypeStore.config.itemName}`" @close="showAddGameModal = false">
-  <form @submit.prevent="addGame" class="game-form">
-    <div class="form-group">
-      <label :for="mediaTypeStore.config.itemName + 'Title'">{{ mediaTypeStore.config.itemName }}-titel:</label>
-      <input type="text" :id="mediaTypeStore.config.itemName + 'Title'" v-model="newGameTitle" required />
-    </div>
-    <div class="form-group">
-      <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
-      <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
-  <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
-  <option v-for="platform in categoryStore.platforms" :key="platform.id" :value="platform.id">
-    {{ platform.name }}
-  </option>
-</select>
-    </div>
-  </form>
+    <SimplerModal :isOpen="showAddGameModal" :title="`Tilføj nyt ${mediaTypeStore.config.itemName}`"
+      @close="showAddGameModal = false">
+      <form @submit.prevent="addGame" class="game-form">
+        <div class="form-group">
+          <label :for="mediaTypeStore.config.itemName + 'Title'">{{ mediaTypeStore.config.itemName }}-titel:</label>
+          <input type="text" :id="mediaTypeStore.config.itemName + 'Title'" v-model="newGameTitle" required />
+        </div>
+        <div class="form-group">
+          <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
+          <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
+            <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
+            <option v-for="platform in categoryStore.platforms" :key="platform.id" :value="platform.id">
+              {{ platform.name }}
+            </option>
+          </select>
+        </div>
+      </form>
 
-  <div slot="footer">
-    <button @click="addGame" class="btn btn-primary">{{ mediaTypeStore.config.addButtonText }}</button>
-  </div>
-</Modal>
+      <template #footer>
+        <button @click="addGame" class="btn btn-primary">{{ mediaTypeStore.config.addButtonText }}</button>
+      </template>
+    </SimplerModal>
+
+    <SimplerModal :isOpen="showPlatformModal" :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`"
+      @close="showPlatformModal = false">
+      <form @submit.prevent="addGame" class="game-form">
+        <div class="form-group">
+          <label :for="mediaTypeStore.config.itemName + 'Title'">{{ mediaTypeStore.config.itemName }}-titel:</label>
+          <input type="text" :id="mediaTypeStore.config.itemName + 'Title'" v-model="newGameTitle" required />
+        </div>
+        <div class="form-group">
+          <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
+          <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
+            <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
+            <option v-for="platform in categoryStore.platforms" :key="platform.id" :value="platform.id">
+              {{ platform.name }}
+            </option>
+          </select>
+        </div>
+      </form>
+
+      <div slot="footer">
+        <button @click="addGame" class="btn btn-primary">{{ mediaTypeStore.config.addButtonText }}</button>
+      </div>
+    </SimplerModal>
 
     <!-- Platform Modal -->
-    <Modal :isOpen="showPlatformModal" title="Administrer Platforme" @close="showPlatformModal = false">
+    <SimplerModal :isOpen="showPlatformModal" title="Administrer Platforme" @close="showPlatformModal = false">
       <PlatformManager @close="showPlatformModal = false" />
-    </Modal>
+    </SimplerModal>
 
     <!-- Settings Modal -->
-    <Modal :isOpen="showSettingsModal" title="Indstillinger" @close="showSettingsModal = false">
+    <SimplerModal :isOpen="showSettingsModal" title="Indstillinger" @close="showSettingsModal = false">
       <SettingsManager @close="showSettingsModal = false" />
-    </Modal>
+    </SimplerModal>
 
     <!-- Import Modal -->
-    <Modal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
+    <SimplerModal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
       <ImportManager @close="showImportModal = false" />
-    </Modal>
+    </SimplerModal>
   </div>
 </template>
 

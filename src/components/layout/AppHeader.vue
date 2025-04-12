@@ -39,7 +39,7 @@ function goToDashboard() {
 }
 
 // Emit search events når søgefeltet ændres
-const emit = defineEmits(['search', 'openAddGameModal', 'openPlatformModal', 'openSettingsModal', 'openImportModal']);
+const emit = defineEmits(['search', 'open-add-game-modal', 'open-platform-modal', 'open-settings-modal', 'open-import-modal']);
 function handleSearchInput() {
   emit('search', searchInput.value);
 }
@@ -134,8 +134,15 @@ onBeforeUnmount(() => {
 
     <!-- Header knapper - kun hvis ikke dashboard -->
     <div v-if="!dashboardMode" class="header-buttons">
-      <button id="platformBtn" @click="$emit('openPlatformModal')">Platforme</button>
-      <button id="addGameBtn" @click="$emit('openAddGameModal')">Tilføj Spil</button>
+      <button id="platformBtn" @click="() => {
+  console.log('Platform button clicked');
+  $emit('open-platform-modal');
+}">{{ mediaTypeStore.config.categoryNamePlural }}</button>
+
+<button id="addGameBtn" @click="() => {
+  console.log('Add game button clicked');
+  $emit('open-add-game-modal');
+}">{{ mediaTypeStore.config.addButtonText }}</button>
       <div class="dropdown">
         <button id="dropdownBtn" class="dropbtn" @click="toggleDropdown">
           Mere {{ isDropdownOpen ? '▲' : '▼' }}
