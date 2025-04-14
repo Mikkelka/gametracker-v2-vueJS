@@ -24,24 +24,24 @@ onMounted(() => {
 <template>
   <div class="dashboard-page">
     <AppHeader :showSearchToggle="false" :dashboardMode="true" />
-    
+
     <main class="dashboard-container">
       <h1>Velkommen, {{ userStore.displayName }}</h1>
       <p>Vælg hvilket medie du vil spore:</p>
-      
+
       <div class="tracker-grid">
         <div class="tracker-card" @click="navigateTo('game')">
           <div class="card-icon">🎮</div>
           <h2>GameTrack</h2>
           <p>Hold styr på dine spil</p>
         </div>
-        
+
         <div class="tracker-card" @click="navigateTo('movie')">
           <div class="card-icon">🎬</div>
           <h2>MovieTrack</h2>
           <p>Hold styr på dine film</p>
         </div>
-        
+
         <div class="tracker-card" @click="navigateTo('book')">
           <div class="card-icon">📚</div>
           <h2>BookTrack</h2>
@@ -49,7 +49,7 @@ onMounted(() => {
         </div>
       </div>
     </main>
-    
+
     <AppFooter />
   </div>
 </template>
@@ -102,6 +102,21 @@ onMounted(() => {
 @media (max-width: 768px) {
   .tracker-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .tracker-card {
+    padding: 1rem;
+  }
+
+  .card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0;
+  }
+
+  .tracker-card h2 {
+    margin: 0;
+
   }
 }
 </style>
