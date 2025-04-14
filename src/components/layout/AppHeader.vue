@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
 import { useGameStore } from '../../stores/game.store';
 import { useMediaTypeStore } from '../../stores/mediaType';
+import SimplerModal from '../ui/SimplerModal.vue';
 
 
 const props = defineProps({
@@ -173,6 +174,19 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </header>
+
+  <SimplerModal :isOpen="showEditNameModal" title="Rediger navn" @close="showEditNameModal = false">
+  <form @submit.prevent="updateName" class="name-form">
+    <div class="form-group">
+      <label for="displayName">Navn:</label>
+      <input type="text" id="displayName" v-model="newName" required />
+    </div>
+  </form>
+
+  <template #footer>
+    <button @click="updateName" class="btn btn-primary">Gem</button>
+  </template>
+</SimplerModal>
 
 </template>
 
