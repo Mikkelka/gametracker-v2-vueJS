@@ -1,6 +1,6 @@
 <!-- vue/src/components/game/GameCard.vue -->
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useGameStore } from '../../stores/game.store';
 import { usePlatformStore } from '../../stores/platform';
 
@@ -14,6 +14,15 @@ const props = defineProps({
 const emit = defineEmits(['edit-menu', 'platform-menu']);
 const gameStore = useGameStore();
 const platformStore = usePlatformStore();
+
+// Computed property der altid henter den aktuelle platformfarve
+const platformColor = computed(() => {
+  // Prøv at finde platformen i platformStore
+  const platform = platformStore.platforms.find(p => p.name === props.game.platform);
+  
+  // Returner platformfarven hvis platformen findes, ellers brug den gemte farve i game objektet
+  return platform ? platform.color : props.game.platformColor;
+});
 
 // Håndter klik på redigeringsknappen
 function showEditMenu(event) {
@@ -43,7 +52,7 @@ function showPlatformMenu(event) {
     <div class="card-details">
       <span 
         class="platform-pill" 
-        :style="{ backgroundColor: game.platformColor }" 
+        :style="{ backgroundColor: platformColor }" 
         @click="showPlatformMenu"
         :data-platform-name="game.platform" 
         :data-game-id="game.id"
@@ -137,41 +146,6 @@ function showPlatformMenu(event) {
 
 .move-arrows {
   position: absolute;
-  right: 0%;
-  bottom: 5%;
-  display: flex;
-  flex-direction: row;
-}
-
-.move-arrows button {
-  background: none;
-  border: none;
-  font-size: 26px;
-  cursor: pointer;
-  padding: 0px;
-  color: #ffffff;
-}
-
-.move-arrows button:hover {
-  color: #4caf50;
-}
-
-/* Drag and drop styles */
-.card.dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
-
-.card.drag-over-top {
-  border-top: solid 10px var(--button-bg);
-}
-
-.card.drag-over-bottom {
-  border-bottom: solid 10px var(--button-bg);
-}
-
-.move-arrows {
-  position: absolute;
   right: 10px;
   bottom: 10px;
   display: flex;
@@ -199,6 +173,20 @@ function showPlatformMenu(event) {
   color: white;
 }
 
+/* Drag and drop styles */
+.card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.card.drag-over-top {
+  border-top: solid 10px var(--button-bg);
+}
+
+.card.drag-over-bottom {
+  border-bottom: solid 10px var(--button-bg);
+}
+
 @media (max-width: 768px) {
   .move-arrows {
     right: 10px;
@@ -211,5 +199,4 @@ function showPlatformMenu(event) {
     font-size: 22px;
   }
 }
-
 </style>

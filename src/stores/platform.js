@@ -152,7 +152,14 @@ export const usePlatformStore = defineStore('platform', () => {
           // Opdater også spil i gameStore
           gameStore.games.forEach(game => {
             if (game.platform === platform.name) {
+              // Brug Vue's reaktivitetssystem eksplicit
               game.platformColor = newColor;
+              
+              // Trigger en re-render ved at lave en "kopi" af objektet
+              const index = gameStore.games.findIndex(g => g.id === game.id);
+              if (index >= 0) {
+                gameStore.games[index] = { ...game };
+              }
             }
           });
         }
