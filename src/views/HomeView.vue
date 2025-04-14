@@ -32,6 +32,9 @@ const showPlatformModal = ref(false);
 const showSettingsModal = ref(false);
 const showImportModal = ref(false);
 
+const showDeleteConfirmModal = ref(false);
+const gameToDelete = ref(null);
+
 useDragAndDrop();
 
 onMounted(async () => {
@@ -125,15 +128,24 @@ function performEditMenuAction(action, gameId) {
       toggleMoveMode(gameId);
       break;
     case 'delete':
-      if (confirm('Er du sikker på, at du vil slette dette spil?')) {
-        gameStore.deleteGame(gameId);
-      }
+      // Gem gameId i gameToDelete ref og vis modalen
+      gameToDelete.value = gameId;
+      showDeleteConfirmModal.value = true;
       break;
   }
 
-  // Luk kun menuen hvis vi ikke går i flyttilstand
-  if (action !== 'move') {
+  // Luk kun menuen hvis vi ikke går i flyttilstand eller sletning
+  if (action !== 'move' && action !== 'delete') {
     activeEditMenu.value = null;
+  }
+}
+
+function confirmDelete() {
+  if (gameToDelete.value) {
+    gameStore.deleteGame(gameToDelete.value);
+    activeEditMenu.value = null; // Luk også edit-menuen efter sletning
+    gameToDelete.value = null;
+    showDeleteConfirmModal.value = false;
   }
 }
 
@@ -428,7 +440,7 @@ function openPlatformModal() {
     </SimplerModal>
 
     <!-- Platform Modal -->
-    <SimplerModal :isOpen="showPlatformModal" title="Administrer Platforme" @close="showPlatformModal = false">
+    <SimplerModal :isOpen="showPlatformModal" :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`" @close="showPlatformModal = false">
       <PlatformManager @close="showPlatformModal = false" />
     </SimplerModal>
 
@@ -441,6 +453,17 @@ function openPlatformModal() {
     <SimplerModal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
       <ImportManager @close="showImportModal = false" />
     </SimplerModal>
+
+    <SimplerModal :isOpen="showDeleteConfirmModal" title="Bekræft sletning" @close="showDeleteConfirmModal = false">
+      <p>Er du sikker på, at du vil slette denne {{ mediaTypeStore.config.itemName }}?</p>
+      <template #footer>
+        <button @click="showDeleteConfirmModal = false"
+          style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #444; color: white; margin-right: 8px;">Annuller</button>
+        <button @click="confirmDelete"
+          style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #f44336; color: white;">Slet</button>
+      </template>
+    </SimplerModal>
+
   </div>
 </template>
 

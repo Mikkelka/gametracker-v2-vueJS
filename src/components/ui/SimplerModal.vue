@@ -129,6 +129,29 @@ watch(() => props.isOpen, (isOpen) => {
   border-top: 1px solid var(--card-border);
 }
 
+.btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.btn-primary {
+  background-color: var(--button-bg);
+  color: white;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
 @keyframes modalFadeIn {
   from {
     opacity: 0;
