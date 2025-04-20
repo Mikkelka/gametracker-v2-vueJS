@@ -19,8 +19,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Service
   const gamesService = computed(() => {
-    const collectionName = mediaTypeStore.currentType === 'game' 
-      ? 'games' 
+    const collectionName = mediaTypeStore.currentType === 'game'
+      ? 'games'
       : mediaTypeStore.config.collections.items;
     return useFirestoreCollection(collectionName);
   });
@@ -31,10 +31,10 @@ export const useGameStore = defineStore('game', () => {
   const statusList = computed(() => mediaTypeStore.config.statusList);
 
   // Filtrerer spil baseret på den aktuelle medietype
-const filteredGames = computed(() => {
-  // Returnér alle spil uanset mediaType for nu
-  return games.value;
-});
+  const filteredGames = computed(() => {
+    // Returnér alle spil uanset mediaType for nu
+    return games.value;
+  });
 
   // Computed
   const gamesByStatus = computed(() => {
@@ -50,8 +50,61 @@ const filteredGames = computed(() => {
   // Unsubscribe reference
   let unsubscribe = null;
 
+  function getDynamicMessage(messageKey, customValue = null) {
+    // Få det korrekte item navn baseret på medietype
+    const itemName = mediaTypeStore.config.itemName;
+    const itemNamePlural = mediaTypeStore.config.itemNamePlural;
+    const categoryName = mediaTypeStore.config.categoryName;
+
+    // Objektet med alle beskedtyper
+    const messages = {
+      // Under handling
+      moving: `Flytter ${itemName}...`,
+      saving: `Gemmer ændringer...`,
+      updatingTitle: `Opdaterer titel...`,
+      adding: `Tilføjer nyt ${itemName}...`,
+      deleting: `Sletter ${itemName}...`,
+      updatingFavorite: `Opdaterer favorit...`,
+      updatingDate: `Opdaterer dato...`,
+      addingDate: `Tilføjer dato...`,
+      changingCategory: `Skifter ${categoryName.toLowerCase()}...`,
+      updatingOrder: `Opdaterer rækkefølge...`,
+      importing: `Importerer ${itemNamePlural}...`,
+
+      // Efter succes
+      moved: `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} flyttet`,
+      saved: `Ændringer gemt`,
+      titleUpdated: `Titel opdateret`,
+      added: `Nyt ${itemName} tilføjet`,
+      deleted: `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} slettet`,
+      favoritedTrue: `Markeret som favorit`,
+      favoritedFalse: `Fjernet fra favoritter`,
+      dateUpdated: `Dato opdateret`,
+      dateAdded: `Dato tilføjet`,
+      orderUpdated: `Rækkefølge opdateret`,
+
+      // Dynamiske beskeder med specialkode
+      categoryChanged: () => `${categoryName} ændret til ${customValue}`,
+      imported: () => `${customValue} ${customValue === 1 ? itemName : itemNamePlural} importeret`,
+      limitReached: () => `Du har nået grænsen på ${customValue} ${itemNamePlural} i den gratis plan.`,
+      synced: () => `Ændringer gemt`, // Fjernet antallet - nu vises bare "Ændringer gemt"
+
+      // Fejl
+      error: `Kunne ikke gemme ændringer. Prøv igen.`,
+      syncError: `Fejl under synkronisering. Prøv igen senere.`
+    };
+
+    // Returner enten en dynamisk besked eller en statisk besked
+    if (typeof messages[messageKey] === 'function') {
+      return messages[messageKey]();
+    }
+
+    return messages[messageKey] || messageKey;
+  }
+
   // Hjælpefunktion til at håndtere synkroniseringsstatus
-  function updateSyncStatus(status, message, autoHide = true) {
+  function updateSyncStatus(status, messageKey, customValue = null, autoHide = true) {
+    const message = getDynamicMessage(messageKey, customValue);
     syncStatus.value = { status, message };
 
     if (autoHide && status !== 'error') {
@@ -122,7 +175,7 @@ const filteredGames = computed(() => {
     }
 
     console.log(`Syncing ${pendingChanges.value.length} changes`);
-    updateSyncStatus('syncing', 'Synkroniserer ændringer...', false);
+    updateSyncStatus('syncing', 'saving', null, false);
 
     try {
       // Tag en kopi af ændringer og tøm listen
@@ -144,31 +197,31 @@ const filteredGames = computed(() => {
 
       if (result.success) {
         console.log(`Successfully synced ${result.count} changes`);
-        updateSyncStatus('success', `Synkroniseret: ${result.count} ændringer`);
+        updateSyncStatus('success', 'saved');
       } else {
         console.error('Failed to sync changes');
         pendingChanges.value = [...changesToProcess, ...pendingChanges.value];
-        updateSyncStatus('error', 'Fejl under synkronisering');
+        updateSyncStatus('error', 'syncError');
       }
     } catch (error) {
       console.error('Error syncing with Firebase:', error);
-      updateSyncStatus('error', 'Fejl under synkronisering');
+      updateSyncStatus('error', 'syncError');
     }
   }
 
   // Firebase integration
   async function loadGames() {
     if (!userStore.currentUser) return;
-  
+
     isLoading.value = true;
-  
+
     try {
       // Afbryd tidligere lytter hvis den findes
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
-  
+
       // Opsæt realtime lytter - BEMÆRK .value her
       unsubscribe = gamesService.value.subscribeToItems(
         userStore.currentUser.uid,
@@ -176,7 +229,7 @@ const filteredGames = computed(() => {
           if (result.success) {
             // Få statuslisten fra den aktuelle mediaType
             const statusOrder = statusList.value.map(status => status.id);
-            
+
             games.value = result.data.sort((a, b) => {
               if (a.status !== b.status) {
                 return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
@@ -222,11 +275,11 @@ const filteredGames = computed(() => {
       // Queue ændringen til batch-synkronisering
       queueChange(game.id.startsWith('temp_') ? 'add' : 'update', game.id, game);
 
-      updateSyncStatus('syncing', 'Ændringer planlagt...', false);
+      updateSyncStatus('syncing', 'saving', null, false);
       return game;
     } catch (error) {
       console.error('Error saving game:', error);
-      updateSyncStatus('error', 'Fejl ved behandling af spil');
+      updateSyncStatus('error', 'error');
       return null;
     }
   }
@@ -235,7 +288,7 @@ const filteredGames = computed(() => {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
-    updateSyncStatus('syncing', 'Opdaterer spiltitel...');
+    updateSyncStatus('syncing', 'updatingTitle');
 
     try {
       // Opdater lokalt først
@@ -248,10 +301,10 @@ const filteredGames = computed(() => {
         updatedAt: Date.now()
       });
 
-      updateSyncStatus('syncing', 'Titel opdateret lokalt...', false);
+      updateSyncStatus('success', 'titleUpdated');
       return game;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved opdatering af titel');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -260,35 +313,35 @@ const filteredGames = computed(() => {
   async function addGame(title, platformData) {
     // Tjek miljøvariablen for maksimalt antal spil
     const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
-  
+
     // Kun tjek hvis miljøvariablen er defineret og gyldig
     if (!isNaN(maxGames) && games.value.length >= maxGames) {
-      updateSyncStatus('error', `Du har nået grænsen på ${maxGames} spil i den gratis plan.`);
+      updateSyncStatus('error', 'limitReached', maxGames);
       return null;
     }
-  
-    updateSyncStatus('syncing', 'Tilføjer nyt spil...');
-  
+
+    updateSyncStatus('syncing', 'adding');
+
     // Find den korrekte "vil" status baseret på mediaType
     const mediaType = mediaTypeStore.currentType;
     let statusId = 'willplay'; // Default (game)
-    
+
     // Find den korrekte "Vil" status fra statusListen for denne mediaType
-    const willStatus = mediaTypeStore.config.statusList.find(s => 
+    const willStatus = mediaTypeStore.config.statusList.find(s =>
       s.name.toLowerCase().startsWith('vil ')
     );
-    
+
     if (willStatus) {
       statusId = willStatus.id;
     }
-  
+
     const maxOrder = Math.max(
       ...games.value
         .filter(g => g.status === statusId)
         .map(g => g.order || 0),
       -1
     );
-  
+
     const newGame = {
       title,
       platform: platformData.name,
@@ -299,23 +352,23 @@ const filteredGames = computed(() => {
       order: maxOrder + 1,
       userId: userStore.currentUser.uid
     };
-  
+
     try {
       // Brug direkte Firebase addItem for nye spil
       const result = await gamesService.value.addItem(newGame);
-  
+
       if (result.success) {
         // Tilføj det nye spil med Firebase-genereret ID til lokal state
         games.value.push(result.data);
-        updateSyncStatus('success', 'Nyt spil tilføjet');
+        updateSyncStatus('success', 'added');
         return result.data;
       } else {
-        updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
+        updateSyncStatus('error', 'error');
         return null;
       }
     } catch (error) {
       console.error('Error adding game:', error);
-      updateSyncStatus('error', 'Fejl ved tilføjelse af spil');
+      updateSyncStatus('error', 'error');
       return null;
     }
   }
@@ -324,7 +377,7 @@ const filteredGames = computed(() => {
   async function deleteGame(gameId) {
     if (!userStore.currentUser) return false;
 
-    updateSyncStatus('syncing', 'Sletter spil...');
+    updateSyncStatus('syncing', 'deleting');
 
     try {
       // Fjern fra lokal state først
@@ -336,18 +389,18 @@ const filteredGames = computed(() => {
       // Queue sletning til batch-synkronisering
       queueChange('delete', gameId);
 
-      updateSyncStatus('syncing', 'Sletning planlagt...', false);
+      updateSyncStatus('success', 'deleted');
       return true;
     } catch (error) {
       console.error('Error deleting game:', error);
-      updateSyncStatus('error', 'Fejl ved sletning af spil');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
 
   // Flyt et spil til en ny status med en specifik position
   async function moveGameToStatus(gameId, newStatus, specificPosition = null) {
-    updateSyncStatus('syncing', 'Flytter spil...');
+    updateSyncStatus('syncing', 'moving');
 
     const game = games.value.find(g => g.id === gameId);
     if (!game || game.status === newStatus) {
@@ -404,10 +457,10 @@ const filteredGames = computed(() => {
           });
       }
 
-      updateSyncStatus('syncing', 'Spil flyttet lokalt...', false);
+      updateSyncStatus('success', 'moved');
       return game;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved flytning af spil');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -417,7 +470,7 @@ const filteredGames = computed(() => {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
-    updateSyncStatus('syncing', 'Opdaterer favorit-status...');
+    updateSyncStatus('syncing', 'updatingFavorite');
 
     try {
       // Opdater lokalt først
@@ -430,10 +483,10 @@ const filteredGames = computed(() => {
         updatedAt: Date.now()
       });
 
-      updateSyncStatus('syncing', game.favorite ? 'Markeret som favorit lokalt...' : 'Fjernet fra favoritter lokalt...', false);
+      updateSyncStatus('success', game.favorite ? 'favoritedTrue' : 'favoritedFalse');
       return game;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved opdatering af favorit-status');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -443,7 +496,7 @@ const filteredGames = computed(() => {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
-    updateSyncStatus('syncing', 'Opdaterer gennemførelsesdato...');
+    updateSyncStatus('syncing', 'updatingDate');
 
     // Valider dato-format hvis den ikke er tom
     if (date && date.trim() !== "") {
@@ -472,10 +525,10 @@ const filteredGames = computed(() => {
       // Queue ændringen til batch-synkronisering
       queueChange('update', gameId, updateData);
 
-      updateSyncStatus('syncing', 'Gennemførelsesdato opdateret lokalt...', false);
+      updateSyncStatus('success', 'dateUpdated');
       return game;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved opdatering af dato');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -485,7 +538,7 @@ const filteredGames = computed(() => {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
-    updateSyncStatus('syncing', 'Tilføjer gennemførelsesdato...');
+    updateSyncStatus('syncing', 'addingDate');
 
     const today = new Date();
     const formattedDate = `${today.getDate().toString().padStart(2, "0")}-${(
@@ -503,10 +556,10 @@ const filteredGames = computed(() => {
         updatedAt: Date.now()
       });
 
-      updateSyncStatus('syncing', 'Dagens dato tilføjet lokalt...', false);
+      updateSyncStatus('success', 'dateAdded');
       return game;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved tilføjelse af dagens dato');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -516,7 +569,7 @@ const filteredGames = computed(() => {
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
-    updateSyncStatus('syncing', 'Skifter platform...');
+    updateSyncStatus('syncing', 'changingCategory');
 
     try {
       // Opdater lokalt først
@@ -531,10 +584,10 @@ const filteredGames = computed(() => {
         updatedAt: Date.now()
       });
 
-      updateSyncStatus('syncing', `Platform ændret lokalt til ${platformData.name}...`, false);
+      updateSyncStatus('success', 'categoryChanged', platformData.name);
       return game;
     } catch (error) {
-      updateSyncStatus('error', 'Fejl ved skift af platform');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -543,7 +596,7 @@ const filteredGames = computed(() => {
   async function updateGameOrder(changedGames) {
     if (!userStore.currentUser) return false;
 
-    updateSyncStatus('syncing', 'Opdaterer rækkefølge...');
+    updateSyncStatus('syncing', 'updatingOrder');
 
     try {
       // Opdater lokalt først og queue ændringer
@@ -571,11 +624,11 @@ const filteredGames = computed(() => {
         return (a.order || 0) - (b.order || 0);
       });
 
-      updateSyncStatus('syncing', `Rækkefølge opdateret lokalt: ${changedGames.length} spil...`, false);
+      updateSyncStatus('success', 'orderUpdated');
       return true;
     } catch (error) {
       console.error('Error updating game order:', error);
-      updateSyncStatus('error', 'Fejl ved opdatering af rækkefølge');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
@@ -615,7 +668,7 @@ const filteredGames = computed(() => {
   async function importGames(jsonData) {
     if (!userStore.currentUser) return false;
 
-    updateSyncStatus('syncing', 'Importerer spil...');
+    updateSyncStatus('syncing', 'importing');
 
     try {
       const importedGames = JSON.parse(jsonData);
@@ -638,15 +691,15 @@ const filteredGames = computed(() => {
       if (result.success) {
         // Opdater lokal state
         await loadGames(); // Genindlæs spil efter import
-        updateSyncStatus('success', `${updatedGames.length} spil importeret`);
+        updateSyncStatus('success', 'imported', updatedGames.length);
         return true;
       } else {
-        updateSyncStatus('error', 'Fejl ved import af spil');
+        updateSyncStatus('error', 'error');
         return false;
       }
     } catch (error) {
       console.error('Error importing games:', error);
-      updateSyncStatus('error', 'Fejl ved import af spil');
+      updateSyncStatus('error', 'error');
       return false;
     }
   }
