@@ -46,33 +46,33 @@ const router = createRouter({
 
 // Navigation guards for auth
 router.beforeEach(async (to, from, next) => {
-    const userStore = useUserStore();
-    
-    // Vent på auth-initialisering kun én gang per app livscyklus
-    if (userStore.isLoading) {
-      try {
-        await userStore.initUser();
-      } catch (error) {
-        console.error('Error initializing user:', error);
-        // Gå videre selvom der er en fejl, men send til login
-        next({ name: 'login' });
-        return;
-      }
+  const userStore = useUserStore();
+
+  // Vent på auth-initialisering kun én gang per app livscyklus
+  if (userStore.isLoading) {
+    try {
+      await userStore.initUser();
+    } catch (error) {
+      console.error('Error initializing user:', error);
+      // Gå videre selvom der er en fejl, men send til login
+      next({ name: 'login' });
+      return;
     }
-    
-    const isLoggedIn = userStore.isLoggedIn;
-    
-    if (to.matched.some(record => record.meta.requiresAuth)) {
-      if (!isLoggedIn) {
-        next({ name: 'login' });
-      } else {
-        next();
-      }
-    } else if (to.matched.some(record => record.meta.guest) && isLoggedIn) {
-      next({ name: 'home' });
+  }
+
+  const isLoggedIn = userStore.isLoggedIn;
+
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isLoggedIn) {
+      next({ name: 'login' });
     } else {
       next();
     }
-  });
+  } else if (to.matched.some(record => record.meta.guest) && isLoggedIn) {
+    next({ name: 'home' });
+  } else {
+    next();
+  }
+});
 
 export default router;
