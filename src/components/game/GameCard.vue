@@ -33,7 +33,7 @@ function showEditMenu(event) {
 // Håndter klik på platform-badge
 function showPlatformMenu(event) {
   const rect = event.target.getBoundingClientRect();
-  emit('platform-menu', props.game.id, props.game.platform, rect.left, rect.top);
+  emit('platform-menu', props.game.id, props.game.platform, rect.left, rect.top, event.target);
 }
 </script>
 

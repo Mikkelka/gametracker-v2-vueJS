@@ -18,6 +18,7 @@ const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
 const categoryStore = useCategoryStore();
 const searchTerm = ref('');
+const platformButtonRef = ref(null);
 
 const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
@@ -41,6 +42,15 @@ onMounted(async () => {
   document.title = mediaTypeStore.config.name;
   await gameStore.loadGames();
   await categoryStore.loadPlatforms();
+  
+  // Event listeners - konsolideret til én onMounted hook
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('scroll', handleScroll);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
 });
 
 watch(() => gameStore.syncStatus, (newStatus) => {
@@ -74,8 +84,18 @@ function showEditMenu(gameId, x, y, element) {
 }
 
 // Wrapper-funktion for platform menu
-function showPlatformMenu(gameId, platform, x, y) {
+function showPlatformMenu(gameId, platform, x, y, element) {
+  platformButtonRef.value = element; 
   showContextMenu('platform', gameId, platform, x, y);
+}
+
+function handleScroll() {
+  if (activePlatformMenu.value && platformButtonRef.value) {
+    const rect = platformButtonRef.value.getBoundingClientRect();
+    // Opdater positionen baseret på knappens nye position efter scroll
+    activePlatformMenu.value.x = rect.left;
+    activePlatformMenu.value.y = rect.top;
+  }
 }
 
 // Luk alle menus ved klik udenfor
@@ -287,7 +307,7 @@ async function moveCard(gameId, direction) {
 
 // Platform menu action
 function changePlatform(gameId, platformId) {
-  const platform = categoryStore.categories.find(p => p.id === platformId);
+  const platform = categoryStore.platforms.find(p => p.id === platformId);
   if (platform) {
     gameStore.changePlatform(gameId, platform);
   }
@@ -309,15 +329,6 @@ async function addGame() {
   showAddGameModal.value = false;
 }
 
-// Event listeners
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
-
 function openAddGameModal() {
   showAddGameModal.value = true;
 }
@@ -329,7 +340,6 @@ function openPlatformModal() {
 </script>
 
 <template>
-
   <div class="game-track-app">
     <AppHeader @search="handleSearch" @open-add-game-modal="openAddGameModal" @open-platform-modal="openPlatformModal"
       @open-settings-modal="showSettingsModal = true" @open-import-modal="showImportModal = true" />
@@ -387,7 +397,7 @@ function openPlatformModal() {
       top: `${activePlatformMenu.y + 30}px`,
       zIndex: 1000
     }">
-      <button v-for="platform in categoryStore.categories" :key="platform.id" class="change-platform-btn"
+      <button v-for="platform in categoryStore.platforms" :key="platform.id" class="change-platform-btn"
         @click="changePlatform(activePlatformMenu.gameId, platform.id)">
         {{ platform.name }}
       </button>
@@ -416,30 +426,7 @@ function openPlatformModal() {
       </template>
     </SimplerModal>
 
-    <SimplerModal :isOpen="showPlatformModal" :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`"
-      @close="showPlatformModal = false">
-      <form @submit.prevent="addGame" class="game-form">
-        <div class="form-group">
-          <label :for="mediaTypeStore.config.itemName + 'Title'">{{ mediaTypeStore.config.itemName }}-titel:</label>
-          <input type="text" :id="mediaTypeStore.config.itemName + 'Title'" v-model="newGameTitle" required />
-        </div>
-        <div class="form-group">
-          <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
-          <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
-            <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
-            <option v-for="platform in categoryStore.platforms" :key="platform.id" :value="platform.id">
-              {{ platform.name }}
-            </option>
-          </select>
-        </div>
-      </form>
-
-      <div slot="footer">
-        <button @click="addGame" class="btn btn-primary">{{ mediaTypeStore.config.addButtonText }}</button>
-      </div>
-    </SimplerModal>
-
-    <!-- Platform Modal -->
+    <!-- Platform Modal - kun én modal bevaret -->
     <SimplerModal :isOpen="showPlatformModal" :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`" @close="showPlatformModal = false">
       <PlatformManager @close="showPlatformModal = false" />
     </SimplerModal>
@@ -589,6 +576,10 @@ function openPlatformModal() {
     display: flex;
     flex-wrap: wrap;
   }
+  
+  .platform-tag-menu {
+    position: absolute !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -644,9 +635,7 @@ function openPlatformModal() {
       transform: translateY(0);
     }
   }
-
 }
-
 
 /* Styling for kort der er valgt til flytning */
 .card.card-to-move {
@@ -694,7 +683,6 @@ function openPlatformModal() {
 }
 
 @media (max-width: 768px) {
-
   .move-btn {
     display: block !important;
   }
