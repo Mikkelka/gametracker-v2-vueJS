@@ -36,6 +36,10 @@ const showImportModal = ref(false);
 const showDeleteConfirmModal = ref(false);
 const gameToDelete = ref(null);
 
+const showEditTitleModal = ref(false);
+const editingGameId = ref(null);
+const editingGameTitle = ref('');
+
 useDragAndDrop();
 
 onMounted(async () => {
@@ -117,6 +121,13 @@ function handleClickOutside(event) {
   }
 }
 
+function saveEditedTitle() {
+  if (editingGameTitle.value.trim() !== '') {
+    gameStore.updateGameTitle(editingGameId.value, editingGameTitle.value);
+    showEditTitleModal.value = false;
+  }
+}
+
 // Menu actions
 function performEditMenuAction(action, gameId) {
   const game = gameStore.games.find(g => g.id === gameId);
@@ -126,14 +137,12 @@ function performEditMenuAction(action, gameId) {
     case 'favorite':
       gameStore.toggleFavorite(gameId);
       break;
-    case 'edit-title':
-      const gameToEdit = gameStore.games.find(g => g.id === gameId);
-      const currentTitle = game.title || '';
-      const newTitle = prompt('Indtast ny titel:', currentTitle);
-      if (newTitle !== null && newTitle.trim() !== '') {
-        gameStore.updateGameTitle(gameId, newTitle);
-      }
-      break;
+      case 'edit-title':
+  const gameToEdit = gameStore.games.find(g => g.id === gameId);
+  editingGameId.value = gameId;
+  editingGameTitle.value = gameToEdit.title || '';
+  showEditTitleModal.value = true;
+  break;
     case 'edit-date':
       const currentDate = game.completionDate || '';
       const newDate = prompt('Indtast gennemførelsesdato (DD-MM-ÅÅÅÅ):', currentDate);
@@ -450,6 +459,19 @@ function openPlatformModal() {
           style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #f44336; color: white;">Slet</button>
       </template>
     </SimplerModal>
+
+    <SimplerModal :isOpen="showEditTitleModal" title="Rediger titel" @close="showEditTitleModal = false">
+  <form @submit.prevent="saveEditedTitle">
+    <div class="form-group">
+      <label for="gameTitle">Titel:</label>
+      <input type="text" id="gameTitle" v-model="editingGameTitle" required />
+    </div>
+  </form>
+
+  <template #footer>
+    <button @click="saveEditedTitle" class="btn btn-primary">Gem</button>
+  </template>
+</SimplerModal>
 
   </div>
 </template>
