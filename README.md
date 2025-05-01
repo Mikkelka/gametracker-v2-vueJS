@@ -1,19 +1,21 @@
-# GameTrack v2.0
+# MediaTrack v2.1
 
-GameTrack er en webapp til at holde styr på din personlige spilsamling og spillehistorik. Applikationen giver dig mulighed for at kategorisere spil efter status, organisere dem efter platform, og holde styr på dine fremskridt.
+MediaTrack er en webapp til at holde styr på din personlige samling af medier. Applikationen giver dig mulighed for at kategorisere spil, film og bøger efter status, organisere dem efter relevante kategorier, og holde styr på dine fremskridt.
 
-Dette er version 2.0 af GameTrack, en Vue.js-baseret portering af [den oprindelige GameTracker](https://github.com/Mikkelka/gametracker-v2), som bevarer den samme funktionalitet men nu er bygget med et moderne JavaScript-framework.
+Dette er version 2.1 af MediaTrack, en Vue.js-baseret portering og udvidelse af [den oprindelige GameTracker](https://github.com/Mikkelka/gametracker-v2), som nu understøtter flere forskellige medietyper.
 
 ## ✨ Funktioner
 
-- **Kategorisering**: Organiser dine spil i seks forskellige kategorier (Vil spille, Spiller nu, Gennemført, På pause, Droppet, Ser frem til)
-- **Platformhåndtering**: Tilføj og tilpas platforme med brugerdefinerede farver
-- **Drag and drop**: Nem reorganisering af spil via drag and drop
+- **Multi-medie tracking**: Hold styr på spil (GameTrack), film (MovieTrack) og bøger (BookTrack) i én integreret app
+- **Kategorisering**: Organiser dine medier i seks forskellige statusser (Vil spille/se/læse, Spiller/Ser/Læser nu, Gennemført/Set/Læst, osv.)
+- **Tilpassede kategorier**: Tilføj og tilpas platforme for spil, genrer for film og forfattere for bøger med brugerdefinerede farver
+- **Drag and drop**: Nem reorganisering af elementer via drag and drop
 - **Realtidssynkronisering**: Automatisk synkronisering med Firebase
 - **Responsivt design**: Optimeret til alle enheder
 - **Offline-kapabilitet**: Fortsæt med at bruge appen, selv når du er offline
 - **Mørkt tema**: Behageligt design optimeret til langvarig brug
 - **Import/Eksport**: Sikkerhedskopier og gendan dine data
+- **Statistik**: Se statistik over din mediesamling
 
 ## 🛠️ Teknologistack
 
@@ -33,37 +35,41 @@ Dette projekt er under aktiv udvikling. En offentlig installationsguide vil bliv
 src/
 ├── assets/          # Statiske filer (CSS, billeder)
 ├── components/      # Vue komponenter
-│   ├── game/        # Spilrelaterede komponenter
+│   ├── game/        # Medierelaterede komponenter
 │   ├── layout/      # Layout komponenter
-│   ├── platform/    # Platform-relaterede komponenter
+│   ├── platform/    # Kategori-relaterede komponenter
 │   └── settings/    # Indstillingskomponenter
 ├── composables/     # Genbrugelig funktionalitet (useDragAndDrop, etc.)
 ├── firebase/        # Firebase konfiguration og services
 ├── router/          # Vue Router konfiguration
-├── stores/          # Pinia stores (spil, platforme, bruger)
+├── stores/          # Pinia stores (medier, kategorier, bruger)
+│   ├── game.store.js # Mediehåndtering
+│   ├── platform.js  # Kategori-håndtering 
+│   ├── mediaType.js # Medietype-konfiguration
+│   └── user.js      # Brugerhåndtering
 ├── views/           # Sidevise komponenter
 ├── App.vue          # Hovedapplikationskomponent
 └── main.js          # Applikationsentry point
 ```
 
-## 🔄 Forbedringer fra v1
+## 🔄 Forbedringer fra v2.0
 
-Denne version er en portering af den oprindelige GameTracker (som var baseret på ren JavaScript) til Vue.js-frameworket, med samme kernefunktionalitet og brugeroplevelse. Ændringerne inkluderer:
+Denne version udvider den tidligere GameTrack-app til at understøtte flere medietyper:
 
-- **Vue.js implementering**: Den samme app, nu bygget med Vue 3
-- **Samme funktionalitet**: Alle de funktioner du kender, nu i et moderne framework
-- **State management med Pinia**: Opretholdelse af applikationstilstand
-- **Firebase integration**: Fortsat brug af Firebase til databaser og autentifikation
-- **Samme UI/UX**: Bevarelse af det velkendte brugerinterface
-- **Komponentbaseret struktur**: Koden er nu organiseret i Vue-komponenter
+- **Multi-medie tracking**: Udover spil kan du nu holde styr på film og bøger
+- **Tilpasset terminologi**: Hver medietype har sine egne tilpassede termer og statusser
+- **Forbedret arkitektur**: Mere modulær kodeopbygning til håndtering af forskellige medietyper
+- **Dashboardvisning**: Central oversigt til at vælge mellem forskellige medietyper
+- **Bevarede kernefunktioner**: Alle de oprindelige GameTrack-funktioner er bevaret, nu tilgængelige for alle medietyper
 
 ## 📝 Kommende funktioner
 
-- [ ] Statistik og visualiseringer
+- [ ] Avancerede statistikker og visualiseringer
 - [ ] Temaer og tilpasning
-- [ ] Integration med eksterne spildatabaser
+- [ ] Integration med eksterne mediedatabaser
+- [ ] Søgning på tværs af medietyper
+- [ ] Anbefalingssystem baseret på dine mediepreferencer
 
 ## 📄 Licens
 
 Dette projekt er licenseret under [MIT License](LICENSE).
-
