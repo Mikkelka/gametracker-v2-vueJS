@@ -15,7 +15,6 @@ Dette er version 2.1 af MediaTrack, en Vue.js-baseret portering og udvidelse af 
 - **Offline-kapabilitet**: Fortsæt med at bruge appen, selv når du er offline
 - **Mørkt tema**: Behageligt design optimeret til langvarig brug
 - **Import/Eksport**: Sikkerhedskopier og gendan dine data
-- **Statistik**: Se statistik over din mediesamling
 
 ## 🛠️ Teknologistack
 
