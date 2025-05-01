@@ -10,7 +10,7 @@ const userStore = useUserStore();
 async function loginWithGoogle() {
   const success = await userStore.loginWithGoogle();
   if (success) {
-    router.push({ name: 'home' });
+    router.push({ name: 'dashboard' });
   }
 }
 

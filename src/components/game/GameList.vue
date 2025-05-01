@@ -3,6 +3,7 @@
 import { computed } from 'vue';
 import GameCard from './GameCard.vue';
 import { useSettingsStore } from '../../stores/settings';
+import { useMediaTypeStore } from '../../stores/mediaType';
 
 const props = defineProps({
   title: {
@@ -25,6 +26,7 @@ const props = defineProps({
 
 const emit = defineEmits(['edit-menu', 'platform-menu']);
 const settingsStore = useSettingsStore();
+const mediaTypeStore = useMediaTypeStore();
 
 // Filter games baseret på søgning
 const filteredGames = computed(() => {
@@ -78,9 +80,16 @@ function onPlatformMenu(gameId, platform, x, y) {
 
 // Beregn om listen skal vises baseret på indstillinger
 const shouldShow = computed(() => {
-  if (props.status === 'upcoming' && !settingsStore.showUpcoming) return false;
-  if (props.status === 'paused' && !settingsStore.showPaused) return false;
-  if (props.status === 'dropped' && !settingsStore.showDropped) return false;
+  const mediaType = mediaTypeStore.currentType;
+  
+  if (mediaType === 'game') {
+    // Eksisterende logik for spil
+    if (props.status === 'upcoming' && !settingsStore.showUpcoming) return false;
+    if (props.status === 'paused' && !settingsStore.showPaused) return false;
+    if (props.status === 'dropped' && !settingsStore.showDropped) return false;
+  }
+  // For fremtidige medietyper kan vi tilføje specifikke regler her
+  
   return true;
 });
 </script>
@@ -100,11 +109,11 @@ const shouldShow = computed(() => {
     </template>
     
     <p v-else-if="searchTerm" class="empty-list-message">
-      Ingen spil matcher din søgning
+      {{ mediaTypeStore.config.noSearchResultsMessage }}
     </p>
     
     <p v-else class="empty-list-message">
-      Ingen spil i denne liste
+      {{ mediaTypeStore.config.emptyListMessage }}
     </p>
   </div>
 </template>

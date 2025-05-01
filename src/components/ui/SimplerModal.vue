@@ -1,4 +1,4 @@
-<!-- src/components/ui/Modal.vue -->
+<!-- src/components/ui/SimplerModal.vue -->
 <script setup>
 import { watch, onMounted, onBeforeUnmount } from 'vue';
 
@@ -14,37 +14,29 @@ const props = defineProps({
   width: {
     type: String,
     default: '500px'
-  },
-  closeOnClickOutside: {
-    type: Boolean,
-    default: true
   }
 });
 
 const emit = defineEmits(['close']);
 
-// Luk modal når man klikker udenfor indholdet
-function handleClickOutside(event) {
-  if (props.isOpen && props.closeOnClickOutside && event.target.classList.contains('modal-overlay')) {
-    emit('close');
-  }
-}
-
-// Luk modal når man trykker Escape
 function handleKeydown(event) {
   if (props.isOpen && event.key === 'Escape') {
     emit('close');
   }
 }
 
+function handleClickOutside(event) {
+  if (props.isOpen && event.target.classList.contains('modal-overlay')) {
+    emit('close');
+  }
+}
+
 // Tilføj/fjern event listeners
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
   document.addEventListener('keydown', handleKeydown);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeydown);
 });
 
@@ -59,12 +51,11 @@ watch(() => props.isOpen, (isOpen) => {
 </script>
 
 <template>
-  <teleport to="body">
-    <div v-if="isOpen" class="modal-overlay fade-in">
+    <div v-if="isOpen" class="modal-overlay" @click="handleClickOutside">
       <div class="modal-container" :style="{ maxWidth: width }">
         <div class="modal-header">
           <h2>{{ title }}</h2>
-          <button class="close-button" @click="$emit('close')" aria-label="Luk">&times;</button>
+          <button class="close-button" @click="$emit('close')">&times;</button>
         </div>
         <div class="modal-body">
           <slot></slot>
@@ -74,24 +65,20 @@ watch(() => props.isOpen, (isOpen) => {
         </div>
       </div>
     </div>
-  </teleport>
-</template>
+  </template>
 
 <style scoped>
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  padding: 1rem;
-  box-sizing: border-box;
-  overflow-y: auto;
+  z-index: 9999;
 }
 
 .modal-container {
@@ -101,8 +88,6 @@ watch(() => props.isOpen, (isOpen) => {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
   animation: modalFadeIn 0.3s ease;
 }
 
@@ -144,6 +129,29 @@ watch(() => props.isOpen, (isOpen) => {
   border-top: 1px solid var(--card-border);
 }
 
+.btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.btn-primary {
+  background-color: var(--button-bg);
+  color: white;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -152,16 +160,6 @@ watch(() => props.isOpen, (isOpen) => {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease;
-}
-
-@media (max-width: 768px) {
-  .modal-container {
-    max-height: 80vh;
   }
 }
 </style>

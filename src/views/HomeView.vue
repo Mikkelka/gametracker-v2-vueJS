@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useMediaTypeStore } from '../stores/mediaType';
 import { useGameStore } from '../stores/game.store';
-import { usePlatformStore } from '../stores/platform';
+import { useCategoryStore } from '../stores/category';
 import { useDragAndDrop } from '../composables/useDragAndDrop';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppFooter from '../components/layout/AppFooter.vue';
@@ -9,17 +10,16 @@ import GameList from '../components/game/GameList.vue';
 import PlatformManager from '../components/platform/PlatformManager.vue';
 import SettingsManager from '../components/settings/SettingsManager.vue';
 import ImportManager from '../components/game/ImportManager.vue';
-import Modal from '../components/ui/Modal.vue';
 import { computed } from 'vue';
 import { watch } from 'vue';
+import SimplerModal from '../components/ui/SimplerModal.vue';
 
+const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
-const platformStore = usePlatformStore();
+const categoryStore = useCategoryStore();
 const searchTerm = ref('');
-const showAddGameModal = ref(false);
-const showPlatformModal = ref(false);
-const showSettingsModal = ref(false);
-const showImportModal = ref(false);
+const platformButtonRef = ref(null);
+
 const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
 const newGameTitle = ref('');
@@ -28,12 +28,33 @@ const syncStatusDisplay = computed(() => gameStore.syncStatus);
 const moveMode = ref(null);
 const cardToMove = ref(null);
 
+const showAddGameModal = ref(false);
+const showPlatformModal = ref(false);
+const showSettingsModal = ref(false);
+const showImportModal = ref(false);
+
+const showDeleteConfirmModal = ref(false);
+const gameToDelete = ref(null);
+
+const showEditTitleModal = ref(false);
+const editingGameId = ref(null);
+const editingGameTitle = ref('');
+
 useDragAndDrop();
 
 onMounted(async () => {
-  document.title = 'GameTrack';
+  document.title = mediaTypeStore.config.name;
   await gameStore.loadGames();
-  await platformStore.loadPlatforms();
+  await categoryStore.loadPlatforms();
+  
+  // Event listeners - konsolideret til én onMounted hook
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('scroll', handleScroll);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
 });
 
 watch(() => gameStore.syncStatus, (newStatus) => {
@@ -67,8 +88,18 @@ function showEditMenu(gameId, x, y, element) {
 }
 
 // Wrapper-funktion for platform menu
-function showPlatformMenu(gameId, platform, x, y) {
+function showPlatformMenu(gameId, platform, x, y, element) {
+  platformButtonRef.value = element; 
   showContextMenu('platform', gameId, platform, x, y);
+}
+
+function handleScroll() {
+  if (activePlatformMenu.value && platformButtonRef.value) {
+    const rect = platformButtonRef.value.getBoundingClientRect();
+    // Opdater positionen baseret på knappens nye position efter scroll
+    activePlatformMenu.value.x = rect.left;
+    activePlatformMenu.value.y = rect.top;
+  }
 }
 
 // Luk alle menus ved klik udenfor
@@ -90,6 +121,13 @@ function handleClickOutside(event) {
   }
 }
 
+function saveEditedTitle() {
+  if (editingGameTitle.value.trim() !== '') {
+    gameStore.updateGameTitle(editingGameId.value, editingGameTitle.value);
+    showEditTitleModal.value = false;
+  }
+}
+
 // Menu actions
 function performEditMenuAction(action, gameId) {
   const game = gameStore.games.find(g => g.id === gameId);
@@ -98,15 +136,13 @@ function performEditMenuAction(action, gameId) {
   switch (action) {
     case 'favorite':
       gameStore.toggleFavorite(gameId);
-    break;
-    case 'edit-title':
-      const gameToEdit = gameStore.games.find(g => g.id === gameId);
-      const currentTitle = game.title || '';
-      const newTitle = prompt('Indtast ny titel:', currentTitle);
-      if (newTitle !== null && newTitle.trim() !== '') {
-        gameStore.updateGameTitle(gameId, newTitle);
-      }
-    break;
+      break;
+      case 'edit-title':
+  const gameToEdit = gameStore.games.find(g => g.id === gameId);
+  editingGameId.value = gameId;
+  editingGameTitle.value = gameToEdit.title || '';
+  showEditTitleModal.value = true;
+  break;
     case 'edit-date':
       const currentDate = game.completionDate || '';
       const newDate = prompt('Indtast gennemførelsesdato (DD-MM-ÅÅÅÅ):', currentDate);
@@ -121,15 +157,24 @@ function performEditMenuAction(action, gameId) {
       toggleMoveMode(gameId);
       break;
     case 'delete':
-      if (confirm('Er du sikker på, at du vil slette dette spil?')) {
-        gameStore.deleteGame(gameId);
-      }
+      // Gem gameId i gameToDelete ref og vis modalen
+      gameToDelete.value = gameId;
+      showDeleteConfirmModal.value = true;
       break;
   }
 
-  // Luk kun menuen hvis vi ikke går i flyttilstand
-  if (action !== 'move') {
+  // Luk kun menuen hvis vi ikke går i flyttilstand eller sletning
+  if (action !== 'move' && action !== 'delete') {
     activeEditMenu.value = null;
+  }
+}
+
+function confirmDelete() {
+  if (gameToDelete.value) {
+    gameStore.deleteGame(gameToDelete.value);
+    activeEditMenu.value = null; // Luk også edit-menuen efter sletning
+    gameToDelete.value = null;
+    showDeleteConfirmModal.value = false;
   }
 }
 
@@ -271,7 +316,7 @@ async function moveCard(gameId, direction) {
 
 // Platform menu action
 function changePlatform(gameId, platformId) {
-  const platform = platformStore.platforms.find(p => p.id === platformId);
+  const platform = categoryStore.platforms.find(p => p.id === platformId);
   if (platform) {
     gameStore.changePlatform(gameId, platform);
   }
@@ -282,7 +327,8 @@ function changePlatform(gameId, platformId) {
 async function addGame() {
   if (!newGameTitle.value || !selectedPlatform.value) return;
 
-  const platform = platformStore.platforms.find(p => p.id === selectedPlatform.value);
+  // Skift fra .categories til .platforms
+  const platform = categoryStore.platforms.find(p => p.id === selectedPlatform.value);
   if (!platform) return;
 
   await gameStore.addGame(newGameTitle.value, platform);
@@ -292,21 +338,20 @@ async function addGame() {
   showAddGameModal.value = false;
 }
 
-// Event listeners
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
+function openAddGameModal() {
+  showAddGameModal.value = true;
+}
 
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
+function openPlatformModal() {
+  showPlatformModal.value = true;
+}
+
 </script>
 
 <template>
   <div class="game-track-app">
-    <AppHeader @search="handleSearch" @open-add-game-modal="showAddGameModal = true"
-      @open-platform-modal="showPlatformModal = true" @open-settings-modal="showSettingsModal = true"
-      @open-import-modal="showImportModal = true" />
+    <AppHeader @search="handleSearch" @open-add-game-modal="openAddGameModal" @open-platform-modal="openPlatformModal"
+      @open-settings-modal="showSettingsModal = true" @open-import-modal="showImportModal = true" />
 
     <!-- Sync notification -->
     <div v-if="gameStore.syncStatus.status !== 'idle'" class="sync-notification" :class="gameStore.syncStatus.status">
@@ -316,9 +361,10 @@ onBeforeUnmount(() => {
     <main id="app">
       <div id="listIndicator"></div>
       <div id="listsContainer">
-        <GameList v-for="status in gameStore.statusList" :key="status.id" :title="status.name" :status="status.id"
-          :games="gameStore.gamesByStatus[status.id] || []" :search-term="searchTerm" @edit-menu="showEditMenu"
-          @platform-menu="showPlatformMenu" />
+        <!-- Brug statusList fra mediaTypeStore -->
+        <GameList v-for="status in mediaTypeStore.config.statusList" :key="status.id" :title="status.name"
+          :status="status.id" :games="gameStore.gamesByStatus[status.id] || []" :search-term="searchTerm"
+          @edit-menu="showEditMenu" @platform-menu="showPlatformMenu" />
       </div>
     </main>
 
@@ -337,8 +383,8 @@ onBeforeUnmount(() => {
           : 'Marker som favorit'}}
       </button>
       <button class="edit-title-btn" @click="performEditMenuAction('edit-title', activeEditMenu.gameId)">
-  Rediger titel
-</button>
+        Rediger titel
+      </button>
       <button class="edit-date-btn" @click="performEditMenuAction('edit-date', activeEditMenu.gameId)">
         Rediger dato
       </button>
@@ -360,50 +406,73 @@ onBeforeUnmount(() => {
       top: `${activePlatformMenu.y + 30}px`,
       zIndex: 1000
     }">
-      <button v-for="platform in platformStore.platforms" :key="platform.id" class="change-platform-btn"
+      <button v-for="platform in categoryStore.platforms" :key="platform.id" class="change-platform-btn"
         @click="changePlatform(activePlatformMenu.gameId, platform.id)">
         {{ platform.name }}
       </button>
     </div>
 
-    <!-- Modaler med det nye Modal-komponent -->
-    <!-- Add Game Modal -->
-    <Modal :isOpen="showAddGameModal" title="Tilføj nyt spil" @close="showAddGameModal = false">
+    <SimplerModal :isOpen="showAddGameModal" :title="`Tilføj nyt ${mediaTypeStore.config.itemName}`"
+      @close="showAddGameModal = false">
       <form @submit.prevent="addGame" class="game-form">
         <div class="form-group">
-          <label for="gameTitle">Spiltitel:</label>
-          <input type="text" id="gameTitle" v-model="newGameTitle" required />
+          <label :for="mediaTypeStore.config.itemName + 'Title'">{{ mediaTypeStore.config.itemName }}-titel:</label>
+          <input type="text" :id="mediaTypeStore.config.itemName + 'Title'" v-model="newGameTitle" required />
         </div>
         <div class="form-group">
-          <label for="gamePlatform">Platform:</label>
-          <select id="gamePlatform" v-model="selectedPlatform" required>
-            <option value="" disabled>Vælg platform</option>
-            <option v-for="platform in platformStore.platforms" :key="platform.id" :value="platform.id">
+          <label :for="mediaTypeStore.config.itemName + 'Platform'">{{ mediaTypeStore.config.categoryName }}:</label>
+          <select :id="mediaTypeStore.config.itemName + 'Platform'" v-model="selectedPlatform" required>
+            <option value="" disabled>Vælg {{ mediaTypeStore.config.categoryName.toLowerCase() }}</option>
+            <option v-for="platform in categoryStore.platforms" :key="platform.id" :value="platform.id">
               {{ platform.name }}
             </option>
           </select>
         </div>
       </form>
 
-      <div slot="footer">
-        <button @click="addGame" class="btn btn-primary">Tilføj Spil</button>
-      </div>
-    </Modal>
+      <template #footer>
+        <button @click="addGame" class="btn btn-primary">{{ mediaTypeStore.config.addButtonText }}</button>
+      </template>
+    </SimplerModal>
 
-    <!-- Platform Modal -->
-    <Modal :isOpen="showPlatformModal" title="Administrer Platforme" @close="showPlatformModal = false">
+    <!-- Platform Modal - kun én modal bevaret -->
+    <SimplerModal :isOpen="showPlatformModal" :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`" @close="showPlatformModal = false">
       <PlatformManager @close="showPlatformModal = false" />
-    </Modal>
+    </SimplerModal>
 
     <!-- Settings Modal -->
-    <Modal :isOpen="showSettingsModal" title="Indstillinger" @close="showSettingsModal = false">
+    <SimplerModal :isOpen="showSettingsModal" title="Indstillinger" @close="showSettingsModal = false">
       <SettingsManager @close="showSettingsModal = false" />
-    </Modal>
+    </SimplerModal>
 
     <!-- Import Modal -->
-    <Modal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
+    <SimplerModal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
       <ImportManager @close="showImportModal = false" />
-    </Modal>
+    </SimplerModal>
+
+    <SimplerModal :isOpen="showDeleteConfirmModal" title="Bekræft sletning" @close="showDeleteConfirmModal = false">
+      <p>Er du sikker på, at du vil slette denne {{ mediaTypeStore.config.itemName }}?</p>
+      <template #footer>
+        <button @click="showDeleteConfirmModal = false"
+          style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #444; color: white; margin-right: 8px;">Annuller</button>
+        <button @click="confirmDelete"
+          style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #f44336; color: white;">Slet</button>
+      </template>
+    </SimplerModal>
+
+    <SimplerModal :isOpen="showEditTitleModal" title="Rediger titel" @close="showEditTitleModal = false">
+  <form @submit.prevent="saveEditedTitle">
+    <div class="form-group">
+      <label for="gameTitle">Titel:</label>
+      <input type="text" id="gameTitle" v-model="editingGameTitle" required />
+    </div>
+  </form>
+
+  <template #footer>
+    <button @click="saveEditedTitle" class="btn btn-primary">Gem</button>
+  </template>
+</SimplerModal>
+
   </div>
 </template>
 
@@ -529,6 +598,10 @@ onBeforeUnmount(() => {
     display: flex;
     flex-wrap: wrap;
   }
+  
+  .platform-tag-menu {
+    position: absolute !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -584,9 +657,7 @@ onBeforeUnmount(() => {
       transform: translateY(0);
     }
   }
-
 }
-
 
 /* Styling for kort der er valgt til flytning */
 .card.card-to-move {
@@ -634,7 +705,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
-
   .move-btn {
     display: block !important;
   }
