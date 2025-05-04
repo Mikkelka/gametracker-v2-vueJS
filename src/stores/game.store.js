@@ -500,7 +500,6 @@ export const useGameStore = defineStore('game', () => {
 
     // Valider dato-format hvis den ikke er tom
     if (date && date.trim() !== "") {
-      // Regex for DD-MM-ÅÅÅÅ format
       const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/;
       if (!dateRegex.test(date.trim())) {
         updateSyncStatus('error', 'Forkert datoformat. Brug DD-MM-ÅÅÅÅ');

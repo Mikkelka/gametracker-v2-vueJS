@@ -30,13 +30,10 @@ export function useFirestoreCollection(collectionName) {
       const mediaTypeStore = useMediaTypeStore();
       const mediaType = mediaTypeStore.currentType;
       
-      // For originalstrukturen (game medietype)
       if (mediaType === 'game') {
         return collectionName;
       } 
-      // For film og bøger, brug den nye struktur
       else {
-        // Map collection name based on media type
         let mappedCollection = collectionName;
         if (collectionName === 'games') {
           mappedCollection = mediaTypeStore.config.collections.items;
@@ -51,29 +48,8 @@ export function useFirestoreCollection(collectionName) {
       return collectionName;
     }
   }
-
-  function checkRateLimit() {
-    const now = Date.now();
-    const hourInMs = 60 * 60 * 1000;
-    
-    if (now - requestStats.lastRequestTime > hourInMs) {
-      requestStats.requestsThisHour = 0;
-      requestStats.lastRequestTime = now;
-    }
-    
-    if (requestStats.requestsThisHour >= requestStats.hourlyLimit) {
-      return false;
-    }
-    
-    requestStats.requestsThisHour++;
-    return true;
-  }
   
   async function safeOperation(operation, errorMsg) {
-    if (!checkRateLimit()) {
-      return { success: false, error: `For mange forespørgsler. Prøv igen senere.` };
-    }
-    
     try {
       const result = await operation();
       return { success: true, data: result };
@@ -113,7 +89,6 @@ export function useFirestoreCollection(collectionName) {
     }, `Error getting items from ${getCollectionPath()}`);
   }
   
-  // Opdater resten af funktionerne på samme måde
   async function getItem(id) {
     return safeOperation(async () => {
       const collectionPath = getCollectionPath();
