@@ -6,7 +6,6 @@ import { useMediaTypeStore } from '@/stores/mediaType';
 const DashboardView = () => import('@/views/DashboardView.vue');
 const HomeView = () => import('@/views/HomeView.vue');
 const LoginView = () => import('@/views/LoginView.vue');
-const StatisticsView = () => import('@/views/StatisticsView.vue');
 
 const routes = [
   {
@@ -26,12 +25,6 @@ const routes = [
     name: 'login',
     component: LoginView,
     meta: { guest: true }
-  },
-  {
-    path: '/statistics',
-    name: 'statistics',
-    component: StatisticsView,
-    meta: { requiresAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',
