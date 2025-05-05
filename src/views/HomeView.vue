@@ -40,6 +40,10 @@ const showEditTitleModal = ref(false);
 const editingGameId = ref(null);
 const editingGameTitle = ref('');
 
+const showEditDateModal = ref(false);
+const editingDateGameId = ref(null);
+const editingDate = ref('');
+
 useDragAndDrop();
 
 onMounted(async () => {
@@ -144,12 +148,11 @@ function performEditMenuAction(action, gameId) {
   showEditTitleModal.value = true;
   break;
     case 'edit-date':
-      const currentDate = game.completionDate || '';
-      const newDate = prompt('Indtast gennemførelsesdato (DD-MM-ÅÅÅÅ):', currentDate);
-      if (newDate !== null) {
-        gameStore.setCompletionDate(gameId, newDate);
-      }
-      break;
+    const gameToEditDate = gameStore.games.find(g => g.id === gameId);
+    editingDateGameId.value = gameId;
+    editingDate.value = gameToEditDate.completionDate || '';
+    showEditDateModal.value = true;
+    break;
     case 'today-date':
       gameStore.setTodayAsCompletionDate(gameId);
       break;
@@ -175,6 +178,13 @@ function confirmDelete() {
     activeEditMenu.value = null; // Luk også edit-menuen efter sletning
     gameToDelete.value = null;
     showDeleteConfirmModal.value = false;
+  }
+}
+
+function saveEditedDate() {
+  if (editingDateGameId.value) {
+    gameStore.setCompletionDate(editingDateGameId.value, editingDate.value);
+    showEditDateModal.value = false;
   }
 }
 
@@ -470,6 +480,19 @@ function openPlatformModal() {
 
   <template #footer>
     <button @click="saveEditedTitle" class="btn btn-primary">Gem</button>
+  </template>
+</SimplerModal>
+
+<SimplerModal :isOpen="showEditDateModal" :title="mediaTypeStore.config.completionDateLabel" @close="showEditDateModal = false">
+  <form @submit.prevent="saveEditedDate">
+    <div class="form-group">
+      <label for="gameDate">Dato (DD-MM-ÅÅÅÅ):</label>
+      <input type="text" id="gameDate" v-model="editingDate" placeholder="DD-MM-ÅÅÅÅ" />
+    </div>
+  </form>
+
+  <template #footer>
+    <button @click="saveEditedDate" class="btn btn-primary">Gem</button>
   </template>
 </SimplerModal>
 
