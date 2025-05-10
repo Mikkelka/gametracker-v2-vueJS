@@ -564,7 +564,7 @@ function openPlatformModal() {
 
 <style scoped>
 #app {
-  padding: 2rem;
+  padding: 1rem;
   padding-top: 1rem;
   min-height: calc(100vh);
 }
@@ -572,7 +572,7 @@ function openPlatformModal() {
 #listsContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 1rem;
   justify-content: center;
 }
 

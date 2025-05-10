@@ -1,23 +1,45 @@
 <script setup>
-// Eksisterende imports beholdes
-import { onMounted, ref, onBeforeUnmount, provide } from 'vue';
+// Import MobileNavigation
+import { onMounted, ref, onBeforeUnmount, provide, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from './stores/user';
 import AppSidebar from './components/layout/AppSidebar.vue';
+import MobileNavigation from './components/layout/MobileNavigation.vue'; // Tilføj denne import
+import { useRoute } from 'vue-router';
 
-// Fjern importModal ref
 const userStore = useUserStore();
 const router = useRouter();
 const isLoading = ref(true);
 const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
 const showMobileMenu = ref(false);
-
-// Opdateret modal refs uden import
 const showSettingsModal = ref(false);
 const showAddGameModal = ref(false);
 const showPlatformModal = ref(false);
 
-// Opdateret provide uden import
+// Tilføj en isMobile reactive property
+const isMobile = ref(window.innerWidth < 768);
+const route = useRoute();
+
+const isDashboard = computed(() => {
+  return route.name === 'dashboard';
+});
+
+// Lyt efter ændringer i vinduesstørrelse
+function handleResize() {
+  isMobile.value = window.innerWidth < 768;
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  applyCssVariables();
+  // Resten af onMounted koden...
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+  // Resten af onBeforeUnmount koden...
+});
+
 provide('modals', {
   showSettingsModal,
   showAddGameModal,
@@ -97,9 +119,9 @@ onMounted(async () => {
     </div>
     
     <template v-else>
-      <!-- Mobil burger menu knap (vises kun på mobil) -->
+      <!-- Vis kun menuknappen når vi IKKE bruger MobileNavigation -->
       <button 
-        v-if="userStore.isLoggedIn" 
+        v-if="userStore.isLoggedIn && isMobile && false" 
         class="mobile-menu-toggle" 
         @click="toggleMobileMenu" 
         aria-label="Vis menu"
@@ -107,21 +129,28 @@ onMounted(async () => {
         ☰
       </button>
       
-      <!-- Sidebar -->
+      <!-- AppSidebar kun på desktop -->
       <AppSidebar 
-        v-if="userStore.isLoggedIn" 
+        v-if="userStore.isLoggedIn && !isMobile" 
         :collapsed="sidebarCollapsed" 
         @toggle="handleSidebarToggle"
-        :class="{ 'active': showMobileMenu }"
         @open-settings-modal="openSettingsModal"
       />
       
-      <!-- Hoved indholdsområde -->
+      <!-- MobileNavigation kun på mobile -->
+      <MobileNavigation
+        v-if="userStore.isLoggedIn && isMobile && !isDashboard"
+        @openAddModal="showAddGameModal = true"
+        @openCategoryModal="showPlatformModal = true" 
+      />
+      
+      <!-- Juster content-area klassen baseret på isMobile -->
       <main 
         class="content-area" 
         :class="{ 
-          'with-sidebar': userStore.isLoggedIn, 
-          'sidebar-collapsed': sidebarCollapsed 
+          'with-sidebar': userStore.isLoggedIn && !isMobile, 
+          'sidebar-collapsed': sidebarCollapsed && !isMobile,
+          'with-mobile-nav': isMobile
         }"
       >
         <router-view 
@@ -136,7 +165,7 @@ onMounted(async () => {
       
       <!-- Overlay til at lukke mobil menu ved klik udenfor -->
       <div 
-        v-if="showMobileMenu" 
+        v-if="showMobileMenu && !isMobile" 
         class="mobile-overlay" 
         @click="showMobileMenu = false"
       ></div>
@@ -263,4 +292,19 @@ body {
 .fade-in {
   animation: fadeIn 0.5s ease;
 }
+
+/* Tilføj styling for mobil navigation */
+.content-area.with-mobile-nav {
+  margin-left: 0;
+  padding-bottom: 60px; /* Gør plads til MobileNavigation i bunden */
+}
+
+/* Opdater mobile-responsive styles */
+@media (max-width: 768px) {
+  .content-area.with-sidebar,
+  .content-area.with-sidebar.sidebar-collapsed {
+    margin-left: 0;
+  }
+}
+
 </style>
