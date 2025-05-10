@@ -1,15 +1,17 @@
-// src/views/DashboardView.vue
+<!-- src/views/DashboardView.vue -->
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { useMediaTypeStore } from '../stores/mediaType';
-import AppHeader from '../components/layout/AppHeader.vue';
-import AppFooter from '../components/layout/AppFooter.vue';
+
 
 const router = useRouter();
 const userStore = useUserStore();
 const mediaTypeStore = useMediaTypeStore();
+
+// Prøv at få modals via inject hvis tilgængelig
+const injectedModals = inject('modals', null);
 
 function navigateTo(type) {
   mediaTypeStore.setMediaType(type);
@@ -23,7 +25,7 @@ onMounted(() => {
 
 <template>
   <div class="dashboard-page">
-    <AppHeader :showSearchToggle="false" :dashboardMode="true" />
+    <!-- Fjernet AppHeader og AppFooter -->
 
     <main class="dashboard-container">
       <h1>Velkommen, {{ userStore.displayName }}</h1>
@@ -50,7 +52,6 @@ onMounted(() => {
       </div>
     </main>
 
-    <AppFooter />
   </div>
 </template>
 
@@ -59,7 +60,7 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  min-height: calc(100vh - 60px - 83px - 1rem);
+  min-height: calc(100vh);
 }
 
 .tracker-grid {
@@ -116,7 +117,6 @@ onMounted(() => {
 
   .tracker-card h2 {
     margin: 0;
-
   }
 }
 </style>

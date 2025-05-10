@@ -1,15 +1,14 @@
+<!-- src/views/HomeView.vue -->
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+// Fjern import af ImportManager
+import { ref, onMounted, onBeforeUnmount, nextTick, inject } from 'vue';
 import { useMediaTypeStore } from '../stores/mediaType';
 import { useGameStore } from '../stores/game.store';
 import { useCategoryStore } from '../stores/category';
 import { useDragAndDrop } from '../composables/useDragAndDrop';
-import AppHeader from '../components/layout/AppHeader.vue';
-import AppFooter from '../components/layout/AppFooter.vue';
 import GameList from '../components/game/GameList.vue';
 import PlatformManager from '../components/platform/PlatformManager.vue';
 import SettingsManager from '../components/settings/SettingsManager.vue';
-import ImportManager from '../components/game/ImportManager.vue';
 import { computed } from 'vue';
 import { watch } from 'vue';
 import SimplerModal from '../components/ui/SimplerModal.vue';
@@ -28,10 +27,80 @@ const syncStatusDisplay = computed(() => gameStore.syncStatus);
 const moveMode = ref(null);
 const cardToMove = ref(null);
 
-const showAddGameModal = ref(false);
-const showPlatformModal = ref(false);
-const showSettingsModal = ref(false);
-const showImportModal = ref(false);
+// Modtag modalt-state fra props eller brug inject
+const props = defineProps({
+  showAddGameModal: Boolean,
+  showPlatformModal: Boolean,
+  showSettingsModal: Boolean
+});
+
+const emit = defineEmits([
+  'update:show-add-game-modal',
+  'update:show-platform-modal',
+  'update:show-settings-modal'
+]);
+
+// Bruges til at tracke om props er blevet opdateret
+const localShowAddGameModal = ref(props.showAddGameModal || false);
+const localShowPlatformModal = ref(props.showPlatformModal || false);
+const localShowSettingsModal = ref(props.showSettingsModal || false);
+
+// Forsøg også at få modals via inject hvis tilgængelig
+const injectedModals = inject('modals', null);
+
+// Computed properties for at bestemme om modaler skal vises
+const showAddGameModal = computed({
+  get: () => localShowAddGameModal.value || (injectedModals && injectedModals.showAddGameModal.value) || false,
+  set: (value) => {
+    localShowAddGameModal.value = value;
+    emit('update:show-add-game-modal', value);
+    if (injectedModals) injectedModals.showAddGameModal.value = value;
+  }
+});
+
+const showPlatformModal = computed({
+  get: () => localShowPlatformModal.value || (injectedModals && injectedModals.showPlatformModal.value) || false,
+  set: (value) => {
+    localShowPlatformModal.value = value;
+    emit('update:show-platform-modal', value);
+    if (injectedModals) injectedModals.showPlatformModal.value = value;
+  }
+});
+
+const showSettingsModal = computed({
+  get: () => localShowSettingsModal.value || (injectedModals && injectedModals.showSettingsModal.value) || false,
+  set: (value) => {
+    localShowSettingsModal.value = value;
+    emit('update:show-settings-modal', value);
+    if (injectedModals) injectedModals.showSettingsModal.value = value;
+  }
+});
+
+const showImportModal = computed({
+  get: () => localShowImportModal.value || (injectedModals && injectedModals.showImportModal.value) || false,
+  set: (value) => {
+    localShowImportModal.value = value;
+    emit('update:show-import-modal', value);
+    if (injectedModals) injectedModals.showImportModal.value = value;
+  }
+});
+
+// Lyt efter ændringer i props
+watch(() => props.showAddGameModal, (newVal) => {
+  localShowAddGameModal.value = newVal;
+});
+
+watch(() => props.showPlatformModal, (newVal) => {
+  localShowPlatformModal.value = newVal;
+});
+
+watch(() => props.showSettingsModal, (newVal) => {
+  localShowSettingsModal.value = newVal;
+});
+
+watch(() => props.showImportModal, (newVal) => {
+  localShowImportModal.value = newVal;
+});
 
 const showDeleteConfirmModal = ref(false);
 const gameToDelete = ref(null);
@@ -54,11 +123,17 @@ onMounted(async () => {
   // Event listeners - konsolideret til én onMounted hook
   document.addEventListener('click', handleClickOutside);
   window.addEventListener('scroll', handleScroll);
+  
+  // Lyt efter søgninger fra sidebar
+  window.addEventListener('app-search', (event) => {
+    searchTerm.value = event.detail.term;
+  });
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('app-search', () => {});
 });
 
 watch(() => gameStore.syncStatus, (newStatus) => {
@@ -141,18 +216,18 @@ function performEditMenuAction(action, gameId) {
     case 'favorite':
       gameStore.toggleFavorite(gameId);
       break;
-      case 'edit-title':
-  const gameToEdit = gameStore.games.find(g => g.id === gameId);
-  editingGameId.value = gameId;
-  editingGameTitle.value = gameToEdit.title || '';
-  showEditTitleModal.value = true;
-  break;
+    case 'edit-title':
+      const gameToEdit = gameStore.games.find(g => g.id === gameId);
+      editingGameId.value = gameId;
+      editingGameTitle.value = gameToEdit.title || '';
+      showEditTitleModal.value = true;
+      break;
     case 'edit-date':
-    const gameToEditDate = gameStore.games.find(g => g.id === gameId);
-    editingDateGameId.value = gameId;
-    editingDate.value = gameToEditDate.completionDate || '';
-    showEditDateModal.value = true;
-    break;
+      const gameToEditDate = gameStore.games.find(g => g.id === gameId);
+      editingDateGameId.value = gameId;
+      editingDate.value = gameToEditDate.completionDate || '';
+      showEditDateModal.value = true;
+      break;
     case 'today-date':
       gameStore.setTodayAsCompletionDate(gameId);
       break;
@@ -355,14 +430,10 @@ function openAddGameModal() {
 function openPlatformModal() {
   showPlatformModal.value = true;
 }
-
 </script>
 
 <template>
   <div class="game-track-app">
-    <AppHeader @search="handleSearch" @open-add-game-modal="openAddGameModal" @open-platform-modal="openPlatformModal"
-      @open-settings-modal="showSettingsModal = true" @open-import-modal="showImportModal = true" />
-
     <!-- Sync notification -->
     <div v-if="gameStore.syncStatus.status !== 'idle'" class="sync-notification" :class="gameStore.syncStatus.status">
       {{ gameStore.syncStatus.message }}
@@ -377,8 +448,6 @@ function openPlatformModal() {
           @edit-menu="showEditMenu" @platform-menu="showPlatformMenu" />
       </div>
     </main>
-
-    <AppFooter />
 
     <!-- Edit Menu -->
     <div v-if="activeEditMenu" class="edit-menu" :style="{
@@ -445,7 +514,7 @@ function openPlatformModal() {
       </template>
     </SimplerModal>
 
-    <!-- Platform Modal - kun én modal bevaret -->
+    <!-- Platform Modal -->
     <SimplerModal :isOpen="showPlatformModal" :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`" @close="showPlatformModal = false">
       <PlatformManager @close="showPlatformModal = false" />
     </SimplerModal>
@@ -453,11 +522,6 @@ function openPlatformModal() {
     <!-- Settings Modal -->
     <SimplerModal :isOpen="showSettingsModal" title="Indstillinger" @close="showSettingsModal = false">
       <SettingsManager @close="showSettingsModal = false" />
-    </SimplerModal>
-
-    <!-- Import Modal -->
-    <SimplerModal :isOpen="showImportModal" title="Importér spilliste" @close="showImportModal = false">
-      <ImportManager @close="showImportModal = false" />
     </SimplerModal>
 
     <SimplerModal :isOpen="showDeleteConfirmModal" title="Bekræft sletning" @close="showDeleteConfirmModal = false">
@@ -471,31 +535,30 @@ function openPlatformModal() {
     </SimplerModal>
 
     <SimplerModal :isOpen="showEditTitleModal" title="Rediger titel" @close="showEditTitleModal = false">
-  <form @submit.prevent="saveEditedTitle">
-    <div class="form-group">
-      <label for="gameTitle">Titel:</label>
-      <input type="text" id="gameTitle" v-model="editingGameTitle" required />
-    </div>
-  </form>
+      <form @submit.prevent="saveEditedTitle">
+        <div class="form-group">
+          <label for="gameTitle">Titel:</label>
+          <input type="text" id="gameTitle" v-model="editingGameTitle" required />
+        </div>
+      </form>
 
-  <template #footer>
-    <button @click="saveEditedTitle" class="btn btn-primary">Gem</button>
-  </template>
-</SimplerModal>
+      <template #footer>
+        <button @click="saveEditedTitle" class="btn btn-primary">Gem</button>
+      </template>
+    </SimplerModal>
 
-<SimplerModal :isOpen="showEditDateModal" :title="mediaTypeStore.config.completionDateLabel" @close="showEditDateModal = false">
-  <form @submit.prevent="saveEditedDate">
-    <div class="form-group">
-      <label for="gameDate">Dato (DD-MM-ÅÅÅÅ):</label>
-      <input type="text" id="gameDate" v-model="editingDate" placeholder="DD-MM-ÅÅÅÅ" />
-    </div>
-  </form>
+    <SimplerModal :isOpen="showEditDateModal" :title="mediaTypeStore.config.completionDateLabel" @close="showEditDateModal = false">
+      <form @submit.prevent="saveEditedDate">
+        <div class="form-group">
+          <label for="gameDate">Dato (DD-MM-ÅÅÅÅ):</label>
+          <input type="text" id="gameDate" v-model="editingDate" placeholder="DD-MM-ÅÅÅÅ" />
+        </div>
+      </form>
 
-  <template #footer>
-    <button @click="saveEditedDate" class="btn btn-primary">Gem</button>
-  </template>
-</SimplerModal>
-
+      <template #footer>
+        <button @click="saveEditedDate" class="btn btn-primary">Gem</button>
+      </template>
+    </SimplerModal>
   </div>
 </template>
 
@@ -503,7 +566,7 @@ function openPlatformModal() {
 #app {
   padding: 2rem;
   padding-top: 1rem;
-  min-height: calc(100vh - 60px - 3rem);
+  min-height: calc(100vh);
 }
 
 #listsContainer {
