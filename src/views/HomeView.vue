@@ -1,6 +1,5 @@
 <!-- src/views/HomeView.vue -->
 <script setup>
-// Fjern import af ImportManager
 import { ref, onMounted, onBeforeUnmount, nextTick, inject } from 'vue';
 import { useMediaTypeStore } from '../stores/mediaType';
 import { useGameStore } from '../stores/game.store';

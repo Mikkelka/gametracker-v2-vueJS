@@ -101,7 +101,6 @@ provide('openModal', (modalName) => {
 onMounted(async () => {
   applyCssVariables();
   try {
-    // Initialisér bruger og vend router til home hvis allerede logget ind
     await userStore.initUser();
   } catch (error) {
     console.error('Failed to initialize user:', error);
@@ -119,7 +118,7 @@ onMounted(async () => {
     </div>
     
     <template v-else>
-      <!-- Vis kun menuknappen når vi IKKE bruger MobileNavigation -->
+   
       <button 
         v-if="userStore.isLoggedIn && isMobile && false" 
         class="mobile-menu-toggle" 
@@ -129,7 +128,6 @@ onMounted(async () => {
         ☰
       </button>
       
-      <!-- AppSidebar kun på desktop -->
       <AppSidebar 
         v-if="userStore.isLoggedIn && !isMobile" 
         :collapsed="sidebarCollapsed" 
@@ -137,14 +135,12 @@ onMounted(async () => {
         @open-settings-modal="openSettingsModal"
       />
       
-      <!-- MobileNavigation kun på mobile -->
       <MobileNavigation
         v-if="userStore.isLoggedIn && isMobile && !isDashboard"
         @openAddModal="showAddGameModal = true"
         @openCategoryModal="showPlatformModal = true" 
       />
       
-      <!-- Juster content-area klassen baseret på isMobile -->
       <main 
         class="content-area" 
         :class="{ 
@@ -163,7 +159,6 @@ onMounted(async () => {
         />
       </main>
       
-      <!-- Overlay til at lukke mobil menu ved klik udenfor -->
       <div 
         v-if="showMobileMenu && !isMobile" 
         class="mobile-overlay" 
