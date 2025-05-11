@@ -4,7 +4,7 @@ import { onMounted, ref, onBeforeUnmount, provide, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from './stores/user';
 import AppSidebar from './components/layout/AppSidebar.vue';
-import MobileNavigation from './components/layout/MobileNavigation.vue'; // Tilføj denne import
+import MobileNavigation from './components/layout/MobileNavigation.vue'; 
 import { useRoute } from 'vue-router';
 
 const userStore = useUserStore();
@@ -118,16 +118,6 @@ onMounted(async () => {
     </div>
     
     <template v-else>
-   
-      <button 
-        v-if="userStore.isLoggedIn && isMobile && false" 
-        class="mobile-menu-toggle" 
-        @click="toggleMobileMenu" 
-        aria-label="Vis menu"
-      >
-        ☰
-      </button>
-      
       <AppSidebar 
         v-if="userStore.isLoggedIn && !isMobile" 
         :collapsed="sidebarCollapsed" 
@@ -138,7 +128,8 @@ onMounted(async () => {
       <MobileNavigation
         v-if="userStore.isLoggedIn && isMobile && !isDashboard"
         @openAddModal="showAddGameModal = true"
-        @openCategoryModal="showPlatformModal = true" 
+        @openCategoryModal="showPlatformModal = true"
+        @openSettingsModal="showSettingsModal = true"
       />
       
       <main 
@@ -158,18 +149,12 @@ onMounted(async () => {
           @update:show-platform-modal="showPlatformModal = $event"
         />
       </main>
-      
-      <div 
-        v-if="showMobileMenu && !isMobile" 
-        class="mobile-overlay" 
-        @click="showMobileMenu = false"
-      ></div>
     </template>
   </div>
 </template>
 
 <style>
-/* Base styles */
+
 * {
   box-sizing: border-box;
 }
@@ -256,7 +241,6 @@ body {
   z-index: 999;
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .mobile-menu-toggle {
     display: block;
@@ -272,7 +256,6 @@ body {
   }
 }
 
-/* Animationer */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -288,18 +271,15 @@ body {
   animation: fadeIn 0.5s ease;
 }
 
-/* Tilføj styling for mobil navigation */
 .content-area.with-mobile-nav {
   margin-left: 0;
-  padding-bottom: 60px; /* Gør plads til MobileNavigation i bunden */
+  padding-bottom: 60px; 
 }
 
-/* Opdater mobile-responsive styles */
 @media (max-width: 768px) {
   .content-area.with-sidebar,
   .content-area.with-sidebar.sidebar-collapsed {
     margin-left: 0;
   }
 }
-
 </style>

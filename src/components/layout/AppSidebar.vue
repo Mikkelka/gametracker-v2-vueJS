@@ -1,4 +1,4 @@
-<!-- src/components/layout/AppSidebar.vue (ny version) -->
+<!-- src/components/layout/AppSidebar.vue (opdateret) -->
 <script setup>
 import { ref, watch, computed, inject } from 'vue';
 import { useMediaTypeStore } from '../../stores/mediaType';
@@ -67,6 +67,13 @@ function navigateTo(path) {
 const currentAppIcon = computed(() => {
   return mediaTypeStore.config?.icon || '📱';
 });
+
+// Åbn indstillinger for den aktuelle medietype
+function openSettingsModal() {
+  if (openModal) {
+    openModal('settings');
+  }
+}
 
 // Ny funktion for at åbne relevante modaler baseret på medietype
 function openAddModal() {
@@ -160,25 +167,25 @@ const mediaMenuItems = [
   }
 ];
 
-// Andre menupunkter
+// Andre menupunkter (Nu uden indstillinger)
 const otherMenuItems = [
   { 
     id: 'dashboard',
     icon: '🏠', 
     label: 'Dashboard',
     action: () => navigateTo({ name: 'dashboard' }) 
-  },
-  { 
-    id: 'settings',
-    icon: '⚙️',
-    label: 'Indstillinger',
-    action: () => {
-      if (openModal) {
-        openModal('settings');
-      }
-    }
   }
 ];
+
+// Funktion til at åbne indstillinger for specifik medietype
+function openSettingsForType(typeId) {
+  if (mediaTypeStore.currentType !== typeId) {
+    mediaTypeStore.setMediaType(typeId);
+  }
+  if (openModal) {
+    openModal('settings');
+  }
+}
 
 // Tjek om dashboard er aktivt
 const isDashboardActive = computed(() => {
@@ -242,12 +249,18 @@ async function logout() {
       <ul class="nav-list">
         <!-- For hver medietype -->
         <template v-for="(item, index) in mediaMenuItems" :key="'media-'+index">
-          <!-- Hovedmenupunkt -->
+          <!-- Hovedmenupunkt med tandhjulsikon -->
           <li class="nav-item"
               :class="{ 'active': isItemActive(item.id) }"
               @click="item.action">
             <span class="nav-icon">{{ item.icon }}</span>
             <span class="nav-label" v-if="!isCollapsed">{{ item.label }}</span>
+            <button 
+              v-if="!isCollapsed" 
+              class="settings-btn" 
+              @click.stop="openSettingsForType(item.id)"
+              title="Indstillinger"
+            >⚙️</button>
           </li>
           
           <!-- Vis kun undermenuer for den aktive medietype -->
@@ -269,25 +282,6 @@ async function logout() {
             </transition-group>
           </div>
         </template>
-      </ul>
-      
-      <!-- Divider -->
-      <div class="menu-divider"></div>
-      
-      <!-- Andre menupunkter (indstillinger) -->
-      <div class="menu-section" v-if="!isCollapsed">
-        <span class="menu-section-title">Andet</span>
-      </div>
-      <div class="menu-section-icon" v-else>
-        <span class="menu-icon-divider"></span>
-      </div>
-      
-      <ul class="nav-list">
-        <li class="nav-item" 
-            @click="otherMenuItems[1].action">
-          <span class="nav-icon">{{ otherMenuItems[1].icon }}</span>
-          <span class="nav-label" v-if="!isCollapsed">{{ otherMenuItems[1].label }}</span>
-        </li>
       </ul>
     </nav>
     
@@ -456,6 +450,7 @@ async function logout() {
   transition: background-color 0.2s ease;
   border-radius: 4px;
   margin: 0 0.5rem 0.1rem 0.5rem;
+  position: relative; /* For at positionere settings-knappen */
 }
 
 /* Centrér ikoner i kollapset tilstand */
@@ -470,6 +465,29 @@ async function logout() {
 
 .nav-item.active {
   background-color: var(--primary-color);
+  color: white;
+}
+
+/* Styling for indstillingsknap */
+.settings-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.settings-btn:hover {
+  opacity: 1;
+  transform: rotate(45deg);
+}
+
+.nav-item.active .settings-btn {
   color: white;
 }
 

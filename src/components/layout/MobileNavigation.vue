@@ -1,4 +1,4 @@
-<!-- src/components/layout/MobileNavigation.vue -->
+<!-- src/components/layout/MobileNavigation.vue (opdateret) -->
 <script setup>
 import { ref, computed } from 'vue';
 import { useMediaTypeStore } from '../../stores/mediaType';
@@ -123,7 +123,7 @@ function goToDashboard(event) {
 }
 
 // Emit events for at åbne modaler
-const emit = defineEmits(['openAddModal', 'openCategoryModal']);
+const emit = defineEmits(['openAddModal', 'openCategoryModal', 'openSettingsModal']);
 
 function openAddModal() {
   emit('openAddModal');
@@ -132,6 +132,16 @@ function openAddModal() {
 
 function openCategoryModal() {
   emit('openCategoryModal');
+  closeAllMenus();
+}
+
+// Ny funktion til at åbne indstillinger
+function openSettingsModal(type) {
+  // Skift medietype hvis nødvendigt
+  if (type && mediaTypeStore.currentType !== type) {
+    mediaTypeStore.setMediaType(type);
+  }
+  emit('openSettingsModal');
   closeAllMenus();
 }
 </script>
@@ -149,17 +159,38 @@ function openCategoryModal() {
           <span class="dropdown-icon">🏠</span>
           <span class="dropdown-text">Dashboard</span>
         </div>
-        <div class="dropdown-item" @click="changeMediaType('game', $event)">
-          <span class="dropdown-icon">🎮</span>
-          <span class="dropdown-text">GameTrack</span>
+        <div class="dropdown-item dropdown-item-with-settings">
+          <div class="dropdown-main" @click="changeMediaType('game', $event)">
+            <span class="dropdown-icon">🎮</span>
+            <span class="dropdown-text">GameTrack</span>
+          </div>
+          <button 
+            class="dropdown-settings-btn" 
+            @click.stop="openSettingsModal('game')"
+            aria-label="Indstillinger for GameTrack"
+          >⚙️</button>
         </div>
-        <div class="dropdown-item" @click="changeMediaType('movie', $event)">
-          <span class="dropdown-icon">🎬</span>
-          <span class="dropdown-text">MovieTrack</span>
+        <div class="dropdown-item dropdown-item-with-settings">
+          <div class="dropdown-main" @click="changeMediaType('movie', $event)">
+            <span class="dropdown-icon">🎬</span>
+            <span class="dropdown-text">MovieTrack</span>
+          </div>
+          <button 
+            class="dropdown-settings-btn" 
+            @click.stop="openSettingsModal('movie')"
+            aria-label="Indstillinger for MovieTrack"
+          >⚙️</button>
         </div>
-        <div class="dropdown-item" @click="changeMediaType('book', $event)">
-          <span class="dropdown-icon">📚</span>
-          <span class="dropdown-text">BookTrack</span>
+        <div class="dropdown-item dropdown-item-with-settings">
+          <div class="dropdown-main" @click="changeMediaType('book', $event)">
+            <span class="dropdown-icon">📚</span>
+            <span class="dropdown-text">BookTrack</span>
+          </div>
+          <button 
+            class="dropdown-settings-btn" 
+            @click.stop="openSettingsModal('book')"
+            aria-label="Indstillinger for BookTrack"
+          >⚙️</button>
         </div>
       </div>
     </div>
@@ -297,6 +328,38 @@ function openCategoryModal() {
 
 .dropdown-item:last-child {
   border-bottom: none;
+}
+
+/* Ny styling for medietyper med indstillingsknap */
+.dropdown-item-with-settings {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dropdown-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.dropdown-settings-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.dropdown-settings-btn:hover, 
+.dropdown-settings-btn:active {
+  opacity: 1;
+  transform: rotate(45deg);
 }
 
 .dropdown-icon {

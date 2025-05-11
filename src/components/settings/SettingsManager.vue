@@ -1,8 +1,10 @@
-<!-- vue/src/components/settings/SettingsManager.vue -->
+<!-- Forenklet SettingsManager.vue -->
 <script setup>
 import { useSettingsStore } from '../../stores/settings';
+import { useMediaTypeStore } from '../../stores/mediaType';
 
 const settingsStore = useSettingsStore();
+const mediaTypeStore = useMediaTypeStore();
 const emit = defineEmits(['close']);
 
 function saveSettings() {

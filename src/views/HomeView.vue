@@ -448,6 +448,13 @@ function openPlatformModal() {
       </div>
     </main>
 
+    <MobileNavigation
+      v-if="isMobile" 
+      @openAddModal="showAddGameModal = true"
+      @openCategoryModal="showPlatformModal = true"
+      @openSettingsModal="showSettingsModal = true" 
+    />
+
     <!-- Edit Menu -->
     <div v-if="activeEditMenu" class="edit-menu" :style="{
       position: 'fixed',
