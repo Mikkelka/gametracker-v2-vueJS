@@ -168,13 +168,11 @@ body {
   box-sizing: border-box;
 }
 
-/* App layout */
 .app-container {
   position: relative;
   min-height: 100vh;
 }
 
-/* Content area med sidebar */
 .content-area {
   min-height: 100vh;
   transition: margin-left 0.3s ease;

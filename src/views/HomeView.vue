@@ -448,13 +448,6 @@ function openPlatformModal() {
       </div>
     </main>
 
-    <MobileNavigation
-      v-if="isMobile" 
-      @openAddModal="showAddGameModal = true"
-      @openCategoryModal="showPlatformModal = true"
-      @openSettingsModal="showSettingsModal = true" 
-    />
-
     <!-- Edit Menu -->
     <div v-if="activeEditMenu" class="edit-menu" :style="{
       position: 'fixed',
@@ -572,7 +565,7 @@ function openPlatformModal() {
 #app {
   padding: 1rem;
   padding-top: 1rem;
-  min-height: calc(100vh);
+  /* min-height: calc(100vh); */
 }
 
 #listsContainer {
@@ -711,6 +704,9 @@ function openPlatformModal() {
     -webkit-overflow-scrolling: touch;
     gap: 1rem;
     width: 100%;
+    max-height: calc(100vh - 60px);
+    min-height: calc(100vh - 60px);
+    overflow: auto;
   }
 
   .edit-menu,
