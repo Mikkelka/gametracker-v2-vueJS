@@ -80,15 +80,10 @@ function onPlatformMenu(gameId, platform, x, y) {
 
 // Beregn om listen skal vises baseret på indstillinger
 const shouldShow = computed(() => {
-  const mediaType = mediaTypeStore.currentType;
-  
-  if (mediaType === 'game') {
-    // Eksisterende logik for spil
-    if (props.status === 'upcoming' && !settingsStore.showUpcoming) return false;
-    if (props.status === 'paused' && !settingsStore.showPaused) return false;
-    if (props.status === 'dropped' && !settingsStore.showDropped) return false;
-  }
-  // For fremtidige medietyper kan vi tilføje specifikke regler her
+  // Uanset medietype - tjek om statussen skal vises
+  if (props.status === 'upcoming' && !settingsStore.showUpcoming) return false;
+  if (props.status === 'paused' && !settingsStore.showPaused) return false;
+  if (props.status === 'dropped' && !settingsStore.showDropped) return false;
   
   return true;
 });
@@ -122,8 +117,8 @@ const shouldShow = computed(() => {
 .list {
   background-color: var(--list-bg);
   border-radius: 8px;
-  padding: 1rem;
-  width: 280px;
+  padding: 0.6rem;
+  width: 250px;
   box-shadow: var(--shadow);
 }
 

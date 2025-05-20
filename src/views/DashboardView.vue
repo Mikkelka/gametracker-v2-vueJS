@@ -1,19 +1,57 @@
-// src/views/DashboardView.vue
+<!-- src/views/DashboardView.vue -->
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed, ref, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { useMediaTypeStore } from '../stores/mediaType';
-import AppHeader from '../components/layout/AppHeader.vue';
-import AppFooter from '../components/layout/AppFooter.vue';
+import { useGameStore } from '../stores/game.store';
+import SimplerModal from '../components/ui/SimplerModal.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
 const mediaTypeStore = useMediaTypeStore();
+const gameStore = useGameStore();
+
+// Tilføj state for navn-redigering
+const showEditNameModal = ref(false);
+const newName = ref('');
+
+// Prøv at få modals via inject hvis tilgængelig
+const injectedModals = inject('modals', null);
 
 function navigateTo(type) {
   mediaTypeStore.setMediaType(type);
   router.push({ name: 'home' });
+}
+
+// Funktion til at åbne modal og indstille startværdi
+function openEditNameModal() {
+  newName.value = userStore.displayName || '';
+  showEditNameModal.value = true;
+}
+
+// Funktion til at opdatere brugernavn
+async function updateName() {
+  if (newName.value.trim()) {
+    await userStore.updateDisplayName(newName.value.trim());
+    showEditNameModal.value = false;
+  }
+}
+
+// Log ud funktion
+async function logout() {
+  try {
+    // Synkroniser først hvis der er ændringer
+    await gameStore.syncWithFirebase?.();
+    
+    // Log ud
+    await userStore.logout();
+    
+    // Naviger til login
+    router.push({ name: 'login' });
+  } catch (error) {
+    console.error('Fejl ved log ud:', error);
+  }
 }
 
 onMounted(() => {
@@ -23,8 +61,6 @@ onMounted(() => {
 
 <template>
   <div class="dashboard-page">
-    <AppHeader :showSearchToggle="false" :dashboardMode="true" />
-
     <main class="dashboard-container">
       <h1>Velkommen, {{ userStore.displayName }}</h1>
       <p>Vælg hvilket medie du vil spore:</p>
@@ -48,9 +84,31 @@ onMounted(() => {
           <p>Hold styr på dine bøger</p>
         </div>
       </div>
+      
+      <!-- Opdateret log ud sektion med to knapper -->
+      <div class="user-actions">
+        <button class="edit-name-button" @click="openEditNameModal">
+          Rediger navn
+        </button>
+        <button class="logout-button" @click="logout">
+          Log ud
+        </button>
+      </div>
     </main>
 
-    <AppFooter />
+    <!-- Tilføj modal til redigering af navn -->
+    <SimplerModal :isOpen="showEditNameModal" title="Rediger navn" @close="showEditNameModal = false">
+      <form @submit.prevent="updateName" class="name-form">
+        <div class="form-group">
+          <label for="displayName">Navn:</label>
+          <input type="text" id="displayName" v-model="newName" required />
+        </div>
+      </form>
+
+      <template #footer>
+        <button @click="updateName" class="btn btn-primary">Gem</button>
+      </template>
+    </SimplerModal>
   </div>
 </template>
 
@@ -59,7 +117,7 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  min-height: calc(100vh - 60px - 83px - 1rem);
+  /* min-height: calc(100vh); */
 }
 
 .tracker-grid {
@@ -99,6 +157,83 @@ onMounted(() => {
   opacity: 0.8;
 }
 
+/* User actions styling */
+.user-actions {
+  margin-top: 3rem;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.logout-button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f;
+}
+
+.edit-name-button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.edit-name-button:hover {
+  background-color: #0b7dda;
+}
+
+/* Form styling for modal */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-primary {
+  background-color: var(--button-bg);
+  color: white;
+  min-width: 120px;
+}
+
+.btn-primary:hover {
+  background-color: var(--button-hover);
+}
+
 @media (max-width: 768px) {
   .tracker-grid {
     grid-template-columns: 1fr;
@@ -116,7 +251,19 @@ onMounted(() => {
 
   .tracker-card h2 {
     margin: 0;
+  }
 
+  .user-actions {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .edit-name-button,
+  .logout-button {
+    width: 100%;
+    max-width: 200px;
   }
 }
 </style>

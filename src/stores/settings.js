@@ -1,45 +1,111 @@
 // vue/src/stores/settings.js
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, reactive, computed } from 'vue';
+import { useMediaTypeStore } from './mediaType';
 
 export const useSettingsStore = defineStore('settings', () => {
-  const showUpcoming = ref(true);
-  const showPaused = ref(true);
-  const showDropped = ref(true);
+  const mediaTypeStore = useMediaTypeStore();
+  
+  // Indstillinger for hver medietype
+  const mediaSettings = reactive({
+    game: {
+      showUpcoming: true,
+      showPaused: true,
+      showDropped: true
+    },
+    movie: {
+      showUpcoming: true,
+      showPaused: true,
+      showDropped: true
+    },
+    book: {
+      showUpcoming: true,
+      showPaused: true,
+      showDropped: true
+    }
+  });
+  
+  // Computed properties der henter indstillinger for den aktuelle medietype
+  const showUpcoming = computed({
+    get: () => {
+      const currentType = mediaTypeStore.currentType;
+      return mediaSettings[currentType]?.showUpcoming ?? true;
+    },
+    set: (value) => {
+      const currentType = mediaTypeStore.currentType;
+      if (mediaSettings[currentType]) {
+        mediaSettings[currentType].showUpcoming = value;
+      }
+    }
+  });
+  
+  const showPaused = computed({
+    get: () => {
+      const currentType = mediaTypeStore.currentType;
+      return mediaSettings[currentType]?.showPaused ?? true;
+    },
+    set: (value) => {
+      const currentType = mediaTypeStore.currentType;
+      if (mediaSettings[currentType]) {
+        mediaSettings[currentType].showPaused = value;
+      }
+    }
+  });
+  
+  const showDropped = computed({
+    get: () => {
+      const currentType = mediaTypeStore.currentType;
+      return mediaSettings[currentType]?.showDropped ?? true;
+    },
+    set: (value) => {
+      const currentType = mediaTypeStore.currentType;
+      if (mediaSettings[currentType]) {
+        mediaSettings[currentType].showDropped = value;
+      }
+    }
+  });
   
   // Indlæs indstillinger fra localStorage
   function loadSettings() {
-    const savedSettings = localStorage.getItem('gameTrackSettings');
+    const savedSettings = localStorage.getItem('mediaTrackSettings');
     if (savedSettings) {
       const parsedSettings = JSON.parse(savedSettings);
-      showUpcoming.value = parsedSettings.showUpcoming ?? true;
-      showPaused.value = parsedSettings.showPaused ?? true;
-      showDropped.value = parsedSettings.showDropped ?? true;
+      
+      // Opdater indstillinger for hver medietype
+      for (const type in parsedSettings) {
+        if (mediaSettings[type]) {
+          mediaSettings[type] = { ...mediaSettings[type], ...parsedSettings[type] };
+        }
+      }
+    } else {
+      // Bagudkompatibilitet med "gameTrackSettings"
+      const savedGameSettings = localStorage.getItem('gameTrackSettings');
+      if (savedGameSettings) {
+        const parsedSettings = JSON.parse(savedGameSettings);
+        mediaSettings.game.showUpcoming = parsedSettings.showUpcoming ?? true;
+        mediaSettings.game.showPaused = parsedSettings.showPaused ?? true;
+        mediaSettings.game.showDropped = parsedSettings.showDropped ?? true;
+      }
     }
   }
   
   // Gem indstillinger i localStorage
   function saveSettings() {
-    localStorage.setItem(
-      'gameTrackSettings',
-      JSON.stringify({
-        showUpcoming: showUpcoming.value,
-        showPaused: showPaused.value,
-        showDropped: showDropped.value
-      })
-    );
+    localStorage.setItem('mediaTrackSettings', JSON.stringify(mediaSettings));
   }
   
   // Opdater indstillinger
   function updateSettings(settings) {
+    const currentType = mediaTypeStore.currentType;
+    
     if (settings.showUpcoming !== undefined) {
-      showUpcoming.value = settings.showUpcoming;
+      mediaSettings[currentType].showUpcoming = settings.showUpcoming;
     }
     if (settings.showPaused !== undefined) {
-      showPaused.value = settings.showPaused;
+      mediaSettings[currentType].showPaused = settings.showPaused;
     }
     if (settings.showDropped !== undefined) {
-      showDropped.value = settings.showDropped;
+      mediaSettings[currentType].showDropped = settings.showDropped;
     }
     
     saveSettings();
@@ -54,6 +120,7 @@ export const useSettingsStore = defineStore('settings', () => {
     showDropped,
     loadSettings,
     saveSettings,
-    updateSettings
+    updateSettings,
+    mediaSettings
   };
 });
