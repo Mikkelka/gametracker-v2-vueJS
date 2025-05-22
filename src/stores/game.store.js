@@ -1,6 +1,6 @@
 // src/stores/game.store.js
 import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, readonly } from 'vue';
 import { useUserStore } from './user';
 import { useMediaTypeStore } from './mediaType';
 import { useFirestoreCollection } from '../firebase/db.service';
@@ -12,8 +12,13 @@ export const useGameStore = defineStore('game', () => {
   const syncStatus = ref({ status: 'idle', message: '' });
   const isSyncing = ref(false);
   const mediaTypeStore = useMediaTypeStore();
-
   const pendingChanges = ref([]);
+  
+  // Memory leak prevention
+  const isStoreDestroyed = ref(false);
+  const activeTimers = new Set();
+  const activeSubscriptions = new Set();
+  
   let syncTimer = null;
   const SYNC_DELAY = 5000; // 5 sekunder mellem synkroniseringer
 
@@ -49,6 +54,44 @@ export const useGameStore = defineStore('game', () => {
 
   // Unsubscribe reference
   let unsubscribe = null;
+
+  // Timer management functions
+  function createTimer(callback, delay) {
+    if (isStoreDestroyed.value) return null;
+    
+    const timerId = setTimeout(() => {
+      activeTimers.delete(timerId);
+      if (!isStoreDestroyed.value) {
+        callback();
+      }
+    }, delay);
+    
+    activeTimers.add(timerId);
+    return timerId;
+  }
+
+  function clearTimer(timerId) {
+    if (timerId) {
+      clearTimeout(timerId);
+      activeTimers.delete(timerId);
+    }
+  }
+
+  function setSyncTimer() {
+    // Clear eksisterende timer først
+    if (syncTimer) {
+      clearTimer(syncTimer);
+      syncTimer = null;
+    }
+    
+    if (isStoreDestroyed.value) return;
+    
+    syncTimer = createTimer(() => {
+      console.log('Sync timer triggered');
+      syncWithFirebase();
+      syncTimer = null;
+    }, SYNC_DELAY);
+  }
 
   function getDynamicMessage(messageKey, customValue = null) {
     // Få det korrekte item navn baseret på medietype
@@ -104,13 +147,15 @@ export const useGameStore = defineStore('game', () => {
 
   // Hjælpefunktion til at håndtere synkroniseringsstatus
   function updateSyncStatus(status, messageKey, customValue = null, autoHide = true) {
+    if (isStoreDestroyed.value) return;
+    
     const message = getDynamicMessage(messageKey, customValue);
     syncStatus.value = { status, message };
 
     if (autoHide && status !== 'error') {
-      setTimeout(() => {
+      createTimer(() => {
         // Opdater kun hvis status ikke er ændret i mellemtiden
-        if (syncStatus.value.status === status) {
+        if (syncStatus.value.status === status && !isStoreDestroyed.value) {
           syncStatus.value = { status: 'idle', message: '' };
         }
       }, status === 'success' ? 3000 : 5000);
@@ -118,6 +163,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function queueChange(type, id, data) {
+    if (isStoreDestroyed.value) {
+      console.warn('Store destroyed, ignoring queue change');
+      return;
+    }
+    
     console.log(`Queuing ${type} operation for id: ${id}`);
 
     // Special case for 'add' operations - these should skip the queue
@@ -152,20 +202,13 @@ export const useGameStore = defineStore('game', () => {
       pendingChanges.value.push({ type, id, data });
     }
 
-    // Klar og sæt ny timer
-    if (syncTimer) {
-      clearTimeout(syncTimer);
-    }
-
-    syncTimer = setTimeout(() => {
-      console.log('Sync timer triggered');
-      syncWithFirebase();
-    }, SYNC_DELAY);
+    // Brug den nye timer management
+    setSyncTimer();
   }
 
   async function syncWithFirebase() {
-    if (pendingChanges.value.length === 0) {
-      console.log('No pending changes to sync');
+    if (pendingChanges.value.length === 0 || isStoreDestroyed.value) {
+      console.log('No pending changes to sync or store destroyed');
       return;
     }
 
@@ -178,12 +221,16 @@ export const useGameStore = defineStore('game', () => {
     updateSyncStatus('syncing', 'saving', null, false);
 
     try {
-      // Tag en kopi af ændringer og tøm listen
+      // Tag en kopi af ændringer og tøm listen atomically
       const changesToProcess = [...pendingChanges.value];
       pendingChanges.value = [];
-
-      // Nulstil timer
       syncTimer = null;
+
+      // Check if store was destroyed during async operation
+      if (isStoreDestroyed.value) {
+        console.log('Store destroyed during sync, aborting');
+        return;
+      }
 
       // Konverter til batch operations format
       const batchOperations = changesToProcess.map(change => ({
@@ -195,29 +242,41 @@ export const useGameStore = defineStore('game', () => {
       // Udfør batch operation
       const result = await gamesService.value.batchUpdate(batchOperations);
 
+      // Check again after async operation
+      if (isStoreDestroyed.value) {
+        console.log('Store destroyed after sync completion');
+        return;
+      }
+
       if (result.success) {
         console.log(`Successfully synced ${result.count} changes`);
         updateSyncStatus('success', 'saved');
       } else {
         console.error('Failed to sync changes');
-        pendingChanges.value = [...changesToProcess, ...pendingChanges.value];
-        updateSyncStatus('error', 'syncError');
+        // Only restore changes if store is still active
+        if (!isStoreDestroyed.value) {
+          pendingChanges.value = [...changesToProcess, ...pendingChanges.value];
+          updateSyncStatus('error', 'syncError');
+        }
       }
     } catch (error) {
       console.error('Error syncing with Firebase:', error);
-      updateSyncStatus('error', 'syncError');
+      if (!isStoreDestroyed.value) {
+        updateSyncStatus('error', 'syncError');
+      }
     }
   }
 
   // Firebase integration
   async function loadGames() {
-    if (!userStore.currentUser) return;
+    if (!userStore.currentUser || isStoreDestroyed.value) return;
 
     isLoading.value = true;
 
     try {
-      // Afbryd tidligere lytter hvis den findes
+      // Cleanup previous subscription
       if (unsubscribe) {
+        activeSubscriptions.delete(unsubscribe);
         unsubscribe();
         unsubscribe = null;
       }
@@ -226,6 +285,12 @@ export const useGameStore = defineStore('game', () => {
       unsubscribe = gamesService.value.subscribeToItems(
         userStore.currentUser.uid,
         (result) => {
+          // Check if store is still active
+          if (isStoreDestroyed.value) {
+            console.log('Store destroyed, ignoring subscription callback');
+            return;
+          }
+
           if (result.success) {
             // Få statuslisten fra den aktuelle mediaType
             const statusOrder = statusList.value.map(status => status.id);
@@ -243,6 +308,12 @@ export const useGameStore = defineStore('game', () => {
         },
         { orderBy: { field: 'order', direction: 'asc' } }
       );
+
+      // Track subscription for cleanup
+      if (unsubscribe) {
+        activeSubscriptions.add(unsubscribe);
+      }
+
     } catch (error) {
       console.error('Error setting up games subscription:', error);
       isLoading.value = false;
@@ -251,7 +322,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Game operations
   async function saveGame(gameData) {
-    if (!userStore.currentUser) return null;
+    if (!userStore.currentUser || isStoreDestroyed.value) return null;
 
     try {
       const game = {
@@ -285,6 +356,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function updateGameTitle(gameId, newTitle) {
+    if (isStoreDestroyed.value) return false;
+    
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
@@ -311,6 +384,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Tilføj et nyt spil
   async function addGame(title, platformData) {
+    if (isStoreDestroyed.value) return null;
+    
     // Tjek miljøvariablen for maksimalt antal spil
     const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
 
@@ -357,7 +432,7 @@ export const useGameStore = defineStore('game', () => {
       // Brug direkte Firebase addItem for nye spil
       const result = await gamesService.value.addItem(newGame);
 
-      if (result.success) {
+      if (result.success && !isStoreDestroyed.value) {
         // Tilføj det nye spil med Firebase-genereret ID til lokal state
         games.value.push(result.data);
         updateSyncStatus('success', 'added');
@@ -375,7 +450,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Slet et spil
   async function deleteGame(gameId) {
-    if (!userStore.currentUser) return false;
+    if (!userStore.currentUser || isStoreDestroyed.value) return false;
 
     updateSyncStatus('syncing', 'deleting');
 
@@ -400,6 +475,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Flyt et spil til en ny status med en specifik position
   async function moveGameToStatus(gameId, newStatus, specificPosition = null) {
+    if (isStoreDestroyed.value) return false;
+    
     updateSyncStatus('syncing', 'moving');
 
     const game = games.value.find(g => g.id === gameId);
@@ -467,6 +544,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Toggle favorit-status for et spil
   async function toggleFavorite(gameId) {
+    if (isStoreDestroyed.value) return false;
+    
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
@@ -493,6 +572,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Sæt gennemførelsesdato for et spil
   async function setCompletionDate(gameId, date) {
+    if (isStoreDestroyed.value) return false;
+    
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
@@ -518,7 +599,8 @@ export const useGameStore = defineStore('game', () => {
         updateData.completionDate = date.trim();
       } else {
         delete game.completionDate;
-        updateData.completionDate = deleteField();
+        // Note: For Firebase, we'll need to handle field deletion differently
+        updateData.completionDate = null;
       }
 
       // Queue ændringen til batch-synkronisering
@@ -534,6 +616,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Sæt dagens dato som gennemførelsesdato
   async function setTodayAsCompletionDate(gameId) {
+    if (isStoreDestroyed.value) return false;
+    
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
@@ -565,6 +649,8 @@ export const useGameStore = defineStore('game', () => {
 
   // Skift platform for et spil
   async function changePlatform(gameId, platformData) {
+    if (isStoreDestroyed.value) return false;
+    
     const game = games.value.find(g => g.id === gameId);
     if (!game) return false;
 
@@ -593,7 +679,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Opdater rækkefølgen for spil
   async function updateGameOrder(changedGames) {
-    if (!userStore.currentUser) return false;
+    if (!userStore.currentUser || isStoreDestroyed.value) return false;
 
     updateSyncStatus('syncing', 'updatingOrder');
 
@@ -632,24 +718,59 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // Ryd spildata når brugeren logger ud
+  // Comprehensive cleanup function
   function clearGames() {
+    console.log('Clearing games store...');
+    
+    // Set destruction flag first
+    isStoreDestroyed.value = true;
+    
+    // Clear data
     games.value = [];
     pendingChanges.value = [];
 
-    if (unsubscribe) {
-      unsubscribe();
-      unsubscribe = null;
-    }
-
+    // Clear all timers
+    activeTimers.forEach(timerId => {
+      clearTimeout(timerId);
+    });
+    activeTimers.clear();
+    
+    // Clear sync timer specifically
     if (syncTimer) {
-      clearTimeout(syncTimer);
+      clearTimer(syncTimer);
       syncTimer = null;
     }
+
+    // Clear all subscriptions
+    activeSubscriptions.forEach(unsubscribeFn => {
+      try {
+        unsubscribeFn();
+      } catch (error) {
+        console.warn('Error unsubscribing:', error);
+      }
+    });
+    activeSubscriptions.clear();
+    
+    // Clear main subscription
+    if (unsubscribe) {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('Error clearing main subscription:', error);
+      }
+      unsubscribe = null;
+    }
+  }
+
+  // Store reactivation function
+  function reactivateStore() {
+    isStoreDestroyed.value = false;
   }
 
   // Eksporter spilliste til JSON
   function exportGames() {
+    if (isStoreDestroyed.value) return;
+    
     const jsonData = JSON.stringify(games.value, null, 2);
     const blob = new Blob([jsonData], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -665,7 +786,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Importér spilliste fra JSON
   async function importGames(jsonData) {
-    if (!userStore.currentUser) return false;
+    if (!userStore.currentUser || isStoreDestroyed.value) return false;
 
     updateSyncStatus('syncing', 'importing');
 
@@ -687,7 +808,7 @@ export const useGameStore = defineStore('game', () => {
 
       const result = await gamesService.value.batchUpdate(batchOperations);
 
-      if (result.success) {
+      if (result.success && !isStoreDestroyed.value) {
         // Opdater lokal state
         await loadGames(); // Genindlæs spil efter import
         updateSyncStatus('success', 'imported', updatedGames.length);
@@ -703,12 +824,30 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // Sørg for at ikke-autentificerede brugere ikke kan tilgå eller ændre data
+  // Watch for user logout to cleanup
   watch(() => userStore.isLoggedIn, (isLoggedIn) => {
     if (!isLoggedIn) {
       clearGames();
+    } else {
+      reactivateStore();
     }
   });
+
+  // Emergency cleanup on page unload
+  if (typeof window !== 'undefined') {
+    const handleBeforeUnload = () => {
+      clearGames();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Override clearGames to also cleanup event listener
+    const originalClearGames = clearGames;
+    clearGames = function() {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      originalClearGames.call(this);
+    };
+  }
 
   return {
     // State
@@ -717,6 +856,7 @@ export const useGameStore = defineStore('game', () => {
     syncStatus,
     statusList,
     filteredGames,
+    isStoreDestroyed: readonly(isStoreDestroyed),
 
     // Getters
     gamesByStatus,
@@ -733,6 +873,7 @@ export const useGameStore = defineStore('game', () => {
     changePlatform,
     updateGameOrder,
     clearGames,
+    reactivateStore,
     exportGames,
     importGames,
     updateSyncStatus,

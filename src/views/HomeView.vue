@@ -1,4 +1,3 @@
-<!-- src/views/HomeView.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, inject } from 'vue';
 import { useMediaTypeStore } from '../stores/mediaType';
@@ -17,6 +16,10 @@ const gameStore = useGameStore();
 const categoryStore = useCategoryStore();
 const searchTerm = ref('');
 const platformButtonRef = ref(null);
+
+// Memory leak prevention
+const isComponentDestroyed = ref(false);
+const activeEventListeners = new Set();
 
 const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
@@ -86,19 +89,21 @@ const showImportModal = computed({
 
 // Lyt efter ændringer i props
 watch(() => props.showAddGameModal, (newVal) => {
-  localShowAddGameModal.value = newVal;
+  if (!isComponentDestroyed.value) {
+    localShowAddGameModal.value = newVal;
+  }
 });
 
 watch(() => props.showPlatformModal, (newVal) => {
-  localShowPlatformModal.value = newVal;
+  if (!isComponentDestroyed.value) {
+    localShowPlatformModal.value = newVal;
+  }
 });
 
 watch(() => props.showSettingsModal, (newVal) => {
-  localShowSettingsModal.value = newVal;
-});
-
-watch(() => props.showImportModal, (newVal) => {
-  localShowImportModal.value = newVal;
+  if (!isComponentDestroyed.value) {
+    localShowSettingsModal.value = newVal;
+  }
 });
 
 const showDeleteConfirmModal = ref(false);
@@ -112,46 +117,134 @@ const showEditDateModal = ref(false);
 const editingDateGameId = ref(null);
 const editingDate = ref('');
 
-useDragAndDrop();
+// Initialize drag and drop with memory leak protection
+const dragAndDropCleanup = useDragAndDrop();
 
+// Event handler functions - stored in variables for proper cleanup
+const handleClickOutside = (event) => {
+  if (isComponentDestroyed.value) return;
+  
+  // Håndterer Edit Menu
+  if (activeEditMenu.value && !event.target.closest('.edit-menu') && !event.target.classList.contains('edit-btn')) {
+    activeEditMenu.value = null;
+  }
+
+  // Håndterer Platform Menu
+  if (activePlatformMenu.value && !event.target.closest('.platform-tag-menu') && !event.target.classList.contains('platform-pill')) {
+    activePlatformMenu.value = null;
+  }
+
+  if (cardToMove.value &&
+    !event.target.closest('.move-arrows') &&
+    !event.target.classList.contains('move-btn')) {
+    disableMoveMode();
+  }
+};
+
+const handleScroll = () => {
+  if (isComponentDestroyed.value) return;
+  
+  if (activePlatformMenu.value && platformButtonRef.value) {
+    const rect = platformButtonRef.value.getBoundingClientRect();
+    // Opdater positionen baseret på knappens nye position efter scroll
+    activePlatformMenu.value.x = rect.left;
+    activePlatformMenu.value.y = rect.top;
+  }
+};
+
+// Lyt efter søgninger fra sidebar - improved with proper cleanup
+const handleAppSearch = (event) => {
+  if (isComponentDestroyed.value) return;
+  
+  searchTerm.value = event.detail.term;
+};
+
+// Utility function to add event listener with tracking
+function addTrackedEventListener(target, event, handler, options = false) {
+  if (isComponentDestroyed.value) return;
+  
+  target.addEventListener(event, handler, options);
+  
+  // Store cleanup function
+  const cleanup = () => target.removeEventListener(event, handler, options);
+  activeEventListeners.add(cleanup);
+  
+  return cleanup;
+}
+
+// Component lifecycle
 onMounted(async () => {
+  isComponentDestroyed.value = false;
+  
   document.title = mediaTypeStore.config.name;
   await gameStore.loadGames();
   await categoryStore.loadPlatforms();
   
-  // Event listeners - konsolideret til én onMounted hook
-  document.addEventListener('click', handleClickOutside);
-  window.addEventListener('scroll', handleScroll);
-  
-  // Lyt efter søgninger fra sidebar
-  window.addEventListener('app-search', (event) => {
-    searchTerm.value = event.detail.term;
-  });
+  // Event listeners - konsolideret til én onMounted hook med proper tracking
+  addTrackedEventListener(document, 'click', handleClickOutside);
+  addTrackedEventListener(window, 'scroll', handleScroll);
+  addTrackedEventListener(window, 'app-search', handleAppSearch);
 });
+
+// Comprehensive cleanup function
+function cleanup() {
+  isComponentDestroyed.value = true;
+  
+  // Clean up all tracked event listeners
+  activeEventListeners.forEach(cleanupFn => {
+    try {
+      cleanupFn();
+    } catch (error) {
+      console.warn('Error removing event listener:', error);
+    }
+  });
+  activeEventListeners.clear();
+  
+  // Clean up drag and drop
+  if (dragAndDropCleanup && typeof dragAndDropCleanup.cleanup === 'function') {
+    dragAndDropCleanup.cleanup();
+  }
+  
+  // Reset component state
+  activeEditMenu.value = null;
+  activePlatformMenu.value = null;
+  cardToMove.value = null;
+}
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-  window.removeEventListener('scroll', handleScroll);
-  window.removeEventListener('app-search', () => {});
+  cleanup();
 });
 
+// Emergency cleanup
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', cleanup);
+}
+
+// Watch for sync status changes with component state check
 watch(() => gameStore.syncStatus, (newStatus) => {
-  console.log('Sync status changed:', newStatus);
+  if (!isComponentDestroyed.value) {
+    console.log('Sync status changed:', newStatus);
+  }
 }, { deep: true });
 
 // Søgefunktion
 function handleSearch(term) {
+  if (isComponentDestroyed.value) return;
   searchTerm.value = term;
 }
 
 // Generisk funktion til at vise kontekstmenuer
 function showContextMenu(menuType, gameId, x, y, element) {
+  if (isComponentDestroyed.value) return;
+  
   // Luk eksisterende menuer
   activeEditMenu.value = null;
   activePlatformMenu.value = null;
 
   // Åbn ny menu
   nextTick(() => {
+    if (isComponentDestroyed.value) return;
+    
     if (menuType === 'edit') {
       activeEditMenu.value = { gameId, x, y, element };
     } else if (menuType === 'platform') {
@@ -171,35 +264,9 @@ function showPlatformMenu(gameId, platform, x, y, element) {
   showContextMenu('platform', gameId, platform, x, y);
 }
 
-function handleScroll() {
-  if (activePlatformMenu.value && platformButtonRef.value) {
-    const rect = platformButtonRef.value.getBoundingClientRect();
-    // Opdater positionen baseret på knappens nye position efter scroll
-    activePlatformMenu.value.x = rect.left;
-    activePlatformMenu.value.y = rect.top;
-  }
-}
-
-// Luk alle menus ved klik udenfor
-function handleClickOutside(event) {
-  // Håndterer Edit Menu
-  if (activeEditMenu.value && !event.target.closest('.edit-menu') && !event.target.classList.contains('edit-btn')) {
-    activeEditMenu.value = null;
-  }
-
-  // Håndterer Platform Menu
-  if (activePlatformMenu.value && !event.target.closest('.platform-tag-menu') && !event.target.classList.contains('platform-pill')) {
-    activePlatformMenu.value = null;
-  }
-
-  if (cardToMove.value &&
-    !event.target.closest('.move-arrows') &&
-    !event.target.classList.contains('move-btn')) {
-    disableMoveMode();
-  }
-}
-
 function saveEditedTitle() {
+  if (isComponentDestroyed.value) return;
+  
   if (editingGameTitle.value.trim() !== '') {
     gameStore.updateGameTitle(editingGameId.value, editingGameTitle.value);
     showEditTitleModal.value = false;
@@ -208,6 +275,8 @@ function saveEditedTitle() {
 
 // Menu actions
 function performEditMenuAction(action, gameId) {
+  if (isComponentDestroyed.value) return;
+  
   const game = gameStore.games.find(g => g.id === gameId);
   if (!game) return;
 
@@ -247,6 +316,8 @@ function performEditMenuAction(action, gameId) {
 }
 
 function confirmDelete() {
+  if (isComponentDestroyed.value) return;
+  
   if (gameToDelete.value) {
     gameStore.deleteGame(gameToDelete.value);
     activeEditMenu.value = null; // Luk også edit-menuen efter sletning
@@ -256,6 +327,8 @@ function confirmDelete() {
 }
 
 function saveEditedDate() {
+  if (isComponentDestroyed.value) return;
+  
   if (editingDateGameId.value) {
     gameStore.setCompletionDate(editingDateGameId.value, editingDate.value);
     showEditDateModal.value = false;
@@ -264,6 +337,8 @@ function saveEditedDate() {
 
 // Implementér toggleMoveMode funktionen
 function toggleMoveMode(gameId) {
+  if (isComponentDestroyed.value) return;
+  
   if (cardToMove.value === gameId) {
     // Deaktiver flyttilstand
     disableMoveMode();
@@ -305,6 +380,8 @@ function toggleMoveMode(gameId) {
 }
 
 function disableMoveMode() {
+  if (isComponentDestroyed.value) return;
+  
   cardToMove.value = null;
 
   // Fjern markeringer og skjul pile på alle kort
@@ -317,9 +394,10 @@ function disableMoveMode() {
   });
 }
 
-
 // Implementér moveCardRelative funktionen for at flytte et kort relativt til et andet
 async function moveCardRelative(sourceGameId, targetGameId, position) {
+  if (isComponentDestroyed.value) return;
+  
   const sourceGame = gameStore.games.find(g => g.id === sourceGameId);
   const targetGame = gameStore.games.find(g => g.id === targetGameId);
 
@@ -363,6 +441,8 @@ async function moveCardRelative(sourceGameId, targetGameId, position) {
 
 // Implementér moveCard funktionen
 async function moveCard(gameId, direction) {
+  if (isComponentDestroyed.value) return;
+  
   const game = gameStore.games.find(g => g.id === gameId);
   if (!game) return;
 
@@ -400,6 +480,8 @@ async function moveCard(gameId, direction) {
 
 // Platform menu action
 function changePlatform(gameId, platformId) {
+  if (isComponentDestroyed.value) return;
+  
   const platform = categoryStore.platforms.find(p => p.id === platformId);
   if (platform) {
     gameStore.changePlatform(gameId, platform);
@@ -409,6 +491,8 @@ function changePlatform(gameId, platformId) {
 
 // Tilføj nyt spil
 async function addGame() {
+  if (isComponentDestroyed.value) return;
+  
   if (!newGameTitle.value || !selectedPlatform.value) return;
 
   // Skift fra .categories til .platforms
@@ -423,10 +507,12 @@ async function addGame() {
 }
 
 function openAddGameModal() {
+  if (isComponentDestroyed.value) return;
   showAddGameModal.value = true;
 }
 
 function openPlatformModal() {
+  if (isComponentDestroyed.value) return;
   showPlatformModal.value = true;
 }
 </script>

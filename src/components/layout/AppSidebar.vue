@@ -1,6 +1,6 @@
 <!-- src/components/layout/AppSidebar.vue (opdateret) -->
 <script setup>
-import { ref, watch, computed, inject } from 'vue';
+import { ref, watch, computed, inject, onMounted, onBeforeUnmount } from 'vue';
 import { useMediaTypeStore } from '../../stores/mediaType';
 import { useUserStore } from '../../stores/user';
 import { useRouter } from 'vue-router';
@@ -22,29 +22,55 @@ const gameStore = useGameStore();
 const categoryStore = useCategoryStore();
 const router = useRouter();
 
+// Memory leak prevention
+const isComponentDestroyed = ref(false);
+
 // Få adgang til openModal funktion
 const openModal = inject('openModal', null);
 
 // Lyt til collapsed prop ændringer
 watch(() => props.collapsed, (newValue) => {
-  isCollapsed.value = newValue;
+  if (!isComponentDestroyed.value) {
+    isCollapsed.value = newValue;
+  }
 });
 
 function toggleSidebar() {
+  if (isComponentDestroyed.value) return;
+  
   isCollapsed.value = !isCollapsed.value;
   emit('toggle', isCollapsed.value);
 }
 
 // Søgefelt
 const searchInput = ref('');
+
+// Debounced search function for better performance
+let searchTimeout = null;
+
 function handleSearch() {
-  const searchEvent = new CustomEvent('app-search', { 
-    detail: { term: searchInput.value }
-  });
-  window.dispatchEvent(searchEvent);
+  if (isComponentDestroyed.value) return;
+  
+  // Clear previous timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  
+  // Debounce search for 300ms
+  searchTimeout = setTimeout(() => {
+    if (!isComponentDestroyed.value) {
+      const searchEvent = new CustomEvent('app-search', { 
+        detail: { term: searchInput.value }
+      });
+      window.dispatchEvent(searchEvent);
+    }
+    searchTimeout = null;
+  }, 300);
 }
 
 function clearSearch() {
+  if (isComponentDestroyed.value) return;
+  
   searchInput.value = '';
   handleSearch();
 }
@@ -60,6 +86,7 @@ const isItemActive = (itemId) => {
 };
 
 function navigateTo(path) {
+  if (isComponentDestroyed.value) return;
   router.push(path);
 }
 
@@ -70,6 +97,8 @@ const currentAppIcon = computed(() => {
 
 // Åbn indstillinger for den aktuelle medietype
 function openSettingsModal() {
+  if (isComponentDestroyed.value) return;
+  
   if (openModal) {
     openModal('settings');
   }
@@ -77,12 +106,16 @@ function openSettingsModal() {
 
 // Ny funktion for at åbne relevante modaler baseret på medietype
 function openAddModal() {
+  if (isComponentDestroyed.value) return;
+  
   if (openModal) {
     openModal('addGame');
   }
 }
 
 function openCategoryModal() {
+  if (isComponentDestroyed.value) return;
+  
   if (openModal) {
     openModal('platform');
   }
@@ -95,6 +128,8 @@ const mediaMenuItems = [
     icon: '🎮',
     label: 'GameTrack',
     action: async () => {
+      if (isComponentDestroyed.value) return;
+      
       if (mediaTypeStore.currentType !== 'game') {
         await mediaTypeStore.setMediaType('game');
         await gameStore.loadGames();
@@ -120,6 +155,8 @@ const mediaMenuItems = [
     icon: '🎬',
     label: 'MovieTrack',
     action: async () => {
+      if (isComponentDestroyed.value) return;
+      
       if (mediaTypeStore.currentType !== 'movie') {
         await mediaTypeStore.setMediaType('movie');
         await gameStore.loadGames();
@@ -145,6 +182,8 @@ const mediaMenuItems = [
     icon: '📚',
     label: 'BookTrack',
     action: async () => {
+      if (isComponentDestroyed.value) return;
+      
       if (mediaTypeStore.currentType !== 'book') {
         await mediaTypeStore.setMediaType('book');
         await gameStore.loadGames();
@@ -179,6 +218,8 @@ const otherMenuItems = [
 
 // Funktion til at åbne indstillinger for specifik medietype
 function openSettingsForType(typeId) {
+  if (isComponentDestroyed.value) return;
+  
   if (mediaTypeStore.currentType !== typeId) {
     mediaTypeStore.setMediaType(typeId);
   }
@@ -193,9 +234,36 @@ const isDashboardActive = computed(() => {
 });
 
 async function logout() {
+  if (isComponentDestroyed.value) return;
+  
   await gameStore.syncWithFirebase?.();
   await userStore.logout();
   router.push({ name: 'login' });
+}
+
+// Cleanup function
+function cleanup() {
+  isComponentDestroyed.value = true;
+  
+  // Clear search timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+}
+
+// Component lifecycle
+onMounted(() => {
+  isComponentDestroyed.value = false;
+});
+
+onBeforeUnmount(() => {
+  cleanup();
+});
+
+// Emergency cleanup
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', cleanup);
 }
 </script>
 
@@ -301,6 +369,7 @@ async function logout() {
   </aside>
 </template>
 
+<!-- CSS unchanged - keeping original styles -->
 <style scoped>
 .sidebar {
   background-color: var(--header-bg);

@@ -1,6 +1,6 @@
 <!-- src/components/layout/MobileNavigation.vue (opdateret) -->
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useMediaTypeStore } from '../../stores/mediaType';
 import { useRouter } from 'vue-router';
 import { useGameStore } from '../../stores/game.store';
@@ -11,6 +11,10 @@ const categoryStore = useCategoryStore();
 
 const mediaTypeStore = useMediaTypeStore();
 const router = useRouter();
+
+// Memory leak prevention
+const isComponentDestroyed = ref(false);
+const activeTimeouts = new Set();
 
 const showMediaMenu = ref(false);
 const showSearch = ref(false);
@@ -28,8 +32,32 @@ const actionConfig = computed(() => {
   };
 });
 
+// Timer management with cleanup tracking
+function createTimeout(callback, delay) {
+  if (isComponentDestroyed.value) return null;
+  
+  const timeoutId = setTimeout(() => {
+    activeTimeouts.delete(timeoutId);
+    if (!isComponentDestroyed.value) {
+      callback();
+    }
+  }, delay);
+  
+  activeTimeouts.add(timeoutId);
+  return timeoutId;
+}
+
+function clearTrackedTimeout(timeoutId) {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    activeTimeouts.delete(timeoutId);
+  }
+}
+
 // Luk alle menuer
 function closeAllMenus() {
+  if (isComponentDestroyed.value) return;
+  
   showMediaMenu.value = false;
   showSearch.value = false;
   showActionMenu.value = false;
@@ -37,6 +65,8 @@ function closeAllMenus() {
 
 // Toggle funktioner
 function toggleMediaMenu() {
+  if (isComponentDestroyed.value) return;
+  
   showMediaMenu.value = !showMediaMenu.value;
   if (showMediaMenu.value) {
     showSearch.value = false;
@@ -45,18 +75,27 @@ function toggleMediaMenu() {
 }
 
 function toggleSearch() {
+  if (isComponentDestroyed.value) return;
+  
   showSearch.value = !showSearch.value;
   if (showSearch.value) {
     showMediaMenu.value = false;
     showActionMenu.value = false;
-    // Fokuser på søgefeltet når det åbnes
-    setTimeout(() => {
-      document.getElementById('mobileSearchInput')?.focus();
+    // Fokuser på søgefeltet når det åbnes - with safety check
+    createTimeout(() => {
+      if (!isComponentDestroyed.value) {
+        const searchInput = document.getElementById('mobileSearchInput');
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
     }, 100);
   }
 }
 
 function toggleActionMenu() {
+  if (isComponentDestroyed.value) return;
+  
   showActionMenu.value = !showActionMenu.value;
   if (showActionMenu.value) {
     showMediaMenu.value = false;
@@ -64,22 +103,41 @@ function toggleActionMenu() {
   }
 }
 
-// Håndter søgning
+// Debounced search for better performance
+let searchTimeout = null;
+
 function handleSearch() {
-  // Emit search event som app'en kan lytte efter
-  const searchEvent = new CustomEvent('app-search', { 
-    detail: { term: searchInput.value }
-  });
-  window.dispatchEvent(searchEvent);
+  if (isComponentDestroyed.value) return;
+  
+  // Clear previous timeout
+  if (searchTimeout) {
+    clearTrackedTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  
+  // Debounce search for 300ms
+  searchTimeout = createTimeout(() => {
+    if (!isComponentDestroyed.value) {
+      const searchEvent = new CustomEvent('app-search', { 
+        detail: { term: searchInput.value }
+      });
+      window.dispatchEvent(searchEvent);
+    }
+    searchTimeout = null;
+  }, 300);
 }
 
 function clearSearch() {
+  if (isComponentDestroyed.value) return;
+  
   searchInput.value = '';
   handleSearch();
 }
 
 // Medietype-skift
 async function changeMediaType(type, event) {
+  if (isComponentDestroyed.value) return;
+  
   // Stop event propagation
   if (event) {
     event.stopPropagation();
@@ -95,8 +153,10 @@ async function changeMediaType(type, event) {
       await categoryStore.loadPlatforms();
       
       // Luk menu efter en kort forsinkelse
-      setTimeout(() => {
-        showMediaMenu.value = false;
+      createTimeout(() => {
+        if (!isComponentDestroyed.value) {
+          showMediaMenu.value = false;
+        }
       }, 100);
       
       console.log(`Skiftet til ${type}, data indlæst`);
@@ -110,6 +170,8 @@ async function changeMediaType(type, event) {
 
 // Åbne dashboardet
 function goToDashboard(event) {
+  if (isComponentDestroyed.value) return;
+  
   if (event) {
     event.stopPropagation();
   }
@@ -117,8 +179,10 @@ function goToDashboard(event) {
   router.push({ name: 'dashboard' });
   
   // Tilføj en lille forsinkelse før menuen lukkes
-  setTimeout(() => {
-    closeAllMenus();
+  createTimeout(() => {
+    if (!isComponentDestroyed.value) {
+      closeAllMenus();
+    }
   }, 100);
 }
 
@@ -126,23 +190,65 @@ function goToDashboard(event) {
 const emit = defineEmits(['openAddModal', 'openCategoryModal', 'openSettingsModal']);
 
 function openAddModal() {
+  if (isComponentDestroyed.value) return;
+  
   emit('openAddModal');
   closeAllMenus();
 }
 
 function openCategoryModal() {
+  if (isComponentDestroyed.value) return;
+  
   emit('openCategoryModal');
   closeAllMenus();
 }
 
 // Ny funktion til at åbne indstillinger
 function openSettingsModal(type) {
+  if (isComponentDestroyed.value) return;
+  
   // Skift medietype hvis nødvendigt
   if (type && mediaTypeStore.currentType !== type) {
     mediaTypeStore.setMediaType(type);
   }
   emit('openSettingsModal');
   closeAllMenus();
+}
+
+// Cleanup function
+function cleanup() {
+  isComponentDestroyed.value = true;
+  
+  // Clear all timeouts
+  activeTimeouts.forEach(timeoutId => {
+    clearTimeout(timeoutId);
+  });
+  activeTimeouts.clear();
+  
+  // Clear search timeout specifically
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  
+  // Close all menus
+  showMediaMenu.value = false;
+  showSearch.value = false;
+  showActionMenu.value = false;
+}
+
+// Component lifecycle
+onMounted(() => {
+  isComponentDestroyed.value = false;
+});
+
+onBeforeUnmount(() => {
+  cleanup();
+});
+
+// Emergency cleanup
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', cleanup);
 }
 </script>
 
@@ -178,7 +284,7 @@ function openSettingsModal(type) {
           <button 
             class="dropdown-settings-btn" 
             @click.stop="openSettingsModal('movie')"
-            aria-label="Indstillinger for MovieTrack"
+            aria-label="Indstillinger för MovieTrack"
           >⚙️</button>
         </div>
         <div class="dropdown-item dropdown-item-with-settings">
@@ -242,6 +348,7 @@ function openSettingsModal(type) {
   ></div>
 </template>
 
+<!-- CSS unchanged - keeping original styles -->
 <style scoped>
 .mobile-navigation {
   display: flex;
