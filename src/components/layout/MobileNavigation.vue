@@ -203,16 +203,29 @@ function openCategoryModal() {
   closeAllMenus();
 }
 
-// Ny funktion til at åbne indstillinger
-function openSettingsModal(type) {
+async function openSettingsModal(type) {
   if (isComponentDestroyed.value) return;
   
-  // Skift medietype hvis nødvendigt
   if (type && mediaTypeStore.currentType !== type) {
-    mediaTypeStore.setMediaType(type);
+    try {
+      await mediaTypeStore.setMediaType(type);
+      await gameStore.loadGames();
+      await categoryStore.loadPlatforms();
+      await router.push({ name: 'home' });
+      closeAllMenus();
+      setTimeout(() => {
+        if (!isComponentDestroyed.value) {
+          emit('openSettingsModal');
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Fejl ved skift af medietype:', error);
+      closeAllMenus();
+    }
+  } else {
+    emit('openSettingsModal');
+    closeAllMenus();
   }
-  emit('openSettingsModal');
-  closeAllMenus();
 }
 
 // Cleanup function

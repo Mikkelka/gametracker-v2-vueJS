@@ -217,14 +217,22 @@ const otherMenuItems = [
 ];
 
 // Funktion til at åbne indstillinger for specifik medietype
-function openSettingsForType(typeId) {
+async function openSettingsForType(typeId) {
   if (isComponentDestroyed.value) return;
-  
-  if (mediaTypeStore.currentType !== typeId) {
-    mediaTypeStore.setMediaType(typeId);
-  }
-  if (openModal) {
-    openModal('settings');
+  if (mediaTypeStore.currentType !== typeId) {   
+    await mediaTypeStore.setMediaType(typeId);
+    await gameStore.loadGames();
+    await categoryStore.loadPlatforms();  
+    await router.push({ name: 'home' });   
+    setTimeout(() => {
+      if (!isComponentDestroyed.value && openModal) {
+        openModal('settings');
+      }
+    }, 100);
+  } else {  
+    if (openModal) {
+      openModal('settings');
+    }
   }
 }
 
