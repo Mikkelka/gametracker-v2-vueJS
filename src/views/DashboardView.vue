@@ -94,6 +94,11 @@ onMounted(() => {
           Log ud
         </button>
       </div>
+
+      <div class="version">
+        v 3.0.0
+      </div>
+
     </main>
 
     <!-- Tilføj modal til redigering af navn -->
@@ -265,5 +270,14 @@ onMounted(() => {
     width: 100%;
     max-width: 200px;
   }
+}
+
+.version {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  text-align: center;
 }
 </style>
