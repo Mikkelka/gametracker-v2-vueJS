@@ -40,7 +40,7 @@ function showPlatformMenu(event) {
 <template>
   <div 
     class="card" 
-    :class="{ favorite: game.favorite }" 
+    :class="{ favorite: game.favorite, 'has-note': game.hasNote }" 
     :data-id="game.id"
     :data-order="game.order || 0"
     draggable="true"
@@ -185,6 +185,23 @@ function showPlatformMenu(event) {
 
 .card.drag-over-bottom {
   border-bottom: solid 10px var(--button-bg);
+}
+
+.card.favorite {
+  border-color: gold;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.card.has-note::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background-color: var(--button-bg);
+  border-radius: 12px 0 6px 0;
+  border: 2px solid var(--card-bg);
 }
 
 @media (max-width: 768px) {

@@ -6,6 +6,7 @@ import { useMediaTypeStore } from './mediaType';
 import { useGameSync } from './modules/gameSync';
 import { useGameOperations } from './modules/gameOperations';
 import { useGameValidation } from './modules/gameValidation';
+import { useGameNotes } from './modules/gameNotes';
 
 export const useGameStore = defineStore('game', () => {
   // Core state
@@ -15,12 +16,15 @@ export const useGameStore = defineStore('game', () => {
   // Store dependencies
   const mediaTypeStore = useMediaTypeStore();
   const userStore = useUserStore();
+ 
   
   // Initialize modules
   const gameValidation = useGameValidation();
   const gameSync = useGameSync(mediaTypeStore, userStore);
   const gameOperations = useGameOperations(games, gameSync, gameValidation, mediaTypeStore, userStore);
   
+  const gameNotes = useGameNotes(games, gameSync, userStore);
+
   // Real-time listener reference
   let unsubscribe = null;
 
@@ -28,7 +32,6 @@ export const useGameStore = defineStore('game', () => {
   const statusList = computed(() => mediaTypeStore.config.statusList);
   
   const filteredGames = computed(() => {
-    // Return all games for now, regardless of media type
     return games.value;
   });
 
@@ -42,9 +45,7 @@ export const useGameStore = defineStore('game', () => {
     return grouped;
   });
 
-  /**
-   * Load games with real-time listener
-   */
+  
   async function loadGames() {
     if (!userStore.currentUser || gameSync.isDestroyed.value) return;
 
@@ -89,14 +90,15 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  /**
-   * Comprehensive cleanup function
-   */
+  
   function clearGames() {
     console.log('Clearing games store...');
     
     // Clear data
     games.value = [];
+
+    // Cleanup notes module
+    gameNotes.cleanup();
     
     // Cleanup subscription
     if (unsubscribe) {
@@ -112,11 +114,10 @@ export const useGameStore = defineStore('game', () => {
     gameSync.cleanup();
   }
 
-  /**
-   * Reactivate store after cleanup
-   */
+  
   function reactivateStore() {
     gameSync.reactivate();
+    gameNotes.reactivate();
   }
 
   // Watch for user logout to cleanup
@@ -162,6 +163,13 @@ export const useGameStore = defineStore('game', () => {
     loadGames,
     clearGames,
     reactivateStore,
+
+    // Notes methods (from notes module)
+    hasNote: gameNotes.hasNote,
+    loadNote: gameNotes.loadNote,
+    saveNote: gameNotes.saveNote,
+    deleteNote: gameNotes.deleteNote,
+    copyNoteToClipboard: gameNotes.copyToClipboard,
 
     // CRUD operations (from operations module)
     addGame: gameOperations.addGame,

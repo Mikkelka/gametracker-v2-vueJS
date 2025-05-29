@@ -1,18 +1,8 @@
-// src/stores/modules/gameValidation.js
 import { useMediaTypeStore } from '../mediaType';
 
-/**
- * Validation and business logic module for games
- */
 export function useGameValidation() {
   const mediaTypeStore = useMediaTypeStore();
 
-  /**
-   * Validate game title
-   * @param {string} title - Game title to validate
-   * @returns {string} - Cleaned title
-   * @throws {Error} - If validation fails
-   */
   function validateGameTitle(title) {
     if (!title?.trim()) {
       throw new Error('Titel er påkrævet');
@@ -31,12 +21,6 @@ export function useGameValidation() {
     return cleanTitle;
   }
 
-  /**
-   * Validate completion date format
-   * @param {string} date - Date string to validate (DD-MM-YYYY)
-   * @returns {string|null} - Cleaned date or null if empty
-   * @throws {Error} - If date format is invalid
-   */
   function validateCompletionDate(date) {
     if (!date || date.trim() === '') {
       return null;
@@ -62,12 +46,7 @@ export function useGameValidation() {
     return cleanDate;
   }
 
-  /**
-   * Validate platform data
-   * @param {Object} platformData - Platform object with name and color
-   * @returns {Object} - Validated platform data
-   * @throws {Error} - If validation fails
-   */
+ 
   function validatePlatformData(platformData) {
     if (!platformData || typeof platformData !== 'object') {
       throw new Error('Platform data er påkrævet');
@@ -87,12 +66,7 @@ export function useGameValidation() {
     };
   }
 
-  /**
-   * Validate game status against allowed statuses
-   * @param {string} status - Status to validate
-   * @returns {string} - Validated status
-   * @throws {Error} - If status is invalid
-   */
+  
   function validateGameStatus(status) {
     const validStatuses = mediaTypeStore.config.statusList.map(s => s.id);
     
@@ -103,11 +77,7 @@ export function useGameValidation() {
     return status;
   }
 
-  /**
-   * Validate order value
-   * @param {number|string} order - Order value to validate
-   * @returns {number} - Validated order as number
-   */
+  
   function validateOrder(order) {
     const orderNum = Number(order) || 0;
     
@@ -122,11 +92,7 @@ export function useGameValidation() {
     return orderNum;
   }
 
-  /**
-   * Check if user has reached game limit
-   * @param {number} currentGameCount - Current number of games
-   * @returns {boolean} - True if limit is reached
-   */
+  
   function hasReachedGameLimit(currentGameCount) {
     const maxGames = parseInt(import.meta.env.VITE_MAX_GAMES_PER_USER);
     
@@ -138,10 +104,7 @@ export function useGameValidation() {
     return currentGameCount >= maxGames;
   }
 
-  /**
-   * Get the default "will" status for current media type
-   * @returns {string} - Default status ID
-   */
+ 
   function getDefaultWillStatus() {
     const willStatus = mediaTypeStore.config.statusList.find(s =>
       s.name.toLowerCase().startsWith('vil ')
@@ -150,10 +113,7 @@ export function useGameValidation() {
     return willStatus ? willStatus.id : 'willplay'; // fallback
   }
 
-  /**
-   * Generate today's date in DD-MM-YYYY format
-   * @returns {string} - Formatted date string
-   */
+  
   function getTodayDateString() {
     const today = new Date();
     return `${today.getDate().toString().padStart(2, "0")}-${(
@@ -161,11 +121,7 @@ export function useGameValidation() {
     ).toString().padStart(2, "0")}-${today.getFullYear()}`;
   }
 
-  /**
-   * Sanitize game data for storage
-   * @param {Object} gameData - Raw game data
-   * @returns {Object} - Sanitized game data
-   */
+  
   function sanitizeGameData(gameData) {
     const sanitized = { ...gameData };
     
@@ -194,12 +150,10 @@ export function useGameValidation() {
     return sanitized;
   }
 
-  /**
-   * Validate complete game object
-   * @param {Object} gameData - Game data to validate
-   * @returns {Object} - Validated and sanitized game data
-   * @throws {Error} - If validation fails
-   */
+  function validateHasNote(hasNote) {
+    return Boolean(hasNote);
+  }
+
   function validateGameData(gameData) {
     if (!gameData || typeof gameData !== 'object') {
       throw new Error('Game data er påkrævet');
@@ -209,6 +163,7 @@ export function useGameValidation() {
       ...gameData,
       title: validateGameTitle(gameData.title),
       status: validateGameStatus(gameData.status),
+      hasNote: validateHasNote(gameData.hasNote),
       order: validateOrder(gameData.order)
     };
     
@@ -218,6 +173,8 @@ export function useGameValidation() {
     
     return sanitizeGameData(validated);
   }
+
+  
 
   return {
     validateGameTitle,

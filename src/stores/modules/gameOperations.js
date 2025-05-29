@@ -1,13 +1,8 @@
 // src/stores/modules/gameOperations.js
 import { ref, computed } from 'vue';
 
-/**
- * CRUD operations module for games
- */
 export function useGameOperations(games, gameSync, gameValidation, mediaTypeStore, userStore) {
-  /**
-   * Add a new game
-   */
+  
   async function addGame(title, platformData) {
     if (gameSync.isDestroyed.value) return null;
     
@@ -65,9 +60,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Update game title
-   */
+  
   async function updateGameTitle(gameId, newTitle) {
     if (gameSync.isDestroyed.value) return false;
     
@@ -98,9 +91,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Delete a game
-   */
+  
   async function deleteGame(gameId) {
     if (!userStore.currentUser || gameSync.isDestroyed.value) return false;
 
@@ -125,9 +116,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Move game to new status with specific position
-   */
+  
   async function moveGameToStatus(gameId, newStatus, specificPosition = null) {
     if (gameSync.isDestroyed.value) return false;
     
@@ -196,9 +185,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Toggle favorite status
-   */
+ 
   async function toggleFavorite(gameId) {
     if (gameSync.isDestroyed.value) return false;
     
@@ -227,9 +214,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Set completion date
-   */
+ 
   async function setCompletionDate(gameId, date) {
     if (gameSync.isDestroyed.value) return false;
     
@@ -266,9 +251,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Set today as completion date
-   */
+ 
   async function setTodayAsCompletionDate(gameId) {
     if (gameSync.isDestroyed.value) return false;
     
@@ -299,9 +282,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Change platform/category
-   */
+ 
   async function changePlatform(gameId, platformData) {
     if (gameSync.isDestroyed.value) return false;
     
@@ -334,9 +315,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Update game order (bulk operation)
-   */
+ 
   async function updateGameOrder(changedGames) {
     if (!userStore.currentUser || gameSync.isDestroyed.value) return false;
 
@@ -380,9 +359,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Export games to JSON
-   */
+ 
   function exportGames() {
     if (gameSync.isDestroyed.value) return;
     
@@ -404,9 +381,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
     }
   }
 
-  /**
-   * Import games from JSON
-   */
+ 
   async function importGames(jsonData) {
     if (!userStore.currentUser || gameSync.isDestroyed.value) return false;
 
