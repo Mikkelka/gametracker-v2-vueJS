@@ -41,13 +41,11 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
 
-  // Vent på auth-initialisering kun én gang per app livscyklus
   if (userStore.isLoading) {
     try {
       await userStore.initUser();
     } catch (error) {
       console.error('Error initializing user:', error);
-      // Gå videre selvom der er en fejl, men send til login
       next({ name: 'login' });
       return;
     }
@@ -59,10 +57,15 @@ router.beforeEach(async (to, from, next) => {
     if (!isLoggedIn) {
       next({ name: 'login' });
     } else {
-      next();
+      // Redirect til dashboard ved refresh/første besøg
+      if (to.name === 'home' && from.name === undefined) {
+        next({ name: 'dashboard' });
+      } else {
+        next();
+      }
     }
   } else if (to.matched.some(record => record.meta.guest) && isLoggedIn) {
-    next({ name: 'home' });
+    next({ name: 'dashboard' });
   } else {
     next();
   }
