@@ -689,7 +689,7 @@ function openPlatformModal() {
       </div>
     </main>
 
-    <!-- Edit Menu -->
+    <!-- Edit Menu - Erstat hele din edit-menu sektion med dette -->
     <div
       v-if="activeEditMenu"
       class="edit-menu"
@@ -700,55 +700,68 @@ function openPlatformModal() {
         zIndex: 1000,
       }"
     >
+      <!-- Action buttons - favorit og slet øverst -->
+      <div class="edit-menu-actions">
+        <button
+          class="icon-btn favorite-btn"
+          :class="{ 'is-favorited': gameStore.games.find(g => g.id === activeEditMenu.gameId)?.favorite }"
+          @click="performEditMenuAction('favorite', activeEditMenu.gameId)"
+          :title="gameStore.games.find(g => g.id === activeEditMenu.gameId)?.favorite ? 'Fjern favorit' : 'Marker som favorit'"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </button>
+        
+        <button
+          class="icon-btn delete-btn"
+          @click="performEditMenuAction('delete', activeEditMenu.gameId)"
+          title="Slet"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Regular menu buttons - kun tekst, ingen ikoner -->
       <button
-        class="favorite-btn"
-        @click="performEditMenuAction('favorite', activeEditMenu.gameId)"
-      >
-        {{
-          gameStore.games.find((g) => g.id === activeEditMenu.gameId)?.favorite
-            ? "Fjern favorit"
-            : "Marker som favorit"
-        }}
-      </button>
-      <button
-        class="note-btn"
+        class="menu-btn note-btn"
         @click="performEditMenuAction('note', activeEditMenu.gameId)"
       >
         {{
           gameStore.games.find((g) => g.id === activeEditMenu.gameId)?.hasNote
-            ? "📝 Rediger note"
-            : "📝 Tilføj note"
+            ? "Rediger note"
+            : "Tilføj note"
         }}
       </button>
+      
       <button
-        class="edit-title-btn"
+        class="menu-btn edit-title-btn"
         @click="performEditMenuAction('edit-title', activeEditMenu.gameId)"
       >
         Rediger titel
       </button>
+      
       <button
-        class="edit-date-btn"
+        class="menu-btn edit-date-btn"
         @click="performEditMenuAction('edit-date', activeEditMenu.gameId)"
       >
         Rediger dato
       </button>
+      
       <button
-        class="today-date-btn"
+        class="menu-btn today-date-btn"
         @click="performEditMenuAction('today-date', activeEditMenu.gameId)"
       >
         Dagens dato
       </button>
+      
       <button
-        class="move-btn"
+        class="menu-btn move-btn"
         @click="performEditMenuAction('move', activeEditMenu.gameId)"
       >
         Flyt kort
-      </button>
-      <button
-        class="delete-btn"
-        @click="performEditMenuAction('delete', activeEditMenu.gameId)"
-      >
-        Slet
       </button>
     </div>
 
@@ -983,7 +996,6 @@ function openPlatformModal() {
 #app {
   padding: 1rem;
   padding-top: 1rem;
-  /* min-height: calc(100vh); */
 }
 
 #listsContainer {
@@ -993,24 +1005,188 @@ function openPlatformModal() {
   justify-content: center;
 }
 
-/* Edit Menu og Platform Menu styling */
-.edit-menu,
-.platform-tag-menu {
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
-  padding: 5px;
-  box-shadow: var(--shadow);
+/* ===== EDIT MENU ===== */
+.edit-menu {
+  --menu-radius: 16px;
+  --menu-padding: 1rem;
+  --button-height: 44px;
+  --icon-button-size: 36px;
+  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-menu: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+  
+  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--menu-radius);
+  padding: var(--menu-padding);
+  box-shadow: var(--shadow-menu);
+  backdrop-filter: blur(20px);
   z-index: 1000;
-  width: 160px;
+  width: 180px;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  position: relative;
+}
+
+.edit-menu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.edit-menu-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edit-menu .icon-btn {
+  width: var(--icon-button-size);
+  height: var(--icon-button-size);
+  border: none;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+}
+
+.edit-menu .icon-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.edit-menu .icon-btn:hover::before {
+  opacity: 1;
+}
+
+.edit-menu .icon-btn svg {
+  width: 16px;
+  height: 16px;
+  z-index: 1;
+  position: relative;
+}
+
+.edit-menu .favorite-btn {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.edit-menu .favorite-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.5);
+}
+
+.edit-menu .favorite-btn.is-favorited {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.edit-menu .delete-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.edit-menu .delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
+}
+
+.edit-menu .menu-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--button-height);
+  padding: 0 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.edit-menu .menu-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.edit-menu .menu-btn:hover::before {
+  opacity: 1;
+}
+
+.edit-menu .menu-btn:hover {
+  transform: translateX(4px);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.edit-menu .menu-btn:active {
+  transform: translateX(2px);
+}
+
+.edit-menu .note-btn {
+  color: var(--primary-color);
+}
+
+.edit-menu .note-btn:hover {
+  color: rgba(76, 175, 80, 0.8);
+}
+
+.edit-menu .move-btn {
+  color: var(--text-color);
+}
+
+.edit-menu .move-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== PLATFORM MENU ===== */
+.platform-tag-menu {
+  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  width: 180px;
   max-width: calc(100% - 20px);
 }
 
-.edit-menu button,
 .platform-tag-menu button {
   display: block;
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: none;
   border: none;
   text-align: left;
@@ -1020,14 +1196,17 @@ function openPlatformModal() {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  transition: all 0.2s ease;
 }
 
-.edit-menu button:hover,
 .platform-tag-menu button:hover {
-  background-color: var(--list-bg);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  transform: translateX(4px);
 }
 
-/* Form styling */
+/* ===== FORMS ===== */
 .form-group {
   margin-bottom: 15px;
 }
@@ -1066,7 +1245,7 @@ function openPlatformModal() {
   background-color: var(--button-hover);
 }
 
-/* Sync notification */
+/* ===== SYNC NOTIFICATION ===== */
 .sync-notification {
   position: fixed;
   bottom: 20px;
@@ -1095,77 +1274,7 @@ function openPlatformModal() {
   color: white;
 }
 
-/* Responsiv design */
-@media (min-width: 769px) {
-  #listsContainer {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .platform-tag-menu {
-    position: absolute !important;
-  }
-}
-
-@media (max-width: 768px) {
-  #app {
-    padding: 0px;
-  }
-
-  #listsContainer {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 100%;
-    justify-content: space-between;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    gap: 1rem;
-    width: 100%;
-    max-height: calc(100vh - 60px);
-    min-height: calc(100vh - 60px);
-    overflow: auto;
-  }
-
-  .edit-menu,
-  .platform-tag-menu {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    top: auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 12px 12px 0 0;
-    padding: 15px 0;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    animation: slideUp 0.3s ease;
-  }
-
-  .edit-menu button,
-  .platform-tag-menu button {
-    padding: 12px 20px;
-    font-size: 16px;
-    border-bottom: 1px solid var(--card-border);
-  }
-
-  .edit-menu button:last-child,
-  .platform-tag-menu button:last-child {
-    border-bottom: none;
-  }
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(100%);
-    }
-
-    to {
-      transform: translateY(0);
-    }
-  }
-}
-
-/* Styling for kort der er valgt til flytning */
+/* ===== MOVE MODE STYLING ===== */
 .card.card-to-move {
   border: 2px dashed var(--button-bg);
   background-color: rgba(76, 175, 80, 0.1);
@@ -1173,13 +1282,11 @@ function openPlatformModal() {
   box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
 }
 
-/* Opdater styling for pile */
 .move-arrows {
   position: absolute;
   right: 10px;
   bottom: 10px;
   display: none;
-  /* Skjult som standard */
   gap: 5px;
   z-index: 5;
 }
@@ -1210,25 +1317,7 @@ function openPlatformModal() {
   color: white;
 }
 
-@media (max-width: 768px) {
-  .move-btn {
-    display: block !important;
-  }
-
-  .move-arrows {
-    right: 5px;
-    bottom: 5px;
-  }
-
-  .move-up,
-  .move-down {
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
-  }
-}
-
-/* Note Modal Styling */
+/* ===== NOTE MODAL STYLING ===== */
 .note-read-mode {
   min-height: 200px;
 }
@@ -1292,7 +1381,6 @@ function openPlatformModal() {
   border-color: var(--button-bg);
 }
 
-/* Kompakte knapper */
 .btn-icon {
   padding: 8px 12px;
   font-size: 1.2rem;
@@ -1320,7 +1408,120 @@ function openPlatformModal() {
   background-color: #d32f2f;
 }
 
+/* ===== RESPONSIVE DESIGN ===== */
+@media (min-width: 769px) {
+  #listsContainer {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .platform-tag-menu {
+    position: absolute !important;
+  }
+}
+
 @media (max-width: 768px) {
+  #app {
+    padding: 0px;
+  }
+
+  #listsContainer {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1rem;
+    width: 100%;
+    max-height: calc(100vh - 60px);
+    min-height: calc(100vh - 60px);
+    overflow: auto;
+  }
+
+  .edit-menu {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 1.5rem 1rem !important;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.3) !important;
+    animation: slideUpMobile 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .edit-menu-actions {
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .edit-menu .icon-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+  
+  .edit-menu .icon-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .edit-menu .menu-btn {
+    height: 52px;
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .platform-tag-menu {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 12px 12px 0 0;
+    padding: 15px 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+  }
+
+  .platform-tag-menu button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .platform-tag-menu button:last-child {
+    border-bottom: none;
+  }
+
+  .move-btn {
+    display: block !important;
+  }
+
+  .move-arrows {
+    right: 5px;
+    bottom: 5px;
+  }
+
+  .move-up,
+  .move-down {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
   .note-read-mode {
     min-height: 400px;
   }
@@ -1342,6 +1543,32 @@ function openPlatformModal() {
   .no-note-message {
     min-height: 300px;
     padding: 2rem 1rem;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUpMobile {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@media (hover: hover) {
+  .edit-menu .menu-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
   }
 }
 </style>
