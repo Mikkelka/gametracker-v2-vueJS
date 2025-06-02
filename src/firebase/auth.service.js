@@ -13,24 +13,12 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 
-/**
- * Autentificeringsfunktioner for Firebase
- * @returns {Object} Objekter med auth-funktionalitet
- */
+
 export function useFirebaseAuth() {
-  /**
-   * Initialiserer auth state lytter
-   * @param {Function} callback - Callback der køres når auth state ændres
-   * @returns {Function} Funktion til at fjerne lytteren
-   */
   function initAuthListener(callback) {
     return onAuthStateChanged(auth, callback);
   }
   
-  /**
-   * Logger ind med Google-provider
-   * @returns {Promise<Object>} Firebase user objekt
-   */
   async function loginWithGoogle() {
     try {
       const provider = new GoogleAuthProvider();
@@ -42,10 +30,6 @@ export function useFirebaseAuth() {
     }
   }
   
-  /**
-   * Logger bruger ud
-   * @returns {Promise<boolean>} Success status
-   */
   async function logout() {
     try {
       await signOut(auth);
@@ -56,11 +40,7 @@ export function useFirebaseAuth() {
     }
   }
   
-  /**
-   * Henter brugerens profil fra Firestore
-   * @param {string} userId - Bruger ID
-   * @returns {Promise<Object>} Brugerdata
-   */
+ 
   async function getUserProfile(userId) {
     try {
       const userRef = doc(db, 'users', userId);
@@ -77,12 +57,6 @@ export function useFirebaseAuth() {
     }
   }
   
-  /**
-   * Opretter eller opdaterer en bruger i Firestore
-   * @param {Object} user - Firebase user objekt
-   * @param {Object} profileData - Ekstra profildata
-   * @returns {Promise<Object>} Success status og brugerdata
-   */
   async function saveUserProfile(user, profileData = {}) {
     if (!user || !user.uid) {
       return { success: false, error: 'Invalid user' };

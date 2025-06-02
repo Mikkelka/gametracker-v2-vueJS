@@ -14,10 +14,14 @@ const props = defineProps({
   width: {
     type: String,
     default: '500px'
+  },
+  preventBackdropClose: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'backdrop-click']);
 
 function handleKeydown(event) {
   if (props.isOpen && event.key === 'Escape') {
@@ -27,7 +31,11 @@ function handleKeydown(event) {
 
 function handleClickOutside(event) {
   if (props.isOpen && event.target.classList.contains('modal-overlay')) {
-    emit('close');
+    if (props.preventBackdropClose) {
+      emit('backdrop-click');
+    } else {
+      emit('close');
+    }
   }
 }
 

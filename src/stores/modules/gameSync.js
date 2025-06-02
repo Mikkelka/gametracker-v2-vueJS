@@ -2,9 +2,7 @@
 import { ref, computed } from 'vue';
 import { useFirestoreCollection } from '../../firebase/db.service';
 
-/**
- * Firebase synchronization module for games
- */
+
 export function useGameSync(mediaTypeStore, userStore) {
   // Sync state
   const pendingChanges = ref([]);
@@ -27,9 +25,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     return useFirestoreCollection(collectionName);
   });
 
-  /**
-   * Timer management with cleanup tracking
-   */
+ 
   function createTimer(callback, delay) {
     if (isDestroyed.value) return null;
     
@@ -51,9 +47,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  /**
-   * Set sync timer with cleanup of existing timer
-   */
+ 
   function setSyncTimer() {
     // Clear existing timer first
     if (syncTimer) {
@@ -70,9 +64,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }, SYNC_DELAY);
   }
 
-  /**
-   * Generate dynamic status messages based on media type
-   */
+ 
   function getDynamicMessage(messageKey, customValue = null) {
     const itemName = mediaTypeStore.config.itemName;
     const itemNamePlural = mediaTypeStore.config.itemNamePlural;
@@ -91,6 +83,13 @@ export function useGameSync(mediaTypeStore, userStore) {
       changingCategory: `Skifter ${categoryName.toLowerCase()}...`,
       updatingOrder: `Opdaterer rækkefølge...`,
       importing: `Importerer ${itemNamePlural}...`,
+
+      // Note-specifikke beskeder
+      savingNote: `Gemmer note...`,
+      noteDeleting: `Sletter note...`,
+      noteSaved: `Note gemt`,
+      noteDeleted: `Note slettet`,
+      noteError: `Kunne ikke gemme note. Prøv igen.`,
 
       // After success
       moved: `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} flyttet`,
@@ -122,9 +121,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     return messages[messageKey] || messageKey;
   }
 
-  /**
-   * Update sync status with auto-hide functionality
-   */
+ 
   function updateSyncStatus(status, messageKey, customValue = null, autoHide = true) {
     if (isDestroyed.value) return;
     
@@ -140,9 +137,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  /**
-   * Queue a change for batch synchronization
-   */
+ 
   function queueChange(type, id, data) {
     if (isDestroyed.value) {
       console.warn('Sync module destroyed, ignoring queue change');
@@ -185,9 +180,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     setSyncTimer();
   }
 
-  /**
-   * Sync pending changes with Firebase
-   */
+ 
   async function syncWithFirebase() {
     if (pendingChanges.value.length === 0 || isDestroyed.value) {
       console.log('No pending changes to sync or module destroyed');
@@ -249,9 +242,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  /**
-   * Setup real-time listener for games
-   */
+  
   function setupGamesListener(userId, callback) {
     if (!userId || isDestroyed.value) return null;
 
@@ -280,9 +271,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  /**
-   * Direct add operation (bypasses queue for immediate Firebase interaction)
-   */
+ 
   async function addGameDirectly(gameData) {
     if (isDestroyed.value || !userStore.currentUser) return null;
 
@@ -299,9 +288,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  /**
-   * Batch import operation
-   */
+ 
   async function importGamesDirectly(gamesData) {
     if (isDestroyed.value || !userStore.currentUser) return false;
 
@@ -323,9 +310,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  /**
-   * Comprehensive cleanup function
-   */
+ 
   function cleanup() {
     console.log('Cleaning up game sync module...');
     
@@ -357,9 +342,6 @@ export function useGameSync(mediaTypeStore, userStore) {
     activeSubscriptions.clear();
   }
 
-  /**
-   * Reactivate the module
-   */
   function reactivate() {
     isDestroyed.value = false;
   }
