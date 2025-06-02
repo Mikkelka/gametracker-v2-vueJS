@@ -118,7 +118,7 @@ const shouldShow = computed(() => {
   background-color: var(--list-bg);
   border-radius: 8px;
   padding: 0.6rem;
-  width: 250px;
+  width: 280px;
   box-shadow: var(--shadow);
 }
 
