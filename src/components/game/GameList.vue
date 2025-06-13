@@ -389,7 +389,7 @@ const statusConfig = computed(() => {
 
   .games-container {
     flex: 1;
-    padding: 1.25rem 1.5rem;
+    padding: .5rem;
     max-height: calc(100vh - 150px);
     overflow-y: scroll;
   }
@@ -434,11 +434,6 @@ const statusConfig = computed(() => {
   .list-header {
     padding: 0.875rem 1rem;
   }
-  
-  .games-container {
-    padding: 0.875rem;
-    
-  }
 }
 
 /* ===== LARGE SCREEN OPTIMIZATION ===== */
@@ -452,9 +447,7 @@ const statusConfig = computed(() => {
   }
   
   .games-container {
-    padding: 1.25rem;
     overflow-y: scroll;
-    
   }
 }
 

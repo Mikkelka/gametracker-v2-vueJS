@@ -119,7 +119,7 @@ onMounted(async () => {
     
     <template v-else>
       <AppSidebar 
-        v-if="userStore.isLoggedIn && !isMobile" 
+        v-if="userStore.isLoggedIn && !isMobile && !isDashboard" 
         :collapsed="sidebarCollapsed" 
         @toggle="handleSidebarToggle"
         @open-settings-modal="openSettingsModal"
@@ -135,9 +135,9 @@ onMounted(async () => {
       <main 
         class="content-area" 
         :class="{ 
-          'with-sidebar': userStore.isLoggedIn && !isMobile, 
-          'sidebar-collapsed': sidebarCollapsed && !isMobile,
-          'with-mobile-nav': isMobile
+          'with-sidebar': userStore.isLoggedIn && !isMobile && !isDashboard, 
+          'sidebar-collapsed': sidebarCollapsed && !isMobile && !isDashboard,
+          'with-mobile-nav': userStore.isLoggedIn && isMobile && !isDashboard
         }"
       >
         <router-view 
