@@ -5,9 +5,10 @@ import { useGameStore } from "../stores/game.store";
 import { useCategoryStore } from "../stores/category";
 import { useDragAndDrop } from "../composables/useDragAndDrop";
 import GameList from "../components/game/GameList.vue";
-import PlatformManager from "../components/platform/PlatformManager.vue";
-import SettingsManager from "../components/settings/SettingsManager.vue";
-import { computed } from "vue";
+// Lazy load heavy components
+const PlatformManager = defineAsyncComponent(() => import("../components/platform/PlatformManager.vue"));
+const SettingsManager = defineAsyncComponent(() => import("../components/settings/SettingsManager.vue"));
+import { computed, defineAsyncComponent } from "vue";
 import { watch } from "vue";
 import SimplerModal from "../components/ui/SimplerModal.vue";
 
