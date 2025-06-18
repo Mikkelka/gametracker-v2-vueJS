@@ -182,7 +182,7 @@ watch(
   () => gameStore.syncStatus,
   (newStatus) => {
     if (!isComponentDestroyed.value) {
-      console.log("Sync status changed:", newStatus);
+      console.warn("Sync status changed:", newStatus);
     }
   },
   { deep: true }

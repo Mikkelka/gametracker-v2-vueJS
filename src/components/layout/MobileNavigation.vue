@@ -159,7 +159,7 @@ async function changeMediaType(type, event) {
         }
       }, 100);
       
-      console.log(`Skiftet til ${type}, data indlæst`);
+      console.warn(`Skiftet til ${type}, data indlæst`);
     } catch (error) {
       console.error('Fejl ved skift af medietype:', error);
     }

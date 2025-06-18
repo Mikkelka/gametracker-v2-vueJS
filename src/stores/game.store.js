@@ -63,7 +63,7 @@ export const useGameStore = defineStore('game', () => {
         userStore.currentUser.uid,
         (result) => {
           if (gameSync.isDestroyed.value) {
-            console.log('Store destroyed, ignoring subscription callback');
+            console.warn('Store destroyed, ignoring subscription callback');
             return;
           }
 
@@ -92,7 +92,7 @@ export const useGameStore = defineStore('game', () => {
 
   
   function clearGames() {
-    console.log('Clearing games store...');
+    console.warn('Clearing games store...');
     
     // Clear data
     games.value = [];

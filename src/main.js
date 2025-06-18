@@ -9,10 +9,10 @@ import { registerSW } from 'virtual:pwa-register'
 // Registrer service worker med auto-opdatering
 const _updateSW = registerSW({
   onNeedRefresh() {
-    console.log('Ny version tilgængelig!')
+    console.warn('Ny version tilgængelig!')
   },
   onOfflineReady() {
-    console.log('App er klar til offline brug')
+    console.warn('App er klar til offline brug')
   }
 })
 

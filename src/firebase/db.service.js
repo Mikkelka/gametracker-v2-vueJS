@@ -63,7 +63,7 @@ export function useFirestoreCollection(collectionName) {
     return safeOperation(async () => {
       const collectionPath = getCollectionPath();
       const collectionRef = collection(db, collectionPath);
-      let queryConstraints = [where('userId', '==', userId)];
+      const queryConstraints = [where('userId', '==', userId)];
       
       if (options.orderBy) {
         queryConstraints.push(orderBy(options.orderBy.field, options.orderBy.direction || 'asc'));
@@ -218,7 +218,7 @@ export function useFirestoreCollection(collectionName) {
       const collectionPath = getCollectionPath();
       const collectionRef = collection(db, collectionPath);
       
-      let queryConstraints = [where('userId', '==', userId)];
+      const queryConstraints = [where('userId', '==', userId)];
       
       if (options.orderBy) {
         queryConstraints.push(orderBy(options.orderBy.field, options.orderBy.direction || 'asc'));
