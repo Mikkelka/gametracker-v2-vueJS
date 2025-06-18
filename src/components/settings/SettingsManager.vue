@@ -4,7 +4,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { useMediaTypeStore } from '../../stores/mediaType';
 
 const settingsStore = useSettingsStore();
-const mediaTypeStore = useMediaTypeStore();
+const _mediaTypeStore = useMediaTypeStore();
 const emit = defineEmits(['close']);
 
 function saveSettings() {

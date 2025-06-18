@@ -1,6 +1,6 @@
 <!-- vue/src/components/game/GameCard.vue - Refined Design -->
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useGameStore } from '../../stores/game.store';
 import { usePlatformStore } from '../../stores/platform';
 
@@ -12,7 +12,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['edit-menu', 'platform-menu']);
-const gameStore = useGameStore();
+const _gameStore = useGameStore();
 const platformStore = usePlatformStore();
 
 // Computed property der altid henter den aktuelle platformfarve

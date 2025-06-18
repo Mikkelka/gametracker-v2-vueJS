@@ -1,17 +1,16 @@
 <script setup>
 // Import MobileNavigation
 import { onMounted, ref, onBeforeUnmount, provide, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from './stores/user';
 import AppSidebar from './components/layout/AppSidebar.vue';
-import MobileNavigation from './components/layout/MobileNavigation.vue'; 
-import { useRoute } from 'vue-router';
+import MobileNavigation from './components/layout/MobileNavigation.vue';
 
 const userStore = useUserStore();
-const router = useRouter();
+const _router = useRouter();
 const isLoading = ref(true);
 const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
-const showMobileMenu = ref(false);
+const _showMobileMenu = ref(false);
 const showSettingsModal = ref(false);
 const showAddGameModal = ref(false);
 const showPlatformModal = ref(false);
@@ -76,10 +75,7 @@ function handleSidebarToggle(collapsed) {
   localStorage.setItem('sidebarCollapsed', collapsed.toString());
 }
 
-// Håndter toggle af mobil menu
-function toggleMobileMenu() {
-  showMobileMenu.value = !showMobileMenu.value;
-}
+// Mobile menu toggle removed - handled by MobileNavigation component
 
 // Håndter åbning af indstillingsmodal
 function openSettingsModal() {

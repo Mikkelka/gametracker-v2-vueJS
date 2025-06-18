@@ -1,6 +1,6 @@
 <!-- src/views/DashboardView.vue -->
 <script setup>
-import { onMounted, computed, ref, inject } from 'vue';
+import { onMounted, ref, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { useMediaTypeStore } from '../stores/mediaType';
@@ -17,7 +17,7 @@ const showEditNameModal = ref(false);
 const newName = ref('');
 
 // Prøv at få modals via inject hvis tilgængelig
-const injectedModals = inject('modals', null);
+const _injectedModals = inject('modals', null);
 
 function navigateTo(type) {
   mediaTypeStore.setMediaType(type);

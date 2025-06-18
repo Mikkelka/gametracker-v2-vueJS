@@ -7,7 +7,7 @@ import './assets/main.css'
 import { registerSW } from 'virtual:pwa-register'
 
 // Registrer service worker med auto-opdatering
-const updateSW = registerSW({
+const _updateSW = registerSW({
   onNeedRefresh() {
     console.log('Ny version tilgængelig!')
   },

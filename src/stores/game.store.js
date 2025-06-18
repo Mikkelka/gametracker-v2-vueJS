@@ -139,10 +139,12 @@ export const useGameStore = defineStore('game', () => {
     
     // Override clearGames to also cleanup event listener
     const originalClearGames = clearGames;
-    clearGames = function() {
+    const newClearGames = function() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       originalClearGames.call(this);
     };
+    // eslint-disable-next-line no-func-assign
+    clearGames = newClearGames;
   }
 
   return {
@@ -189,7 +191,7 @@ export const useGameStore = defineStore('game', () => {
     updateSyncStatus: gameSync.updateSyncStatus,
 
     // Legacy method for backward compatibility
-    saveGame: async (gameData) => {
+    saveGame: async (_gameData) => {
       console.warn('saveGame is deprecated. Use specific CRUD operations instead.');
       // This can be implemented as a wrapper if needed
       return null;

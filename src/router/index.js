@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { useMediaTypeStore } from '@/stores/mediaType';
 
 // Lazy load komponenter
 const DashboardView = () => import('@/views/DashboardView.vue');

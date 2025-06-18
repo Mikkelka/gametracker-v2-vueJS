@@ -1,16 +1,14 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, inject } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick, computed, defineAsyncComponent, watch } from "vue";
 import { useMediaTypeStore } from "../stores/mediaType";
 import { useGameStore } from "../stores/game.store";
 import { useCategoryStore } from "../stores/category";
 import { useDragAndDrop } from "../composables/useDragAndDrop";
 import GameList from "../components/game/GameList.vue";
+import SimplerModal from "../components/ui/SimplerModal.vue";
 // Lazy load heavy components
 const PlatformManager = defineAsyncComponent(() => import("../components/platform/PlatformManager.vue"));
 const SettingsManager = defineAsyncComponent(() => import("../components/settings/SettingsManager.vue"));
-import { computed, defineAsyncComponent } from "vue";
-import { watch } from "vue";
-import SimplerModal from "../components/ui/SimplerModal.vue";
 
 const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
@@ -26,8 +24,8 @@ const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
 const newGameTitle = ref("");
 const selectedPlatform = ref("");
-const syncStatusDisplay = computed(() => gameStore.syncStatus);
-const moveMode = ref(null);
+const _syncStatusDisplay = computed(() => gameStore.syncStatus);
+const _moveMode = ref(null);
 const cardToMove = ref(null);
 
 // Note modal state
@@ -50,90 +48,10 @@ const emit = defineEmits([
   "update:show-settings-modal",
 ]);
 
-// Bruges til at tracke om props er blevet opdateret
-const localShowAddGameModal = ref(props.showAddGameModal || false);
-const localShowPlatformModal = ref(props.showPlatformModal || false);
-const localShowSettingsModal = ref(props.showSettingsModal || false);
-
-// Forsøg også at få modals via inject hvis tilgængelig
-const injectedModals = inject("modals", null);
-
-// Computed properties for at bestemme om modaler skal vises
-const showAddGameModal = computed({
-  get: () =>
-    localShowAddGameModal.value ||
-    (injectedModals && injectedModals.showAddGameModal.value) ||
-    false,
-  set: (value) => {
-    localShowAddGameModal.value = value;
-    emit("update:show-add-game-modal", value);
-    if (injectedModals) injectedModals.showAddGameModal.value = value;
-  },
-});
-
-const showPlatformModal = computed({
-  get: () =>
-    localShowPlatformModal.value ||
-    (injectedModals && injectedModals.showPlatformModal.value) ||
-    false,
-  set: (value) => {
-    localShowPlatformModal.value = value;
-    emit("update:show-platform-modal", value);
-    if (injectedModals) injectedModals.showPlatformModal.value = value;
-  },
-});
-
-const showSettingsModal = computed({
-  get: () =>
-    localShowSettingsModal.value ||
-    (injectedModals && injectedModals.showSettingsModal.value) ||
-    false,
-  set: (value) => {
-    localShowSettingsModal.value = value;
-    emit("update:show-settings-modal", value);
-    if (injectedModals) injectedModals.showSettingsModal.value = value;
-  },
-});
-
-const showImportModal = computed({
-  get: () =>
-    localShowImportModal.value ||
-    (injectedModals && injectedModals.showImportModal.value) ||
-    false,
-  set: (value) => {
-    localShowImportModal.value = value;
-    emit("update:show-import-modal", value);
-    if (injectedModals) injectedModals.showImportModal.value = value;
-  },
-});
-
-// Lyt efter ændringer i props
-watch(
-  () => props.showAddGameModal,
-  (newVal) => {
-    if (!isComponentDestroyed.value) {
-      localShowAddGameModal.value = newVal;
-    }
-  }
-);
-
-watch(
-  () => props.showPlatformModal,
-  (newVal) => {
-    if (!isComponentDestroyed.value) {
-      localShowPlatformModal.value = newVal;
-    }
-  }
-);
-
-watch(
-  () => props.showSettingsModal,
-  (newVal) => {
-    if (!isComponentDestroyed.value) {
-      localShowSettingsModal.value = newVal;
-    }
-  }
-);
+// Use computed properties to reactively follow props
+const showAddGameModal = computed(() => props.showAddGameModal);
+const showPlatformModal = computed(() => props.showPlatformModal);
+const showSettingsModal = computed(() => props.showSettingsModal);
 
 const showDeleteConfirmModal = ref(false);
 const gameToDelete = ref(null);
@@ -271,7 +189,7 @@ watch(
 );
 
 // Søgefunktion
-function handleSearch(term) {
+function _handleSearch(term) {
   if (isComponentDestroyed.value) return;
   searchTerm.value = term;
 }
@@ -332,18 +250,20 @@ function performEditMenuAction(action, gameId) {
       loadGameNote(gameId);
       showNoteModal.value = true;
       break;
-    case "edit-title":
+    case "edit-title": {
       const gameToEdit = gameStore.games.find((g) => g.id === gameId);
       editingGameId.value = gameId;
       editingGameTitle.value = gameToEdit.title || "";
       showEditTitleModal.value = true;
       break;
-    case "edit-date":
+    }
+    case "edit-date": {
       const gameToEditDate = gameStore.games.find((g) => g.id === gameId);
       editingDateGameId.value = gameId;
       editingDate.value = gameToEditDate.completionDate || "";
       showEditDateModal.value = true;
       break;
+    }
     case "today-date":
       gameStore.setTodayAsCompletionDate(gameId);
       break;
@@ -553,7 +473,7 @@ async function moveCardRelative(sourceGameId, targetGameId, position) {
   } else {
     // Ellers opdater rækkefølgen inden for den samme liste
     // Find alle spil i samme status-liste
-    const gamesInSameList = gameStore.games
+    const _gamesInSameList = gameStore.games
       .filter((g) => g.status === targetGame.status)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -580,7 +500,7 @@ async function moveCardRelative(sourceGameId, targetGameId, position) {
 }
 
 // Implementér moveCard funktionen
-async function moveCard(gameId, direction) {
+async function _moveCard(gameId, direction) {
   if (isComponentDestroyed.value) return;
 
   const game = gameStore.games.find((g) => g.id === gameId);
@@ -648,18 +568,10 @@ async function addGame() {
 
   newGameTitle.value = "";
   selectedPlatform.value = "";
-  showAddGameModal.value = false;
+  emit('update:show-add-game-modal', false);
 }
 
-function openAddGameModal() {
-  if (isComponentDestroyed.value) return;
-  showAddGameModal.value = true;
-}
-
-function openPlatformModal() {
-  if (isComponentDestroyed.value) return;
-  showPlatformModal.value = true;
-}
+// Modal functions removed - handled through props/events system
 </script>
 
 <template>
@@ -790,7 +702,7 @@ function openPlatformModal() {
     <SimplerModal
       :isOpen="showAddGameModal"
       :title="`Tilføj nyt ${mediaTypeStore.config.itemName}`"
-      @close="showAddGameModal = false"
+      @close="emit('update:show-add-game-modal', false)"
     >
       <form @submit.prevent="addGame" class="game-form">
         <div class="form-group">
@@ -838,18 +750,18 @@ function openPlatformModal() {
     <SimplerModal
       :isOpen="showPlatformModal"
       :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`"
-      @close="showPlatformModal = false"
+      @close="emit('update:show-platform-modal', false)"
     >
-      <PlatformManager @close="showPlatformModal = false" />
+      <PlatformManager @close="emit('update:show-platform-modal', false)" />
     </SimplerModal>
 
     <!-- Settings Modal -->
     <SimplerModal
       :isOpen="showSettingsModal"
       title="Indstillinger"
-      @close="showSettingsModal = false"
+      @close="emit('update:show-settings-modal', false)"
     >
-      <SettingsManager @close="showSettingsModal = false" />
+      <SettingsManager @close="emit('update:show-settings-modal', false)" />
     </SimplerModal>
 
     <SimplerModal

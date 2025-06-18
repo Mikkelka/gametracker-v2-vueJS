@@ -95,14 +95,7 @@ const currentAppIcon = computed(() => {
   return mediaTypeStore.config?.icon || '📱';
 });
 
-// Åbn indstillinger for den aktuelle medietype
-function openSettingsModal() {
-  if (isComponentDestroyed.value) return;
-  
-  if (openModal) {
-    openModal('settings');
-  }
-}
+// Settings modal function removed - handled through provide/inject system
 
 // Ny funktion for at åbne relevante modaler baseret på medietype
 function openAddModal() {

@@ -15,7 +15,7 @@ const colorInputRef = ref(null);
 const showDeletePlatformModal = ref(false);
 const platformToDelete = ref(null);
 
-const emit = defineEmits(['close']);
+const _emit = defineEmits(['close']);
 
 onMounted(async () => {
   await platformStore.loadPlatforms();

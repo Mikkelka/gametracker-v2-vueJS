@@ -56,7 +56,7 @@ export function useDragAndDrop() {
     }
   }
 
-  function handleDragEnd(event) {
+  function handleDragEnd(_event) {
     if (isDestroyed.value) return;
     
     // Always cleanup, even if there are errors
