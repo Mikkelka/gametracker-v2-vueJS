@@ -372,12 +372,7 @@ if (typeof window !== 'undefined') {
 
 <style scoped>
 .sidebar {
-  --sidebar-radius: 0 16px 16px 0;
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-moderate: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-strong: 0 10px 25px rgba(0, 0, 0, 0.2);
+  --sidebar-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 
   background: linear-gradient(145deg, var(--header-bg), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -392,7 +387,7 @@ if (typeof window !== 'undefined') {
   transition: var(--transition-smooth);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-strong);
+  box-shadow: var(--shadow-dark-xl);
   backdrop-filter: blur(20px);
   z-index: 1000;
   overflow: hidden;
@@ -410,7 +405,7 @@ if (typeof window !== 'undefined') {
 
 .sidebar.collapsed {
   width: 60px;
-  border-radius: 0 12px 12px 0;
+  border-radius: 3px;
 }
 
 .sidebar-header {
@@ -473,7 +468,7 @@ if (typeof window !== 'undefined') {
     rgba(255, 255, 255, 0.05)
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 3px;
   color: var(--text-color);
   cursor: pointer;
   font-size: 0.9rem;
@@ -506,7 +501,7 @@ if (typeof window !== 'undefined') {
 .search-container input {
   width: 100%;
   padding: 10px 35px 10px 12px;
-  border-radius: 10px;
+  border-radius: 3px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.1), 
@@ -546,7 +541,7 @@ if (typeof window !== 'undefined') {
     rgba(239, 68, 68, 0.6)
   );
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 50%;
+  border-radius: 3px;
   width: 20px;
   height: 20px;
   display: flex;
@@ -623,7 +618,7 @@ if (typeof window !== 'undefined') {
     var(--primary-color), 
     rgba(76, 175, 80, 0.6)
   );
-  border-radius: 2px;
+  border-radius: 3px;
   opacity: 0.7;
   box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
 }
@@ -640,7 +635,7 @@ if (typeof window !== 'undefined') {
   padding: 0.75rem 1.25rem;
   cursor: pointer;
   transition: var(--transition-smooth);
-  border-radius: 12px;
+  border-radius: 3px;
   margin: 0 0.75rem 0.25rem 0.75rem;
   position: relative;
   background: linear-gradient(135deg, 
@@ -655,7 +650,7 @@ if (typeof window !== 'undefined') {
   justify-content: center;
   padding: 0.75rem 0;
   margin: 0 0.5rem 0.25rem 0.5rem;
-  border-radius: 10px;
+  border-radius: 3px;
 }
 
 .nav-item:hover {
@@ -702,7 +697,7 @@ if (typeof window !== 'undefined') {
     rgba(255, 255, 255, 0.08)
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: 3px;
   color: inherit;
   cursor: pointer;
   font-size: 0.8rem;
@@ -767,7 +762,7 @@ if (typeof window !== 'undefined') {
 .submenu-item .nav-item {
   padding: 0.5rem 1rem;
   margin: 0 0 0.1rem 0;
-  border-radius: 8px;
+  border-radius: 3px;
   font-size: 0.85rem;
 }
 
@@ -856,7 +851,7 @@ if (typeof window !== 'undefined') {
     rgba(255, 255, 255, 0.05)
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 3px;
   padding: 0.75rem;
   transition: var(--transition-smooth);
   backdrop-filter: blur(10px);
@@ -875,7 +870,7 @@ if (typeof window !== 'undefined') {
 .user-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 3px;
   background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
   color: white;
   display: flex;
@@ -929,7 +924,7 @@ if (typeof window !== 'undefined') {
     rgba(239, 68, 68, 0.6)
   );
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 6px;
+  border-radius: 3px;
   color: white;
   cursor: pointer;
   padding: 4px 8px;
@@ -955,8 +950,8 @@ if (typeof window !== 'undefined') {
     transform: translateX(-100%);
     position: fixed;
     z-index: 1001;
-    border-radius: 0 20px 20px 0;
-    box-shadow: var(--shadow-strong);
+    border-radius: 3px;
+    box-shadow: var(--shadow-dark-xl);
   }
   
   .sidebar.active {

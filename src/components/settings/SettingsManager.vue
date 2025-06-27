@@ -94,7 +94,7 @@ function saveSettings() {
   bottom: 0;
   background-color: #ccc;
   transition: 0.4s;
-  border-radius: 34px;
+  border-radius: 3px;
 }
 
 .slider:before {
@@ -106,7 +106,7 @@ function saveSettings() {
   bottom: 4px;
   background-color: white;
   transition: 0.4s;
-  border-radius: 50%;
+  border-radius: 3px;
 }
 
 input:checked + .slider {
@@ -124,7 +124,7 @@ input:checked + .slider:before {
   color: white;
   padding: 10px 15px;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
   font-size: 16px;
 }

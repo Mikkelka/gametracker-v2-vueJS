@@ -161,9 +161,9 @@ const statusConfig = computed(() => {
   
   background: linear-gradient(145deg, var(--list-bg), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: var(--list-width);
-  box-shadow: var(--shadow-subtle);
+  box-shadow: var(--shadow-dark-sm);
   backdrop-filter: blur(10px);
   overflow: hidden;
   transition: var(--transition-smooth);
@@ -243,7 +243,7 @@ const statusConfig = computed(() => {
   );
   color: var(--text-color);
   padding: 0.25rem 0.6rem;
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -277,12 +277,12 @@ const statusConfig = computed(() => {
 
 .games-container::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
+  border-radius: var(--radius-xl);
 }
 
 .games-container::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  border-radius: var(--radius-xl);
 }
 
 .games-container::-webkit-scrollbar-thumb:hover {
@@ -348,7 +348,7 @@ const statusConfig = computed(() => {
 @media (max-width: 768px) {
   .list.game-list {
     --list-width: 100%;
-    border-radius: 0;
+    border-radius: var(--radius-xl);
     border-left: none;
     border-right: none;
     scroll-snap-align: center;
@@ -384,7 +384,7 @@ const statusConfig = computed(() => {
   .count-badge {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
   }
 
   .games-container {

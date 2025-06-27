@@ -109,23 +109,18 @@ function showPlatformMenu(event) {
 
 <style scoped>
 .card {
-  --card-radius: 12px;
-  --card-padding: 1rem;
-  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-moderate: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-strong: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --card-radius: var(--radius-md);
+  --card-padding: var(--space-4);
   
   position: relative;
   background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   padding: var(--card-padding);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
   cursor: move;
   transition: var(--transition-smooth);
-  box-shadow: var(--shadow-subtle);
+  box-shadow: var(--shadow-dark-sm);
   overflow: hidden;
   backdrop-filter: blur(10px);
 }
@@ -144,7 +139,7 @@ function showPlatformMenu(event) {
 
 .card:hover {
   transform: translateY(-2px) scale(1.01);
-  box-shadow: var(--shadow-strong);
+  box-shadow: var(--shadow-dark-lg);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -154,7 +149,7 @@ function showPlatformMenu(event) {
 
 /* Favorite styling - kun kant */
 .card.favorite {
-  border-color: #fbbf24;
+  border-color: var(--color-warning);
   border-width: 2px;
   box-shadow: 
     var(--shadow-moderate),
@@ -178,7 +173,7 @@ function showPlatformMenu(event) {
   width: 16px;
   height: 16px;
   background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
-  border-radius: 16px 0 var(--card-radius) 0;
+  border-radius: 3px;
   border: 2px solid var(--card-bg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 3;
@@ -194,17 +189,17 @@ function showPlatformMenu(event) {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
-  gap: 0.5rem;
+  margin-bottom: var(--space-3);
+  gap: var(--space-2);
   position: relative;
   z-index: 10;
 }
 
 .game-title {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
   color: var(--text-color);
   flex: 1;
   min-width: 0; /* For text truncation */
@@ -214,8 +209,8 @@ function showPlatformMenu(event) {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
+  padding: var(--space-2);
+  border-radius: var(--radius-base);
   color: var(--text-color);
   opacity: 0.6;
   flex-shrink: 0;
@@ -253,7 +248,7 @@ function showPlatformMenu(event) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -261,10 +256,10 @@ function showPlatformMenu(event) {
   background: var(--platform-color, var(--primary-color));
   color: white;
   border: none;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
@@ -336,7 +331,7 @@ function showPlatformMenu(event) {
 .move-button {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: 3px;
   width: 32px;
   height: 32px;
   display: flex;

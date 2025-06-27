@@ -779,7 +779,7 @@ async function addGame() {
           style="
             padding: 8px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             background-color: #444;
             color: white;
@@ -793,7 +793,7 @@ async function addGame() {
           style="
             padding: 8px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             background-color: #f44336;
             color: white;
@@ -929,7 +929,7 @@ async function addGame() {
   
   background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--menu-radius);
+  border-radius: 3px;
   padding: var(--menu-padding);
   box-shadow: var(--shadow-menu);
   backdrop-filter: blur(20px);
@@ -962,7 +962,7 @@ async function addGame() {
   width: var(--icon-button-size);
   height: var(--icon-button-size);
   border: none;
-  border-radius: 12px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1035,7 +1035,7 @@ async function addGame() {
   color: var(--text-color);
   font-size: 0.9rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 3px;
   transition: var(--transition-smooth);
   position: relative;
   overflow: hidden;
@@ -1087,7 +1087,7 @@ async function addGame() {
 .platform-tag-menu {
   background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 3px;
   padding: 8px;
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
   backdrop-filter: blur(20px);
@@ -1109,7 +1109,7 @@ async function addGame() {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
-  border-radius: 6px;
+  border-radius: 3px;
   margin-bottom: 2px;
   transition: all 0.2s ease;
 }
@@ -1135,7 +1135,7 @@ async function addGame() {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--card-border);
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: var(--card-bg);
   color: var(--text-color);
 }
@@ -1143,7 +1143,7 @@ async function addGame() {
 .btn {
   padding: 10px 15px;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
   font-size: 16px;
 }
@@ -1164,7 +1164,7 @@ async function addGame() {
   bottom: 20px;
   right: 20px;
   padding: 10px 15px;
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: var(--card-bg);
   color: var(--text-color);
   box-shadow: var(--shadow);
@@ -1212,7 +1212,7 @@ async function addGame() {
 .move-down {
   background-color: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 4px;
+  border-radius: 3px;
   width: 36px;
   height: 36px;
   display: flex;
@@ -1239,7 +1239,7 @@ async function addGame() {
   white-space: pre-wrap;
   background-color: var(--list-bg);
   padding: 1.5rem;
-  border-radius: 4px;
+  border-radius: 3px;
   margin-bottom: 1.5rem;
   font-family: inherit;
   line-height: 1.6;
@@ -1253,7 +1253,7 @@ async function addGame() {
 .no-note-message {
   background-color: var(--list-bg);
   padding: 3rem;
-  border-radius: 4px;
+  border-radius: 3px;
   text-align: center;
   color: var(--text-color);
   opacity: 0.6;
@@ -1280,7 +1280,7 @@ async function addGame() {
   min-height: 250px;
   padding: 1.5rem;
   border: 1px solid var(--card-border);
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: var(--card-bg);
   color: var(--text-color);
   font-family: inherit;
@@ -1361,7 +1361,7 @@ async function addGame() {
     top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: 0 !important;
     padding: 1.5rem 1rem !important;
     box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.3) !important;
     animation: slideUpMobile 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1377,7 +1377,7 @@ async function addGame() {
   .edit-menu .icon-btn {
     width: 56px;
     height: 56px;
-    border-radius: 16px;
+    border-radius: 3px;
   }
   
   .edit-menu .icon-btn svg {
@@ -1389,7 +1389,7 @@ async function addGame() {
     height: 52px;
     padding: 0 1.25rem;
     font-size: 1rem;
-    border-radius: 12px;
+    border-radius: 3px;
     margin-bottom: 4px;
     display: flex !important;
     align-items: center !important;
@@ -1403,7 +1403,7 @@ async function addGame() {
     top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: 12px 12px 0 0;
+    border-radius: 3px;
     padding: 15px 0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
     animation: slideUp 0.3s ease;

@@ -186,7 +186,7 @@ onMounted(() => {
 .tracker-card {
   background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--card-radius);
+  border-radius: 4px;
   padding: 2.5rem;
   text-align: center;
   cursor: pointer;
@@ -287,7 +287,7 @@ onMounted(() => {
 .edit-name-button {
   padding: 0.875rem 2rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 4px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -358,7 +358,7 @@ onMounted(() => {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: 4px;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.1), 
     rgba(255, 255, 255, 0.05)
@@ -390,7 +390,7 @@ onMounted(() => {
 .btn {
   padding: 0.75rem 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
@@ -439,7 +439,7 @@ onMounted(() => {
     rgba(255, 255, 255, 0.05)
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  border-radius: 4px;
   padding: 0.75rem 1.5rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -484,7 +484,7 @@ onMounted(() => {
 
   .tracker-card {
     padding: 2rem 1.5rem;
-    border-radius: 12px;
+    border-radius: 4px;
   }
 
   .card-icon {

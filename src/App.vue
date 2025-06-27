@@ -194,7 +194,7 @@ body {
 
 .loader {
   border: 5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  border-radius: 3px;
   border-top: 5px solid var(--button-bg);
   width: 50px;
   height: 50px;
@@ -216,7 +216,7 @@ body {
   background-color: var(--button-bg);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   font-size: 1.5rem;
   padding: 5px 10px;
   z-index: 1002;

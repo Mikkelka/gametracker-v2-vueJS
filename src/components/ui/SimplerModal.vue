@@ -77,12 +77,7 @@ watch(() => props.isOpen, (isOpen) => {
 
 <style scoped>
 .modal-overlay {
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-moderate: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-strong: 0 10px 25px rgba(0, 0, 0, 0.2);
-  --modal-radius: 16px;
+  --modal-radius: var(--radius-xl);
 
   position: fixed;
   top: 0;
@@ -108,7 +103,7 @@ watch(() => props.isOpen, (isOpen) => {
   width: 100%;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: var(--shadow-strong);
+  box-shadow: var(--shadow-dark-xl);
   backdrop-filter: blur(20px);
   animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
@@ -128,7 +123,7 @@ watch(() => props.isOpen, (isOpen) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
+  padding: var(--space-5) var(--space-6);
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.08), 
     rgba(255, 255, 255, 0.04)
@@ -154,8 +149,8 @@ watch(() => props.isOpen, (isOpen) => {
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
   color: var(--text-color);
   letter-spacing: 0.5px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -167,7 +162,7 @@ watch(() => props.isOpen, (isOpen) => {
     rgba(255, 255, 255, 0.05)
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 3px;
   width: 36px;
   height: 36px;
   display: flex;
@@ -196,7 +191,7 @@ watch(() => props.isOpen, (isOpen) => {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: var(--space-6);
   overflow-y: auto;
   max-height: calc(90vh - 120px);
   position: relative;
@@ -221,10 +216,10 @@ watch(() => props.isOpen, (isOpen) => {
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
+  padding: var(--space-4) var(--space-6);
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: var(--space-3);
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.05), 
     rgba(255, 255, 255, 0.02)
@@ -234,12 +229,12 @@ watch(() => props.isOpen, (isOpen) => {
 }
 
 .btn {
-  padding: 0.6rem 1.25rem;
+  padding: var(--space-2_5) var(--space-5);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   transition: var(--transition-smooth);
   backdrop-filter: blur(10px);
   position: relative;
@@ -330,7 +325,7 @@ watch(() => props.isOpen, (isOpen) => {
   .modal-container {
     margin: 1rem;
     max-height: calc(100vh - 2rem);
-    --modal-radius: 12px;
+    --modal-radius: var(--radius-xl);
   }
 
   .modal-header {
