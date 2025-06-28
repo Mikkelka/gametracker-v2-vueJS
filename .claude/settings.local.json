@@ -3,7 +3,18 @@
     "allow": [
       "Bash(find:*)",
       "Bash(npm run lint)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(cargo install:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(snap install:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(wget:*)",
+      "Bash(tar:*)",
+      "Bash(ls:*)",
+      "Bash(./tokei:*)",
+      "Bash(npm run lines:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

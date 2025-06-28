@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lines": "./tokei --output json | node -e \"const data=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log('![Lines of Code](https://img.shields.io/badge/lines%20of%20code-' + data.Total.code + '%20lines-blue)');\""
   },
   "dependencies": {
     "firebase": "^11.6.1",
