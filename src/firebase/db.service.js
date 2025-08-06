@@ -17,6 +17,7 @@ import {
   limit
 } from 'firebase/firestore';
 import { useMediaTypeStore } from '../stores/mediaType';
+import { warn, error } from '../utils/logger';
 
 export function useFirestoreCollection(collectionName) {
   const requestStats = {
@@ -44,7 +45,7 @@ export function useFirestoreCollection(collectionName) {
         return `mediaTypes/${mediaType}/${mappedCollection}`;
       }
     } catch (error) {
-      console.warn('MediaTypeStore not available, defaulting to original structure', error);
+      warn('MediaTypeStore not available, defaulting to original structure', error);
       return collectionName;
     }
   }
@@ -54,7 +55,7 @@ export function useFirestoreCollection(collectionName) {
       const result = await operation();
       return { success: true, data: result };
     } catch (error) {
-      console.error(errorMsg, error);
+      error(errorMsg, error);
       return { success: false, error: error.message || errorMsg };
     }
   }
@@ -240,11 +241,11 @@ export function useFirestoreCollection(collectionName) {
         
         callback({ success: true, data: items });
       }, error => {
-        console.error(`Error in snapshot listener for ${collectionPath}:`, error);
+        error(`Error in snapshot listener for ${collectionPath}:`, error);
         callback({ success: false, error });
       });
     } catch (error) {
-      console.error(`Error setting up listener for ${getCollectionPath()}:`, error);
+      error(`Error setting up listener for ${getCollectionPath()}:`, error);
       callback({ success: false, error });
       return () => {};
     }

@@ -5,6 +5,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from './stores/user';
 import AppSidebar from './components/layout/AppSidebar.vue';
 import MobileNavigation from './components/layout/MobileNavigation.vue';
+import { error } from './utils/logger';
 
 const userStore = useUserStore();
 const _router = useRouter();
@@ -98,8 +99,8 @@ onMounted(async () => {
   applyCssVariables();
   try {
     await userStore.initUser();
-  } catch (error) {
-    console.error('Failed to initialize user:', error);
+  } catch (err) {
+    error('Failed to initialize user:', err);
   } finally {
     isLoading.value = false;
   }

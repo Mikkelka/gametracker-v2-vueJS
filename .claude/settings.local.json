@@ -14,7 +14,9 @@
       "Bash(ls:*)",
       "Bash(./tokei:*)",
       "Bash(npm run lines:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": []
   }
