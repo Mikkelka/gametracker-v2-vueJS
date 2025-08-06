@@ -110,7 +110,8 @@ function showPlatformMenu(event) {
 <style scoped>
 .card {
   --card-radius: var(--radius-md);
-  --card-padding: var(--space-4);
+  --card-padding: var(--space-3);
+  min-height: 105px;
   
   position: relative;
   background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
@@ -123,6 +124,8 @@ function showPlatformMenu(event) {
   box-shadow: var(--shadow-dark-sm);
   overflow: hidden;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
 }
 
 .card::before {
@@ -183,6 +186,9 @@ function showPlatformMenu(event) {
 .card-content {
   position: relative;
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .card-header {
@@ -197,7 +203,7 @@ function showPlatformMenu(event) {
 
 .game-title {
   margin: 0;
-  font-size: var(--font-size-lg);
+  font-size: 1.05rem;
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
   color: var(--text-color);
