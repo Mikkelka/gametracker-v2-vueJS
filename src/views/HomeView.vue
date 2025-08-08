@@ -907,14 +907,15 @@ async function addGame() {
 
 <style scoped>
 #app {
-  padding: 1rem;
-  padding-top: 1rem;
+  background: #101314;
+  min-height: 100vh;
+  padding: 0;
 }
 
 #listsContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
   justify-content: center;
 }
 
@@ -1335,7 +1336,8 @@ async function addGame() {
 
 @media (max-width: 768px) {
   #app {
-    padding: 0px;
+    padding: 0;
+    background: #111827;
   }
 
   #listsContainer {
@@ -1346,11 +1348,12 @@ async function addGame() {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    gap: 1rem;
+    gap: 0;
     width: 100%;
     max-height: calc(100vh - 60px);
     min-height: calc(100vh - 60px);
     overflow: auto;
+    padding: 0;
   }
 
   .edit-menu {

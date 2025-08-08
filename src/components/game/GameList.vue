@@ -166,30 +166,24 @@ const statusConfig = computed(() => {
 <style scoped>
 .list.game-list {
   --list-width: 280px;
-  --header-height: 60px;
   --transition-smooth: all 0.2s ease;
   
-  background: var(--list-bg, #1f2937);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0;
+  background: transparent;
   width: var(--list-width);
-  overflow: hidden;
-  transition: var(--transition-smooth);
   position: relative;
 }
 
 
 .list.game-list:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  /* No hover effect needed for minimal design */
 }
 
-/* ===== POLERET HEADER ===== */
+/* ===== MINIMAL HEADER ===== */
 .list-header {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1rem 1.25rem;
-  min-height: var(--header-height);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0 0 1rem 0;
+  margin-bottom: 1rem;
 }
 
 .header-content {
@@ -228,17 +222,17 @@ const statusConfig = computed(() => {
 .count-badge {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-color);
-  padding: 0.25rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.8;
 }
 
 
 /* ===== GAMES CONTAINER ===== */
 .games-container {
-  padding: 1rem;
+  padding: 0;
   min-height: 200px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
@@ -305,22 +299,18 @@ const statusConfig = computed(() => {
 @media (max-width: 768px) {
   .list.game-list {
     --list-width: 100%;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
     min-height: calc(100vh - 60px);
     display: flex;
     flex-direction: column;
   }
 
   .list-header {
-    padding: 1.25rem 1.5rem;
-    min-height: 70px;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
     flex-shrink: 0;
     position: sticky;
     top: 0;
     z-index: 10;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    background: #111827;
   }
 
   .header-main {
@@ -344,7 +334,7 @@ const statusConfig = computed(() => {
 
   .games-container {
     flex: 1;
-    padding: .5rem;
+    padding: 0 1.5rem;
     max-height: calc(100vh - 150px);
     overflow-y: scroll;
   }

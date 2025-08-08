@@ -102,83 +102,51 @@ function showPlatformMenu(event) {
       </button>
     </div>
 
-    <!-- Hover overlay for subtle interaction feedback -->
-    <div class="hover-overlay"></div>
   </div>
 </template>
 
 <style scoped>
 .card {
-  --card-radius: var(--radius-md);
-  --card-padding: var(--space-3);
-  min-height: 105px;
+  min-height: 90px;
   
   position: relative;
-  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--card-border);
-  border-radius: var(--card-radius);
-  padding: var(--card-padding);
-  margin-bottom: var(--space-3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
   cursor: move;
-  transition: var(--transition-smooth);
-  box-shadow: var(--shadow-dark-sm);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
 
 .card:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: var(--shadow-dark-lg);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.card:hover::before {
-  opacity: 1;
-}
 
-/* Favorite styling - kun kant */
+/* Favorite styling - minimal */
 .card.favorite {
-  border-color: var(--color-warning);
+  border-color: #fbbf24;
   border-width: 2px;
-  box-shadow: 
-    var(--shadow-moderate),
-    0 0 0 1px rgba(251, 191, 36, 0.3),
-    0 0 20px rgba(251, 191, 36, 0.15);
 }
 
 .card.favorite:hover {
-  box-shadow: 
-    var(--shadow-strong),
-    0 0 0 1px rgba(251, 191, 36, 0.4),
-    0 0 25px rgba(251, 191, 36, 0.2);
+  border-color: #f59e0b;
 }
 
-/* Note indicator - subtil hjørne gradient */
+/* Note indicator - minimal */
 .card.has-note::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
-  border-radius: 3px;
-  border: 2px solid var(--card-bg);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  bottom: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--primary-color);
+  border-radius: 50%;
   z-index: 3;
 }
 
@@ -231,7 +199,8 @@ function showPlatformMenu(event) {
 
 .edit-btn:hover {
   opacity: 1;
-  background-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
 .menu-icon {
@@ -262,41 +231,24 @@ function showPlatformMenu(event) {
   background: var(--platform-color, var(--primary-color));
   color: white;
   border: none;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-base);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: var(--transition-smooth);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.2s ease;
   display: inline-block;
+  opacity: 0.9;
   z-index: 10;
 }
 
-.platform-pill::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
 
 .platform-pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  filter: brightness(1.1);
+  opacity: 1;
 }
 
-.platform-pill:hover::before {
-  left: 100%;
-}
 
 .platform-text {
   position: relative;
@@ -336,7 +288,7 @@ function showPlatformMenu(event) {
 
 .move-button {
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   width: 32px;
   height: 32px;
@@ -346,9 +298,7 @@ function showPlatformMenu(event) {
   cursor: pointer;
   padding: 0;
   color: var(--text-color);
-  transition: var(--transition-smooth);
-  box-shadow: var(--shadow-subtle);
-  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
 }
 
 .move-button svg {
@@ -359,16 +309,12 @@ function showPlatformMenu(event) {
 .move-button:hover {
   background: var(--primary-color);
   color: white;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-moderate);
 }
 
 /* Drag states */
 .card.dragging {
   opacity: 0.5;
   cursor: grabbing;
-  transform: rotate(2deg) scale(0.95);
-  box-shadow: var(--shadow-strong);
 }
 
 .card.drag-over-top {
@@ -384,68 +330,26 @@ function showPlatformMenu(event) {
 @keyframes pulse-border {
   0%, 100% { 
     border-color: var(--primary-color);
-    box-shadow: var(--shadow-moderate);
   }
   50% { 
     border-color: rgba(76, 175, 80, 0.6);
-    box-shadow: var(--shadow-strong), 0 0 0 2px rgba(76, 175, 80, 0.2);
   }
 }
 
 /* Move mode styling */
 .card.card-to-move {
   border: 2px dashed var(--primary-color);
-  background: linear-gradient(145deg, 
-    rgba(76, 175, 80, 0.05), 
-    rgba(76, 175, 80, 0.02)
-  );
-  transform: scale(0.98);
-  box-shadow: 
-    var(--shadow-moderate),
-    0 0 0 4px rgba(76, 175, 80, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  animation: move-mode-pulse 2s ease-in-out infinite;
+  background: rgba(76, 175, 80, 0.05);
+  opacity: 0.8;
 }
 
-@keyframes move-mode-pulse {
-  0%, 100% { 
-    box-shadow: 
-      var(--shadow-moderate),
-      0 0 0 4px rgba(76, 175, 80, 0.1);
-  }
-  50% { 
-    box-shadow: 
-      var(--shadow-strong),
-      0 0 0 6px rgba(76, 175, 80, 0.2);
-  }
-}
 
-/* Hover overlay for interaction feedback */
-.hover-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.05), 
-    rgba(255, 255, 255, 0.01)
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  border-radius: var(--card-radius);
-  z-index: 1;
-}
 
-.card:hover .hover-overlay {
-  opacity: 1;
-}
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .card {
-    --card-padding: 1rem;
+    padding: 1rem;
     margin-bottom: 0.5rem;
   }
   
@@ -485,14 +389,6 @@ function showPlatformMenu(event) {
   .platform-pill,
   .move-button {
     transition: none;
-  }
-  
-  .card:hover {
-    transform: none;
-  }
-  
-  .card.card-to-move {
-    animation: none;
   }
 }
 

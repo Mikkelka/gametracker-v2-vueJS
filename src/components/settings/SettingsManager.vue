@@ -49,15 +49,14 @@ function saveSettings() {
 </template>
 
 <style scoped>
-
 #settingsForm {
   margin-top: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--card-border);
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .form-group:last-child {
@@ -70,13 +69,17 @@ function saveSettings() {
   align-items: center;
   cursor: pointer;
   width: 100%;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+  letter-spacing: 0.25px;
 }
 
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 34px;
+  width: 54px;
+  height: 28px;
 }
 
 .toggle-switch input {
@@ -92,44 +95,47 @@ function saveSettings() {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 26px;
-  width: 26px;
+  height: 20px;
+  width: 20px;
   left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 3px;
+  bottom: 3px;
+  background: white;
+  transition: all 0.2s ease;
+  border-radius: 50%;
 }
 
 input:checked + .slider {
-  background-color: var(--button-bg);
+  background: var(--primary-color);
 }
 
 input:checked + .slider:before {
-  transform: translateX(26px);
+  transform: translateX(22px);
 }
 
 .btn-primary {
   width: 100%;
-  margin-top: 20px;
-  background-color: var(--button-bg);
+  margin-top: 1.25rem;
+  background: var(--primary-color);
   color: white;
-  padding: 10px 15px;
+  padding: 0.75rem 1rem;
   border: none;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-  background-color: var(--button-hover);
+  background: #45a049;
 }
 </style>

@@ -77,121 +77,74 @@ watch(() => props.isOpen, (isOpen) => {
 
 <style scoped>
 .modal-overlay {
-  --modal-radius: var(--radius-xl);
-
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(0, 0, 0, 0.4), 
-    rgba(0, 0, 0, 0.6)
-  );
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  animation: overlayFadeIn 0.3s ease;
 }
 
 .modal-container {
-  background: linear-gradient(145deg, var(--list-bg), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--modal-radius);
+  background: #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
   width: 100%;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: var(--shadow-dark-xl);
-  backdrop-filter: blur(20px);
-  animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
 }
 
-.modal-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-}
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-5) var(--space-6);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08), 
-    rgba(255, 255, 255, 0.04)
-  );
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }
 
-.modal-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    var(--primary-color), 
-    rgba(76, 175, 80, 0.6)
-  );
-  opacity: 0.8;
-  box-shadow: 0 0 8px var(--primary-color);
-}
 
 .modal-header h2 {
   margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
+  font-size: 1.125rem;
+  font-weight: 600;
   color: var(--text-color);
-  letter-spacing: 0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.25px;
 }
 
 .close-button {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1), 
-    rgba(255, 255, 255, 0.05)
-  );
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  width: 36px;
-  height: 36px;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-color);
   cursor: pointer;
   padding: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   line-height: 1;
-  transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
   opacity: 0.8;
 }
 
 .close-button:hover {
   opacity: 1;
-  background: linear-gradient(135deg, 
-    rgba(239, 68, 68, 0.8), 
-    rgba(239, 68, 68, 0.6)
-  );
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.8);
   color: white;
-  transform: translateY(-1px) scale(1.05);
-  box-shadow: var(--shadow-moderate);
 }
 
 .modal-body {
-  padding: var(--space-6);
+  padding: 1.5rem;
   overflow-y: auto;
   max-height: calc(90vh - 120px);
   position: relative;
@@ -216,116 +169,59 @@ watch(() => props.isOpen, (isOpen) => {
 }
 
 .modal-footer {
-  padding: var(--space-4) var(--space-6);
+  padding: 1rem 1.5rem;
   display: flex;
   justify-content: flex-end;
-  gap: var(--space-3);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.05), 
-    rgba(255, 255, 255, 0.02)
-  );
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
 }
 
 .btn {
-  padding: var(--space-2_5) var(--space-5);
+  padding: 0.75rem 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
   letter-spacing: 0.25px;
 }
 
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn:hover::before {
-  left: 100%;
-}
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
+  background: var(--primary-color);
   color: white;
-  box-shadow: var(--shadow-subtle);
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-moderate);
-  filter: brightness(1.1);
+  background: #45a049;
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444, rgba(239, 68, 68, 0.8));
+  background: #ef4444;
   color: white;
-  box-shadow: var(--shadow-subtle);
 }
 
 .btn-danger:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-moderate);
-  filter: brightness(1.1);
+  background: #dc2626;
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1), 
-    rgba(255, 255, 255, 0.05)
-  );
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-color);
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.08)
-  );
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-subtle);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(8px);
-  }
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .modal-container {
     margin: 1rem;
     max-height: calc(100vh - 2rem);
-    --modal-radius: var(--radius-xl);
   }
 
   .modal-header {
@@ -357,17 +253,9 @@ watch(() => props.isOpen, (isOpen) => {
 
 /* Prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .modal-overlay,
-  .modal-container,
   .close-button,
   .btn {
-    animation: none;
     transition: none;
-  }
-
-  .close-button:hover,
-  .btn:hover {
-    transform: none;
   }
 }
 
