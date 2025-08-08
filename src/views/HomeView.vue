@@ -1,15 +1,14 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, inject } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick, computed, defineAsyncComponent, watch } from "vue";
 import { useMediaTypeStore } from "../stores/mediaType";
 import { useGameStore } from "../stores/game.store";
 import { useCategoryStore } from "../stores/category";
 import { useDragAndDrop } from "../composables/useDragAndDrop";
 import GameList from "../components/game/GameList.vue";
-import PlatformManager from "../components/platform/PlatformManager.vue";
-import SettingsManager from "../components/settings/SettingsManager.vue";
-import { computed } from "vue";
-import { watch } from "vue";
 import SimplerModal from "../components/ui/SimplerModal.vue";
+// Lazy load heavy components
+const PlatformManager = defineAsyncComponent(() => import("../components/platform/PlatformManager.vue"));
+const SettingsManager = defineAsyncComponent(() => import("../components/settings/SettingsManager.vue"));
 
 const mediaTypeStore = useMediaTypeStore();
 const gameStore = useGameStore();
@@ -25,8 +24,8 @@ const activeEditMenu = ref(null);
 const activePlatformMenu = ref(null);
 const newGameTitle = ref("");
 const selectedPlatform = ref("");
-const syncStatusDisplay = computed(() => gameStore.syncStatus);
-const moveMode = ref(null);
+const _syncStatusDisplay = computed(() => gameStore.syncStatus);
+const _moveMode = ref(null);
 const cardToMove = ref(null);
 
 // Note modal state
@@ -49,90 +48,10 @@ const emit = defineEmits([
   "update:show-settings-modal",
 ]);
 
-// Bruges til at tracke om props er blevet opdateret
-const localShowAddGameModal = ref(props.showAddGameModal || false);
-const localShowPlatformModal = ref(props.showPlatformModal || false);
-const localShowSettingsModal = ref(props.showSettingsModal || false);
-
-// Forsøg også at få modals via inject hvis tilgængelig
-const injectedModals = inject("modals", null);
-
-// Computed properties for at bestemme om modaler skal vises
-const showAddGameModal = computed({
-  get: () =>
-    localShowAddGameModal.value ||
-    (injectedModals && injectedModals.showAddGameModal.value) ||
-    false,
-  set: (value) => {
-    localShowAddGameModal.value = value;
-    emit("update:show-add-game-modal", value);
-    if (injectedModals) injectedModals.showAddGameModal.value = value;
-  },
-});
-
-const showPlatformModal = computed({
-  get: () =>
-    localShowPlatformModal.value ||
-    (injectedModals && injectedModals.showPlatformModal.value) ||
-    false,
-  set: (value) => {
-    localShowPlatformModal.value = value;
-    emit("update:show-platform-modal", value);
-    if (injectedModals) injectedModals.showPlatformModal.value = value;
-  },
-});
-
-const showSettingsModal = computed({
-  get: () =>
-    localShowSettingsModal.value ||
-    (injectedModals && injectedModals.showSettingsModal.value) ||
-    false,
-  set: (value) => {
-    localShowSettingsModal.value = value;
-    emit("update:show-settings-modal", value);
-    if (injectedModals) injectedModals.showSettingsModal.value = value;
-  },
-});
-
-const showImportModal = computed({
-  get: () =>
-    localShowImportModal.value ||
-    (injectedModals && injectedModals.showImportModal.value) ||
-    false,
-  set: (value) => {
-    localShowImportModal.value = value;
-    emit("update:show-import-modal", value);
-    if (injectedModals) injectedModals.showImportModal.value = value;
-  },
-});
-
-// Lyt efter ændringer i props
-watch(
-  () => props.showAddGameModal,
-  (newVal) => {
-    if (!isComponentDestroyed.value) {
-      localShowAddGameModal.value = newVal;
-    }
-  }
-);
-
-watch(
-  () => props.showPlatformModal,
-  (newVal) => {
-    if (!isComponentDestroyed.value) {
-      localShowPlatformModal.value = newVal;
-    }
-  }
-);
-
-watch(
-  () => props.showSettingsModal,
-  (newVal) => {
-    if (!isComponentDestroyed.value) {
-      localShowSettingsModal.value = newVal;
-    }
-  }
-);
+// Use computed properties to reactively follow props
+const showAddGameModal = computed(() => props.showAddGameModal);
+const showPlatformModal = computed(() => props.showPlatformModal);
+const showSettingsModal = computed(() => props.showSettingsModal);
 
 const showDeleteConfirmModal = ref(false);
 const gameToDelete = ref(null);
@@ -263,14 +182,14 @@ watch(
   () => gameStore.syncStatus,
   (newStatus) => {
     if (!isComponentDestroyed.value) {
-      console.log("Sync status changed:", newStatus);
+      console.warn("Sync status changed:", newStatus);
     }
   },
   { deep: true }
 );
 
 // Søgefunktion
-function handleSearch(term) {
+function _handleSearch(term) {
   if (isComponentDestroyed.value) return;
   searchTerm.value = term;
 }
@@ -331,18 +250,20 @@ function performEditMenuAction(action, gameId) {
       loadGameNote(gameId);
       showNoteModal.value = true;
       break;
-    case "edit-title":
+    case "edit-title": {
       const gameToEdit = gameStore.games.find((g) => g.id === gameId);
       editingGameId.value = gameId;
       editingGameTitle.value = gameToEdit.title || "";
       showEditTitleModal.value = true;
       break;
-    case "edit-date":
+    }
+    case "edit-date": {
       const gameToEditDate = gameStore.games.find((g) => g.id === gameId);
       editingDateGameId.value = gameId;
       editingDate.value = gameToEditDate.completionDate || "";
       showEditDateModal.value = true;
       break;
+    }
     case "today-date":
       gameStore.setTodayAsCompletionDate(gameId);
       break;
@@ -552,7 +473,7 @@ async function moveCardRelative(sourceGameId, targetGameId, position) {
   } else {
     // Ellers opdater rækkefølgen inden for den samme liste
     // Find alle spil i samme status-liste
-    const gamesInSameList = gameStore.games
+    const _gamesInSameList = gameStore.games
       .filter((g) => g.status === targetGame.status)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -579,7 +500,7 @@ async function moveCardRelative(sourceGameId, targetGameId, position) {
 }
 
 // Implementér moveCard funktionen
-async function moveCard(gameId, direction) {
+async function _moveCard(gameId, direction) {
   if (isComponentDestroyed.value) return;
 
   const game = gameStore.games.find((g) => g.id === gameId);
@@ -647,18 +568,10 @@ async function addGame() {
 
   newGameTitle.value = "";
   selectedPlatform.value = "";
-  showAddGameModal.value = false;
+  emit('update:show-add-game-modal', false);
 }
 
-function openAddGameModal() {
-  if (isComponentDestroyed.value) return;
-  showAddGameModal.value = true;
-}
-
-function openPlatformModal() {
-  if (isComponentDestroyed.value) return;
-  showPlatformModal.value = true;
-}
+// Modal functions removed - handled through props/events system
 </script>
 
 <template>
@@ -689,7 +602,7 @@ function openPlatformModal() {
       </div>
     </main>
 
-    <!-- Edit Menu -->
+    <!-- Edit Menu - Erstat hele din edit-menu sektion med dette -->
     <div
       v-if="activeEditMenu"
       class="edit-menu"
@@ -700,55 +613,68 @@ function openPlatformModal() {
         zIndex: 1000,
       }"
     >
+      <!-- Action buttons - favorit og slet øverst -->
+      <div class="edit-menu-actions">
+        <button
+          class="icon-btn favorite-btn"
+          :class="{ 'is-favorited': gameStore.games.find(g => g.id === activeEditMenu.gameId)?.favorite }"
+          @click="performEditMenuAction('favorite', activeEditMenu.gameId)"
+          :title="gameStore.games.find(g => g.id === activeEditMenu.gameId)?.favorite ? 'Fjern favorit' : 'Marker som favorit'"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </button>
+        
+        <button
+          class="icon-btn delete-btn"
+          @click="performEditMenuAction('delete', activeEditMenu.gameId)"
+          title="Slet"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Regular menu buttons - kun tekst, ingen ikoner -->
       <button
-        class="favorite-btn"
-        @click="performEditMenuAction('favorite', activeEditMenu.gameId)"
-      >
-        {{
-          gameStore.games.find((g) => g.id === activeEditMenu.gameId)?.favorite
-            ? "Fjern favorit"
-            : "Marker som favorit"
-        }}
-      </button>
-      <button
-        class="note-btn"
+        class="menu-btn note-btn"
         @click="performEditMenuAction('note', activeEditMenu.gameId)"
       >
         {{
           gameStore.games.find((g) => g.id === activeEditMenu.gameId)?.hasNote
-            ? "📝 Rediger note"
-            : "📝 Tilføj note"
+            ? "Rediger note"
+            : "Tilføj note"
         }}
       </button>
+      
       <button
-        class="edit-title-btn"
+        class="menu-btn edit-title-btn"
         @click="performEditMenuAction('edit-title', activeEditMenu.gameId)"
       >
         Rediger titel
       </button>
+      
       <button
-        class="edit-date-btn"
+        class="menu-btn edit-date-btn"
         @click="performEditMenuAction('edit-date', activeEditMenu.gameId)"
       >
         Rediger dato
       </button>
+      
       <button
-        class="today-date-btn"
+        class="menu-btn today-date-btn"
         @click="performEditMenuAction('today-date', activeEditMenu.gameId)"
       >
         Dagens dato
       </button>
+      
       <button
-        class="move-btn"
+        class="menu-btn move-btn"
         @click="performEditMenuAction('move', activeEditMenu.gameId)"
       >
         Flyt kort
-      </button>
-      <button
-        class="delete-btn"
-        @click="performEditMenuAction('delete', activeEditMenu.gameId)"
-      >
-        Slet
       </button>
     </div>
 
@@ -776,7 +702,7 @@ function openPlatformModal() {
     <SimplerModal
       :isOpen="showAddGameModal"
       :title="`Tilføj nyt ${mediaTypeStore.config.itemName}`"
-      @close="showAddGameModal = false"
+      @close="emit('update:show-add-game-modal', false)"
     >
       <form @submit.prevent="addGame" class="game-form">
         <div class="form-group">
@@ -824,18 +750,18 @@ function openPlatformModal() {
     <SimplerModal
       :isOpen="showPlatformModal"
       :title="`Administrer ${mediaTypeStore.config.categoryNamePlural}`"
-      @close="showPlatformModal = false"
+      @close="emit('update:show-platform-modal', false)"
     >
-      <PlatformManager @close="showPlatformModal = false" />
+      <PlatformManager @close="emit('update:show-platform-modal', false)" />
     </SimplerModal>
 
     <!-- Settings Modal -->
     <SimplerModal
       :isOpen="showSettingsModal"
       title="Indstillinger"
-      @close="showSettingsModal = false"
+      @close="emit('update:show-settings-modal', false)"
     >
-      <SettingsManager @close="showSettingsModal = false" />
+      <SettingsManager @close="emit('update:show-settings-modal', false)" />
     </SimplerModal>
 
     <SimplerModal
@@ -853,7 +779,7 @@ function openPlatformModal() {
           style="
             padding: 8px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             background-color: #444;
             color: white;
@@ -867,7 +793,7 @@ function openPlatformModal() {
           style="
             padding: 8px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             background-color: #f44336;
             color: white;
@@ -983,7 +909,6 @@ function openPlatformModal() {
 #app {
   padding: 1rem;
   padding-top: 1rem;
-  /* min-height: calc(100vh); */
 }
 
 #listsContainer {
@@ -993,24 +918,188 @@ function openPlatformModal() {
   justify-content: center;
 }
 
-/* Edit Menu og Platform Menu styling */
-.edit-menu,
-.platform-tag-menu {
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
-  padding: 5px;
-  box-shadow: var(--shadow);
+/* ===== EDIT MENU ===== */
+.edit-menu {
+  --menu-radius: 16px;
+  --menu-padding: 1rem;
+  --button-height: 44px;
+  --icon-button-size: 36px;
+  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-menu: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+  
+  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  padding: var(--menu-padding);
+  box-shadow: var(--shadow-menu);
+  backdrop-filter: blur(20px);
   z-index: 1000;
-  width: 160px;
+  width: 180px;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  position: relative;
+}
+
+.edit-menu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.edit-menu-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edit-menu .icon-btn {
+  width: var(--icon-button-size);
+  height: var(--icon-button-size);
+  border: none;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+}
+
+.edit-menu .icon-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.edit-menu .icon-btn:hover::before {
+  opacity: 1;
+}
+
+.edit-menu .icon-btn svg {
+  width: 16px;
+  height: 16px;
+  z-index: 1;
+  position: relative;
+}
+
+.edit-menu .favorite-btn {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.edit-menu .favorite-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.5);
+}
+
+.edit-menu .favorite-btn.is-favorited {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.edit-menu .delete-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.edit-menu .delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
+}
+
+.edit-menu .menu-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--button-height);
+  padding: 0 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 3px;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.edit-menu .menu-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.edit-menu .menu-btn:hover::before {
+  opacity: 1;
+}
+
+.edit-menu .menu-btn:hover {
+  transform: translateX(4px);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.edit-menu .menu-btn:active {
+  transform: translateX(2px);
+}
+
+.edit-menu .note-btn {
+  color: var(--primary-color);
+}
+
+.edit-menu .note-btn:hover {
+  color: rgba(76, 175, 80, 0.8);
+}
+
+.edit-menu .move-btn {
+  color: var(--text-color);
+}
+
+.edit-menu .move-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== PLATFORM MENU ===== */
+.platform-tag-menu {
+  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  padding: 8px;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  width: 180px;
   max-width: calc(100% - 20px);
 }
 
-.edit-menu button,
 .platform-tag-menu button {
   display: block;
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: none;
   border: none;
   text-align: left;
@@ -1020,14 +1109,17 @@ function openPlatformModal() {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  transition: all 0.2s ease;
 }
 
-.edit-menu button:hover,
 .platform-tag-menu button:hover {
-  background-color: var(--list-bg);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  transform: translateX(4px);
 }
 
-/* Form styling */
+/* ===== FORMS ===== */
 .form-group {
   margin-bottom: 15px;
 }
@@ -1043,7 +1135,7 @@ function openPlatformModal() {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--card-border);
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: var(--card-bg);
   color: var(--text-color);
 }
@@ -1051,7 +1143,7 @@ function openPlatformModal() {
 .btn {
   padding: 10px 15px;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
   font-size: 16px;
 }
@@ -1066,13 +1158,13 @@ function openPlatformModal() {
   background-color: var(--button-hover);
 }
 
-/* Sync notification */
+/* ===== SYNC NOTIFICATION ===== */
 .sync-notification {
   position: fixed;
   bottom: 20px;
   right: 20px;
   padding: 10px 15px;
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: var(--card-bg);
   color: var(--text-color);
   box-shadow: var(--shadow);
@@ -1095,7 +1187,141 @@ function openPlatformModal() {
   color: white;
 }
 
-/* Responsiv design */
+/* ===== MOVE MODE STYLING ===== */
+.card.card-to-move {
+  border: 2px dashed var(--button-bg);
+  background-color: rgba(76, 175, 80, 0.1);
+  transform: scale(0.98);
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+}
+
+.move-arrows {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: none;
+  gap: 5px;
+  z-index: 5;
+}
+
+.move-btn {
+  display: none !important;
+}
+
+.move-up,
+.move-down {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 3px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-size: 18px;
+  box-shadow: var(--shadow);
+}
+
+.move-up:hover,
+.move-down:hover {
+  background-color: var(--button-bg);
+  color: white;
+}
+
+/* ===== NOTE MODAL STYLING ===== */
+.note-read-mode {
+  min-height: 200px;
+}
+
+.note-content {
+  white-space: pre-wrap;
+  background-color: var(--list-bg);
+  padding: 1.5rem;
+  border-radius: 3px;
+  margin-bottom: 1.5rem;
+  font-family: inherit;
+  line-height: 1.6;
+  min-height: 400px;
+  user-select: text;
+  border: 1px solid var(--card-border);
+  word-wrap: break-word;
+  font-size: 1rem;
+}
+
+.no-note-message {
+  background-color: var(--list-bg);
+  padding: 3rem;
+  border-radius: 3px;
+  text-align: center;
+  color: var(--text-color);
+  opacity: 0.6;
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.note-edit-mode {
+  min-height: 200px;
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 250px;
+  padding: 1.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 3px;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.note-textarea:focus {
+  outline: none;
+  border-color: var(--button-bg);
+}
+
+.btn-icon {
+  padding: 8px 12px;
+  font-size: 1.2rem;
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary {
+  background-color: #666;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #555;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #d32f2f;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
 @media (min-width: 769px) {
   #listsContainer {
     display: flex;
@@ -1127,7 +1353,48 @@ function openPlatformModal() {
     overflow: auto;
   }
 
-  .edit-menu,
+  .edit-menu {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    padding: 1.5rem 1rem !important;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.3) !important;
+    animation: slideUpMobile 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .edit-menu-actions {
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .edit-menu .icon-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 3px;
+  }
+  
+  .edit-menu .icon-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .edit-menu .menu-btn {
+    height: 52px;
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    display: flex !important;
+    align-items: center !important;
+  }
+
   .platform-tag-menu {
     position: fixed !important;
     left: 0 !important;
@@ -1136,81 +1403,22 @@ function openPlatformModal() {
     top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: 12px 12px 0 0;
+    border-radius: 3px;
     padding: 15px 0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
     animation: slideUp 0.3s ease;
   }
 
-  .edit-menu button,
   .platform-tag-menu button {
     padding: 12px 20px;
     font-size: 16px;
     border-bottom: 1px solid var(--card-border);
   }
 
-  .edit-menu button:last-child,
   .platform-tag-menu button:last-child {
     border-bottom: none;
   }
 
-  @keyframes slideUp {
-    from {
-      transform: translateY(100%);
-    }
-
-    to {
-      transform: translateY(0);
-    }
-  }
-}
-
-/* Styling for kort der er valgt til flytning */
-.card.card-to-move {
-  border: 2px dashed var(--button-bg);
-  background-color: rgba(76, 175, 80, 0.1);
-  transform: scale(0.98);
-  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
-}
-
-/* Opdater styling for pile */
-.move-arrows {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: none;
-  /* Skjult som standard */
-  gap: 5px;
-  z-index: 5;
-}
-
-.move-btn {
-  display: none !important;
-}
-
-.move-up,
-.move-down {
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  font-size: 18px;
-  box-shadow: var(--shadow);
-}
-
-.move-up:hover,
-.move-down:hover {
-  background-color: var(--button-bg);
-  color: white;
-}
-
-@media (max-width: 768px) {
   .move-btn {
     display: block !important;
   }
@@ -1226,101 +1434,7 @@ function openPlatformModal() {
     height: 44px;
     font-size: 24px;
   }
-}
 
-/* Note Modal Styling */
-.note-read-mode {
-  min-height: 200px;
-}
-
-.note-content {
-  white-space: pre-wrap;
-  background-color: var(--list-bg);
-  padding: 1.5rem;
-  border-radius: 4px;
-  margin-bottom: 1.5rem;
-  font-family: inherit;
-  line-height: 1.6;
-  min-height: 400px;
-  user-select: text;
-  border: 1px solid var(--card-border);
-  word-wrap: break-word;
-  font-size: 1rem;
-}
-
-.no-note-message {
-  background-color: var(--list-bg);
-  padding: 3rem;
-  border-radius: 4px;
-  text-align: center;
-  color: var(--text-color);
-  opacity: 0.6;
-  font-style: italic;
-  margin-bottom: 1.5rem;
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.note-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.note-edit-mode {
-  min-height: 200px;
-}
-
-.note-textarea {
-  width: 100%;
-  min-height: 250px;
-  padding: 1.5rem;
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  font-family: inherit;
-  font-size: 1rem;
-  line-height: 1.6;
-  resize: vertical;
-}
-
-.note-textarea:focus {
-  outline: none;
-  border-color: var(--button-bg);
-}
-
-/* Kompakte knapper */
-.btn-icon {
-  padding: 8px 12px;
-  font-size: 1.2rem;
-  min-width: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-secondary {
-  background-color: #666;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: #555;
-}
-
-.btn-danger {
-  background-color: #f44336;
-  color: white;
-}
-
-.btn-danger:hover {
-  background-color: #d32f2f;
-}
-
-@media (max-width: 768px) {
   .note-read-mode {
     min-height: 400px;
   }
@@ -1342,6 +1456,32 @@ function openPlatformModal() {
   .no-note-message {
     min-height: 300px;
     padding: 2rem 1rem;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUpMobile {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@media (hover: hover) {
+  .edit-menu .menu-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
   }
 }
 </style>

@@ -12,6 +12,7 @@ import {
   setDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
+import { error } from '../utils/logger';
 
 
 export function useFirebaseAuth() {
@@ -24,9 +25,9 @@ export function useFirebaseAuth() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       return { success: true, user: result.user };
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error };
+    } catch (err) {
+      error('Login error:', err);
+      return { success: false, error: err };
     }
   }
   
@@ -34,9 +35,9 @@ export function useFirebaseAuth() {
     try {
       await signOut(auth);
       return { success: true };
-    } catch (error) {
-      console.error('Logout error:', error);
-      return { success: false, error };
+    } catch (err) {
+      error('Logout error:', err);
+      return { success: false, error: err };
     }
   }
   
@@ -51,9 +52,9 @@ export function useFirebaseAuth() {
       }
       
       return { success: false, error: 'User not found' };
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      return { success: false, error };
+    } catch (err) {
+      error('Error loading user profile:', err);
+      return { success: false, error: err };
     }
   }
   
@@ -89,9 +90,9 @@ export function useFirebaseAuth() {
       }
       
       return { success: true, data: userData };
-    } catch (error) {
-      console.error('Error saving user profile:', error);
-      return { success: false, error };
+    } catch (err) {
+      error('Error saving user profile:', err);
+      return { success: false, error: err };
     }
   }
   

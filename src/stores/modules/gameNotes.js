@@ -1,5 +1,5 @@
 // src/stores/modules/gameNotes.js
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useNotesService } from '../../firebase/notes.service';
 
 
@@ -156,7 +156,7 @@ export function useGameNotes(games, gameSync, userStore) {
         
         gameSync.updateSyncStatus('success', 'Text kopieret til udklipsholder', null, true);
         return true;
-      } catch (fallbackError) {
+      } catch {
         gameSync.updateSyncStatus('error', 'Kunne ikke kopiere tekst');
         return false;
       }
@@ -175,7 +175,7 @@ export function useGameNotes(games, gameSync, userStore) {
 
   
   function cleanup() {
-    console.log('Cleaning up game notes module...');
+    console.warn('Cleaning up game notes module...');
     
     isDestroyed.value = true;
     notesCache.value.clear();

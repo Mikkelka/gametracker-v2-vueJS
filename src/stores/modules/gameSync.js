@@ -58,7 +58,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     if (isDestroyed.value) return;
     
     syncTimer = createTimer(() => {
-      console.log('Sync timer triggered');
+      console.warn('Sync timer triggered');
       syncWithFirebase();
       syncTimer = null;
     }, SYNC_DELAY);
@@ -144,7 +144,7 @@ export function useGameSync(mediaTypeStore, userStore) {
       return;
     }
     
-    console.log(`Queuing ${type} operation for id: ${id}`);
+    console.warn(`Queuing ${type} operation for id: ${id}`);
 
     // Add operations should not use queue
     if (type === 'add') {
@@ -183,16 +183,16 @@ export function useGameSync(mediaTypeStore, userStore) {
  
   async function syncWithFirebase() {
     if (pendingChanges.value.length === 0 || isDestroyed.value) {
-      console.log('No pending changes to sync or module destroyed');
+      console.warn('No pending changes to sync or module destroyed');
       return;
     }
 
     if (!userStore.currentUser) {
-      console.log('No user logged in');
+      console.warn('No user logged in');
       return;
     }
 
-    console.log(`Syncing ${pendingChanges.value.length} changes`);
+    console.warn(`Syncing ${pendingChanges.value.length} changes`);
     updateSyncStatus('syncing', 'saving', null, false);
 
     try {
@@ -203,7 +203,7 @@ export function useGameSync(mediaTypeStore, userStore) {
 
       // Check if module was destroyed during async operation
       if (isDestroyed.value) {
-        console.log('Module destroyed during sync, aborting');
+        console.warn('Module destroyed during sync, aborting');
         return;
       }
 
@@ -219,12 +219,12 @@ export function useGameSync(mediaTypeStore, userStore) {
 
       // Check again after async operation
       if (isDestroyed.value) {
-        console.log('Module destroyed after sync completion');
+        console.warn('Module destroyed after sync completion');
         return;
       }
 
       if (result.success) {
-        console.log(`Successfully synced ${result.count} changes`);
+        console.warn(`Successfully synced ${result.count} changes`);
         updateSyncStatus('success', 'saved');
       } else {
         console.error('Failed to sync changes');
@@ -251,7 +251,7 @@ export function useGameSync(mediaTypeStore, userStore) {
         userId,
         (result) => {
           if (isDestroyed.value) {
-            console.log('Module destroyed, ignoring subscription callback');
+            console.warn('Module destroyed, ignoring subscription callback');
             return;
           }
           callback(result);
@@ -312,7 +312,7 @@ export function useGameSync(mediaTypeStore, userStore) {
 
  
   function cleanup() {
-    console.log('Cleaning up game sync module...');
+    console.warn('Cleaning up game sync module...');
     
     isDestroyed.value = true;
     

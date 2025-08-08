@@ -15,7 +15,7 @@ const colorInputRef = ref(null);
 const showDeletePlatformModal = ref(false);
 const platformToDelete = ref(null);
 
-const emit = defineEmits(['close']);
+const _emit = defineEmits(['close']);
 
 onMounted(async () => {
   await platformStore.loadPlatforms();
@@ -90,8 +90,8 @@ async function confirmDeletePlatform() {
   <p>Er du sikker på, at du vil slette denne {{ mediaTypeStore.config.categoryName.toLowerCase() }}?</p>
   
   <template #footer>
-    <button @click="showDeletePlatformModal = false" style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #444; color: white; margin-right: 8px;">Annuller</button>
-    <button @click="confirmDeletePlatform" style="padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #f44336; color: white;">Slet</button>
+    <button @click="showDeletePlatformModal = false" style="padding: 8px 15px; border: none; border-radius: 3px; cursor: pointer; background-color: #444; color: white; margin-right: 8px;">Annuller</button>
+    <button @click="confirmDeletePlatform" style="padding: 8px 15px; border: none; border-radius: 3px; cursor: pointer; background-color: #f44336; color: white;">Slet</button>
   </template>
 </SimplerModal>
 
@@ -116,7 +116,7 @@ async function confirmDeletePlatform() {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--card-border);
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: var(--card-bg);
   color: var(--text-color);
 }
@@ -137,7 +137,7 @@ async function confirmDeletePlatform() {
 .color-preview {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: 3px;
   border: 2px solid var(--card-border);
   cursor: pointer;
   margin-left: 10px;
@@ -155,13 +155,13 @@ async function confirmDeletePlatform() {
   padding: 10px;
   margin-bottom: 10px;
   background-color: var(--card-bg);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .color-picker-wrapper {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 3px;
   border: 2px solid var(--card-border);
   cursor: pointer;
   position: relative;
@@ -192,7 +192,7 @@ async function confirmDeletePlatform() {
   color: white;
   border: none;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
 }
 

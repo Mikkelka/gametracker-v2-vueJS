@@ -56,7 +56,7 @@ onMounted(() => {
   margin: 100px auto;
   padding: 20px;
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: 4px;
   text-align: center;
   box-shadow: var(--shadow);
 }

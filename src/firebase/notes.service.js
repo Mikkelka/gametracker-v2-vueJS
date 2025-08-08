@@ -1,7 +1,6 @@
 // src/firebase/notes.service.js
 import { db } from './firebase';
 import { 
-  collection, 
   doc, 
   getDoc,
   setDoc, 

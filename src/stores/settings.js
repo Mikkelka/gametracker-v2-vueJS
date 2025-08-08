@@ -1,6 +1,6 @@
 // vue/src/stores/settings.js
 import { defineStore } from 'pinia';
-import { ref, reactive, computed } from 'vue';
+import { reactive, computed } from 'vue';
 import { useMediaTypeStore } from './mediaType';
 
 export const useSettingsStore = defineStore('settings', () => {

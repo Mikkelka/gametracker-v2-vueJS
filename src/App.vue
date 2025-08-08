@@ -1,17 +1,17 @@
 <script setup>
 // Import MobileNavigation
 import { onMounted, ref, onBeforeUnmount, provide, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from './stores/user';
 import AppSidebar from './components/layout/AppSidebar.vue';
-import MobileNavigation from './components/layout/MobileNavigation.vue'; 
-import { useRoute } from 'vue-router';
+import MobileNavigation from './components/layout/MobileNavigation.vue';
+import { error } from './utils/logger';
 
 const userStore = useUserStore();
-const router = useRouter();
+const _router = useRouter();
 const isLoading = ref(true);
 const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
-const showMobileMenu = ref(false);
+const _showMobileMenu = ref(false);
 const showSettingsModal = ref(false);
 const showAddGameModal = ref(false);
 const showPlatformModal = ref(false);
@@ -76,10 +76,7 @@ function handleSidebarToggle(collapsed) {
   localStorage.setItem('sidebarCollapsed', collapsed.toString());
 }
 
-// Håndter toggle af mobil menu
-function toggleMobileMenu() {
-  showMobileMenu.value = !showMobileMenu.value;
-}
+// Mobile menu toggle removed - handled by MobileNavigation component
 
 // Håndter åbning af indstillingsmodal
 function openSettingsModal() {
@@ -102,8 +99,8 @@ onMounted(async () => {
   applyCssVariables();
   try {
     await userStore.initUser();
-  } catch (error) {
-    console.error('Failed to initialize user:', error);
+  } catch (err) {
+    error('Failed to initialize user:', err);
   } finally {
     isLoading.value = false;
   }
@@ -119,7 +116,7 @@ onMounted(async () => {
     
     <template v-else>
       <AppSidebar 
-        v-if="userStore.isLoggedIn && !isMobile" 
+        v-if="userStore.isLoggedIn && !isMobile && !isDashboard" 
         :collapsed="sidebarCollapsed" 
         @toggle="handleSidebarToggle"
         @open-settings-modal="openSettingsModal"
@@ -135,9 +132,9 @@ onMounted(async () => {
       <main 
         class="content-area" 
         :class="{ 
-          'with-sidebar': userStore.isLoggedIn && !isMobile, 
-          'sidebar-collapsed': sidebarCollapsed && !isMobile,
-          'with-mobile-nav': isMobile
+          'with-sidebar': userStore.isLoggedIn && !isMobile && !isDashboard, 
+          'sidebar-collapsed': sidebarCollapsed && !isMobile && !isDashboard,
+          'with-mobile-nav': userStore.isLoggedIn && isMobile && !isDashboard
         }"
       >
         <router-view 
@@ -198,7 +195,7 @@ body {
 
 .loader {
   border: 5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  border-radius: 3px;
   border-top: 5px solid var(--button-bg);
   width: 50px;
   height: 50px;
@@ -220,7 +217,7 @@ body {
   background-color: var(--button-bg);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   font-size: 1.5rem;
   padding: 5px 10px;
   z-index: 1002;

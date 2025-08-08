@@ -1,5 +1,7 @@
 # MediaTrack v2.1
 
+![Lines of Code](https://img.shields.io/badge/lines%20of%20code-3088%20lines-blue)
+
 MediaTrack er en webapp til at holde styr på din personlige samling af medier. Applikationen giver dig mulighed for at kategorisere spil, film og bøger efter status, organisere dem efter relevante kategorier, og holde styr på dine fremskridt.
 
 Dette er version 2.1 af MediaTrack, en Vue.js-baseret portering og udvidelse af [den oprindelige GameTracker](https://github.com/Mikkelka/gametracker-v2), som nu understøtter flere forskellige medietyper.
