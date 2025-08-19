@@ -302,6 +302,7 @@ const statusConfig = computed(() => {
     min-height: calc(100vh - 60px);
     display: flex;
     flex-direction: column;
+    scroll-snap-align: start;
   }
 
   .list-header {
