@@ -921,35 +921,16 @@ async function addGame() {
 
 /* ===== EDIT MENU ===== */
 .edit-menu {
-  --menu-radius: 16px;
-  --menu-padding: 1rem;
-  --button-height: 44px;
-  --icon-button-size: 36px;
-  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-menu: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
-  
-  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+  background: #1f2937;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  padding: var(--menu-padding);
-  box-shadow: var(--shadow-menu);
-  backdrop-filter: blur(20px);
+  border-radius: 6px;
+  padding: 1rem;
   z-index: 1000;
   width: 180px;
   max-width: calc(100% - 20px);
-  overflow: hidden;
   position: relative;
 }
 
-.edit-menu::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-}
 
 .edit-menu-actions {
   display: flex;
@@ -960,74 +941,52 @@ async function addGame() {
 }
 
 .edit-menu .icon-btn {
-  width: var(--icon-button-size);
-  height: var(--icon-button-size);
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 3px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition-smooth);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.2s ease;
   flex: 1;
 }
 
-.edit-menu .icon-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
 
-.edit-menu .icon-btn:hover::before {
-  opacity: 1;
-}
 
 .edit-menu .icon-btn svg {
   width: 16px;
   height: 16px;
-  z-index: 1;
-  position: relative;
 }
 
 .edit-menu .favorite-btn {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  background: #fbbf24;
   color: white;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
 }
 
 .edit-menu .favorite-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.5);
+  background: #f59e0b;
 }
 
 .edit-menu .favorite-btn.is-favorited {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #f59e0b;
 }
 
 .edit-menu .delete-btn {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #ef4444;
   color: white;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .edit-menu .delete-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
+  background: #dc2626;
 }
 
 .edit-menu .menu-btn {
   display: flex;
   align-items: center;
   width: 100%;
-  height: var(--button-height);
+  height: 44px;
   padding: 0 1rem;
   background: none;
   border: none;
@@ -1036,62 +995,34 @@ async function addGame() {
   color: var(--text-color);
   font-size: 0.9rem;
   font-weight: 500;
-  border-radius: 3px;
-  transition: var(--transition-smooth);
-  position: relative;
-  overflow: hidden;
+  border-radius: 4px;
+  transition: all 0.2s ease;
   margin-bottom: 2px;
 }
 
-.edit-menu .menu-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
 
-.edit-menu .menu-btn:hover::before {
-  opacity: 1;
-}
 
 .edit-menu .menu-btn:hover {
-  transform: translateX(4px);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.edit-menu .menu-btn:active {
-  transform: translateX(2px);
-}
 
 .edit-menu .note-btn {
   color: var(--primary-color);
 }
 
-.edit-menu .note-btn:hover {
-  color: rgba(76, 175, 80, 0.8);
-}
 
 .edit-menu .move-btn {
   color: var(--text-color);
 }
 
-.edit-menu .move-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-}
 
 /* ===== PLATFORM MENU ===== */
 .platform-tag-menu {
-  background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+  background: #1f2937;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  border-radius: 6px;
   padding: 8px;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
-  backdrop-filter: blur(20px);
   z-index: 1000;
   width: 180px;
   max-width: calc(100% - 20px);
@@ -1109,15 +1040,14 @@ async function addGame() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.9em;
-  border-radius: 3px;
+  font-size: 0.9rem;
+  border-radius: 4px;
   margin-bottom: 2px;
   transition: all 0.2s ease;
 }
 
 .platform-tag-menu button:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ===== FORMS ===== */
@@ -1366,8 +1296,6 @@ async function addGame() {
     max-width: 100% !important;
     border-radius: 0 !important;
     padding: 1.5rem 1rem !important;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.3) !important;
-    animation: slideUpMobile 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .edit-menu-actions {
@@ -1380,7 +1308,7 @@ async function addGame() {
   .edit-menu .icon-btn {
     width: 56px;
     height: 56px;
-    border-radius: 3px;
+    border-radius: 6px;
   }
   
   .edit-menu .icon-btn svg {
@@ -1392,7 +1320,7 @@ async function addGame() {
     height: 52px;
     padding: 0 1.25rem;
     font-size: 1rem;
-    border-radius: 3px;
+    border-radius: 6px;
     margin-bottom: 4px;
     display: flex !important;
     align-items: center !important;
@@ -1406,10 +1334,8 @@ async function addGame() {
     top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: 3px;
+    border-radius: 0;
     padding: 15px 0;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    animation: slideUp 0.3s ease;
   }
 
   .platform-tag-menu button {

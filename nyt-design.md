@@ -59,6 +59,18 @@ Vi redesigner MediaTrack til et rent, minimalistisk interface inspireret af mode
 ### ✅ SettingsManager.vue
 **Status:** Minimal flat design gennemført
 
+### ✅ DashboardView.vue
+**Status:** Minimal flat design gennemført
+
+### ✅ LoginView.vue
+**Status:** Minimal flat design gennemført
+
+### ✅ Edit-menu (HomeView.vue)
+**Status:** Minimal flat design gennemført
+
+### ✅ Platform-tag-menu (HomeView.vue) 
+**Status:** Minimal flat design gennemført
+
 **Ændringer:**
 
 **AppSidebar.vue:**
@@ -117,13 +129,49 @@ Vi redesigner MediaTrack til et rent, minimalistisk interface inspireret af mode
 - Konsistent button styling
 - Minimal spacing system
 
-**Resultat:** Komplet minimalistisk design system på tværs af hele applikationen
+**DashboardView.vue:**
+- Fjernet alle komplekse gradienter og animationer
+- Forenklet tracker cards med `rgba(255,255,255,0.05)` baggrund
+- Solid farver på knapper uden gradienter
+- Minimal hover states uden transforms
+- Forenklet form inputs og version styling
+
+**LoginView.vue:**
+- Forenklet login container med minimal styling
+- Opdateret Google login knap til fladt design
+- Konsistent typografi og spacing
+- Forbedret responsive layout
+
+**Edit-menu (HomeView.vue):**
+- Fjernet alle gradienter og komplekse animationer
+- Solid `#1f2937` baggrund med minimal border
+- Forenklet icon knapper uden transforms
+- Flat hover states med `rgba(255,255,255,0.1)`
+- Konsistent `border-radius: 6px` på desktop, 0 på mobile
+
+**Platform-tag-menu (HomeView.vue):**
+- Samme minimal styling som edit-menu
+- Fjernet alle gradienter og skygger
+- Forenklet hover states uden transforms
+- Konsistent border-radius og spacing
+- Mobile-optimeret uden animationer
+
+**Resultat:** KOMPLET minimalistisk design system på tværs af HELE applikationen inklusive context menuer
 
 ## Redesign Status
 
-✅ **ALLE HOVEDKOMPONENTER GENNEMFØRT**
+✅ **ALLE KOMPONENTER GENNEMFØRT**
 
-Hele MediaTracker applikationen er nu redesignet til et konsistent minimalistisk design system. Alle komponenter følger de samme design principper og bruger identiske styling patterns.
+MediaTracker applikationen er nu FULDSTÆNDIGT redesignet til et konsistent minimalistisk design system. Dette inkluderer:
+
+- **Layout komponenter**: AppSidebar, MobileNavigation
+- **Game komponenter**: GameList, GameCard  
+- **UI komponenter**: SimplerModal
+- **Management komponenter**: PlatformManager, SettingsManager
+- **View komponenter**: HomeView, DashboardView, LoginView
+- **Context menuer**: Edit-menu, Platform-tag-menu (i HomeView.vue)
+
+Alle komponenter og menuer følger de samme design principper og bruger identiske styling patterns for et sammenhængende brugeroplevelse på tværs af hele applikationen.
 
 ## Design Guidelines for Development
 
