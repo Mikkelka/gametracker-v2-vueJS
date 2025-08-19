@@ -9,7 +9,8 @@ import { useCategoryStore } from '../../stores/category';
 import { 
   Home, 
   Search, 
-  Menu, 
+  ChevronLeft,
+  ChevronRight,
   Gamepad2, 
   Film, 
   Book, 
@@ -288,14 +289,21 @@ if (typeof window !== 'undefined') {
           >
             <Search :size="16" />
           </button>
-          <button class="action-btn menu-btn" @click="toggleSidebar" title="Skift sidebar visning">
-            <Menu :size="16" />
+          <button class="action-btn menu-btn" @click="toggleSidebar" :title="isCollapsed ? 'Udvid sidebar' : 'Minimer sidebar'">
+            <ChevronLeft :size="16" />
           </button>
         </div>
       </div>
       <div class="collapsed-header" v-else>
-        <div class="user-avatar" @click="toggleSidebar" title="Udvid sidebar">{{ userStore.displayName?.charAt(0).toUpperCase() || 'U' }}</div>
+        <div class="user-avatar">{{ userStore.displayName?.charAt(0).toUpperCase() || 'U' }}</div>
       </div>
+    </div>
+    
+    <!-- Toggle knap sektion - kun når collapsed -->
+    <div class="sidebar-toggle-section" v-if="isCollapsed">
+      <button class="toggle-btn" @click="toggleSidebar" title="Udvid sidebar">
+        <ChevronRight :size="16" />
+      </button>
     </div>
     
     <!-- Søgefelt -->
@@ -538,6 +546,7 @@ if (typeof window !== 'undefined') {
   opacity: 1;
   background: rgba(255, 255, 255, 0.3);
 }
+
 
 .sidebar-nav {
   flex: 1;
@@ -849,6 +858,38 @@ if (typeof window !== 'undefined') {
   background: rgba(239, 68, 68, 0.9);
 }
 
+.sidebar-toggle-section {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar.collapsed .toggle-btn {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  margin: 0 auto;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .sidebar {
@@ -893,6 +934,7 @@ if (typeof window !== 'undefined') {
     padding: 0.75rem 1rem;
     margin: 0 0 0.1rem 0;
   }
+  
 }
 
 /* Prefers reduced motion */
