@@ -90,8 +90,8 @@ async function confirmDeletePlatform() {
   <p>Er du sikker på, at du vil slette denne {{ mediaTypeStore.config.categoryName.toLowerCase() }}?</p>
   
   <template #footer>
-    <button @click="showDeletePlatformModal = false" style="padding: 8px 15px; border: none; border-radius: 3px; cursor: pointer; background-color: #444; color: white; margin-right: 8px;">Annuller</button>
-    <button @click="confirmDeletePlatform" style="padding: 8px 15px; border: none; border-radius: 3px; cursor: pointer; background-color: #f44336; color: white;">Slet</button>
+    <button @click="showDeletePlatformModal = false" class="btn btn-secondary">Annuller</button>
+    <button @click="confirmDeletePlatform" class="btn btn-danger">Slet</button>
   </template>
 </SimplerModal>
 
@@ -99,26 +99,37 @@ async function confirmDeletePlatform() {
 
 <style scoped>
 .platform-form {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  letter-spacing: 0.25px;
 }
 
 .form-group input[type="text"] {
   width: 100%;
-  padding: 8px;
-  border: 1px solid var(--card-border);
-  border-radius: 3px;
-  background-color: var(--card-bg);
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-color);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .color-picker {
@@ -135,37 +146,54 @@ async function confirmDeletePlatform() {
 }
 
 .color-preview {
-  width: 30px;
-  height: 30px;
-  border-radius: 3px;
-  border: 2px solid var(--card-border);
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  margin-left: 10px;
+  margin-left: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.color-preview:hover {
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .platform-list {
   list-style-type: none;
   padding: 0;
+  margin: 0;
 }
 
 .platform-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: var(--card-bg);
-  border-radius: 3px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.platform-list li:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .color-picker-wrapper {
   width: 24px;
   height: 24px;
-  border-radius: 3px;
-  border: 2px solid var(--card-border);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.color-picker-wrapper:hover {
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .color-picker-wrapper input[type="color"] {
@@ -182,21 +210,26 @@ async function confirmDeletePlatform() {
 }
 
 .platform-name {
-  font-weight: bold;
+  font-weight: 500;
   flex-grow: 1;
-  margin-left: 10px;
+  margin-left: 0.75rem;
+  color: var(--text-color);
+  font-size: 0.875rem;
 }
 
 .delete-platform {
-  background-color: #f44336;
+  background: #ef4444;
   color: white;
   border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .delete-platform:hover {
-  background-color: #d32f2f;
+  background: #dc2626;
 }
 </style>

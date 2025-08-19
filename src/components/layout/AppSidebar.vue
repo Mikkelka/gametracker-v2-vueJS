@@ -6,6 +6,19 @@ import { useUserStore } from '../../stores/user';
 import { useRouter } from 'vue-router';
 import { useGameStore } from '../../stores/game.store';
 import { useCategoryStore } from '../../stores/category';
+import { 
+  Home, 
+  Search, 
+  ChevronLeft,
+  ChevronRight,
+  Gamepad2, 
+  Film, 
+  Book, 
+  Plus, 
+  Settings, 
+  LogOut,
+  User 
+} from 'lucide-vue-next';
 
 const props = defineProps({
   collapsed: {
@@ -44,6 +57,7 @@ function toggleSidebar() {
 
 // Søgefelt
 const searchInput = ref('');
+const showSearch = ref(true);
 
 // Debounced search function for better performance
 let searchTimeout = null;
@@ -73,6 +87,15 @@ function clearSearch() {
   
   searchInput.value = '';
   handleSearch();
+}
+
+function toggleSearch() {
+  if (isComponentDestroyed.value) return;
+  
+  showSearch.value = !showSearch.value;
+  if (!showSearch.value) {
+    clearSearch();
+  }
 }
 
 // Tjek om vi er på home-siden (for at vise/skjule undermenuer)
@@ -118,7 +141,7 @@ function openCategoryModal() {
 const mediaMenuItems = [
   { 
     id: 'game',
-    icon: '🎮',
+    icon: Gamepad2,
     label: 'GameTrack',
     action: async () => {
       if (isComponentDestroyed.value) return;
@@ -132,12 +155,12 @@ const mediaMenuItems = [
     },
     subMenu: [
       {
-        icon: '➕',
+        icon: Plus,
         label: 'Tilføj spil',
         action: () => openAddModal(),
       },
       {
-        icon: '📋',
+        icon: Settings,
         label: 'Platforme',
         action: () => openCategoryModal(),
       }
@@ -145,7 +168,7 @@ const mediaMenuItems = [
   },
   { 
     id: 'movie',
-    icon: '🎬',
+    icon: Film,
     label: 'MovieTrack',
     action: async () => {
       if (isComponentDestroyed.value) return;
@@ -159,12 +182,12 @@ const mediaMenuItems = [
     },
     subMenu: [
       {
-        icon: '➕',
+        icon: Plus,
         label: 'Tilføj film',
         action: () => openAddModal(),
       },
       {
-        icon: '📋',
+        icon: Settings,
         label: 'Genrer',
         action: () => openCategoryModal(),
       }
@@ -172,7 +195,7 @@ const mediaMenuItems = [
   },
   { 
     id: 'book',
-    icon: '📚',
+    icon: Book,
     label: 'BookTrack',
     action: async () => {
       if (isComponentDestroyed.value) return;
@@ -186,12 +209,12 @@ const mediaMenuItems = [
     },
     subMenu: [
       {
-        icon: '➕',
+        icon: Plus,
         label: 'Tilføj bog',
         action: () => openAddModal(),
       },
       {
-        icon: '📋',
+        icon: Settings,
         label: 'Forfattere',
         action: () => openCategoryModal(),
       }
@@ -203,36 +226,18 @@ const mediaMenuItems = [
 const otherMenuItems = [
   { 
     id: 'dashboard',
-    icon: '🏠', 
+    icon: Home, 
     label: 'Dashboard',
     action: () => navigateTo({ name: 'dashboard' }) 
   }
 ];
 
-// Funktion til at åbne indstillinger for specifik medietype
-async function openSettingsForType(typeId) {
-  if (isComponentDestroyed.value) return;
-  if (mediaTypeStore.currentType !== typeId) {   
-    await mediaTypeStore.setMediaType(typeId);
-    await gameStore.loadGames();
-    await categoryStore.loadPlatforms();  
-    await router.push({ name: 'home' });   
-    setTimeout(() => {
-      if (!isComponentDestroyed.value && openModal) {
-        openModal('settings');
-      }
-    }, 100);
-  } else {  
-    if (openModal) {
-      openModal('settings');
-    }
-  }
-}
 
 // Tjek om dashboard er aktivt
 const isDashboardActive = computed(() => {
   return router.currentRoute.value.name === 'dashboard';
 });
+
 
 async function logout() {
   if (isComponentDestroyed.value) return;
@@ -271,17 +276,38 @@ if (typeof window !== 'undefined') {
 <template>
   <aside class="sidebar" :class="{ 'collapsed': isCollapsed }">
     <div class="sidebar-header">
-      <div class="logo-container">
-        <span class="logo-icon">{{ currentAppIcon }}</span>
-        <span class="logo-text" v-if="!isCollapsed">MediaTrack</span>
+      <div class="user-header" v-if="!isCollapsed">
+        <div class="user-avatar">{{ userStore.displayName?.charAt(0).toUpperCase() || 'U' }}</div>
+        <div class="user-info-header">
+          <div class="user-name">{{ userStore.displayName }}</div>
+        </div>
+        <div class="header-actions">
+          <button 
+            class="action-btn search-btn" 
+            @click="toggleSearch"
+            title="Søg"
+          >
+            <Search :size="16" />
+          </button>
+          <button class="action-btn menu-btn" @click="toggleSidebar" :title="isCollapsed ? 'Udvid sidebar' : 'Minimer sidebar'">
+            <ChevronLeft :size="16" />
+          </button>
+        </div>
       </div>
-      <button class="toggle-btn" @click="toggleSidebar" title="Skift sidebar visning">
-        {{ isCollapsed ? '▶' : '◀' }}
+      <div class="collapsed-header" v-else>
+        <div class="user-avatar">{{ userStore.displayName?.charAt(0).toUpperCase() || 'U' }}</div>
+      </div>
+    </div>
+    
+    <!-- Toggle knap sektion - kun når collapsed -->
+    <div class="sidebar-toggle-section" v-if="isCollapsed">
+      <button class="toggle-btn" @click="toggleSidebar" title="Udvid sidebar">
+        <ChevronRight :size="16" />
       </button>
     </div>
     
     <!-- Søgefelt -->
-    <div class="search-container" v-if="!isCollapsed">
+    <div class="search-container" v-if="!isCollapsed && showSearch">
       <input 
         type="text" 
         v-model="searchInput" 
@@ -302,7 +328,7 @@ if (typeof window !== 'undefined') {
         <li class="nav-item" 
             :class="{ 'active': isDashboardActive }"
             @click="otherMenuItems[0].action">
-          <span class="nav-icon">{{ otherMenuItems[0].icon }}</span>
+          <component :is="otherMenuItems[0].icon" class="nav-icon" :size="20" />
           <span class="nav-label" v-if="!isCollapsed">{{ otherMenuItems[0].label }}</span>
         </li>
       </ul>
@@ -318,18 +344,21 @@ if (typeof window !== 'undefined') {
       <ul class="nav-list">
         <!-- For hver medietype -->
         <template v-for="(item, index) in mediaMenuItems" :key="'media-'+index">
-          <!-- Hovedmenupunkt med tandhjulsikon -->
+          <!-- Hovedmenupunkt med count badge og add knap -->
           <li class="nav-item"
               :class="{ 'active': isItemActive(item.id) }"
               @click="item.action">
-            <span class="nav-icon">{{ item.icon }}</span>
+            <component :is="item.icon" class="nav-icon" :size="20" />
             <span class="nav-label" v-if="!isCollapsed">{{ item.label }}</span>
-            <button 
-              v-if="!isCollapsed" 
-              class="settings-btn" 
-              @click.stop="openSettingsForType(item.id)"
-              title="Indstillinger"
-            >⚙️</button>
+            <div v-if="!isCollapsed" class="nav-item-actions">
+              <button 
+                class="add-btn" 
+                @click.stop="openAddModal()"
+                title="Tilføj ny"
+              >
+                <Plus :size="14" />
+              </button>
+            </div>
           </li>
           
           <!-- Vis kun undermenuer for den aktive medietype -->
@@ -344,7 +373,7 @@ if (typeof window !== 'undefined') {
                 class="submenu-item"
               >
                 <div class="nav-item" @click="subItem.action">
-                  <span class="nav-icon submenu-icon">{{ subItem.icon }}</span>
+                  <component :is="subItem.icon" class="nav-icon submenu-icon" :size="16" />
                   <span class="nav-label">{{ subItem.label }}</span>
                 </div>
               </div>
@@ -356,15 +385,23 @@ if (typeof window !== 'undefined') {
     
     <!-- Footer -->
     <div class="sidebar-footer">
-      <div class="user-info" v-if="!isCollapsed">
-        <div class="user-avatar">{{ userStore.displayName?.charAt(0).toUpperCase() || 'U' }}</div>
-        <div class="user-details">
-          <div class="user-name">{{ userStore.displayName }}</div>
-          <button class="logout-btn" @click="logout">Log ud</button>
+      <div class="footer-actions" v-if="!isCollapsed">
+        <div class="nav-item" @click="openModal && openModal('settings')">
+          <Settings class="nav-icon" :size="20" />
+          <span class="nav-label">Indstillinger</span>
+        </div>
+        <div class="nav-item" @click="logout">
+          <LogOut class="nav-icon" :size="20" />
+          <span class="nav-label">Log ud</span>
         </div>
       </div>
-      <div class="user-icon" v-else @click="logout" title="Log ud">
-        <div class="user-avatar">{{ userStore.displayName?.charAt(0).toUpperCase() || 'U' }}</div>
+      <div class="collapsed-footer" v-else>
+        <div class="nav-item" @click="openModal && openModal('settings')" title="Indstillinger">
+          <Settings class="nav-icon" :size="20" />
+        </div>
+        <div class="nav-item" @click="logout" title="Log ud">
+          <LogOut class="nav-icon" :size="20" />
+        </div>
       </div>
     </div>
   </aside>
@@ -372,12 +409,10 @@ if (typeof window !== 'undefined') {
 
 <style scoped>
 .sidebar {
-  --sidebar-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-
-  background: linear-gradient(145deg, var(--header-bg), rgba(255, 255, 255, 0.02));
+  background: #1f2937;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: none;
-  border-radius: var(--sidebar-radius);
+  border-radius: 0;
   color: var(--text-color);
   height: 100vh;
   width: 240px;
@@ -387,131 +422,94 @@ if (typeof window !== 'undefined') {
   transition: var(--transition-smooth);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-dark-xl);
-  backdrop-filter: blur(20px);
   z-index: 1000;
   overflow: hidden;
 }
 
-.sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-}
 
 .sidebar.collapsed {
   width: 60px;
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 .sidebar-header {
   padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08), 
-    rgba(255, 255, 255, 0.04)
-  );
+  background: rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }
 
-.sidebar-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    var(--primary-color), 
-    rgba(76, 175, 80, 0.6)
-  );
-  opacity: 0.8;
-  box-shadow: 0 0 8px var(--primary-color);
-}
-
-.logo-container {
+.user-header {
   display: flex;
   align-items: center;
-  overflow: hidden;
+  gap: 12px;
+  width: 100%;
 }
 
-.logo-icon {
-  font-size: 1.5rem;
-  margin-right: 12px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-  animation: gentle-pulse 3s ease-in-out infinite;
+.user-info-header {
+  flex: 1;
+  min-width: 0;
 }
 
-@keyframes gentle-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.logo-text {
-  font-weight: 700;
-  font-size: 1.25rem;
-  white-space: nowrap;
-  letter-spacing: 0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.toggle-btn {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1), 
-    rgba(255, 255, 255, 0.05)
-  );
+.action-btn {
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  border-radius: 4px;
   color: var(--text-color);
   cursor: pointer;
   font-size: 0.9rem;
-  padding: 8px;
-  width: 32px;
-  height: 32px;
+  padding: 6px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0.8;
   transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
 }
 
-.toggle-btn:hover {
+.action-btn:hover {
   opacity: 1;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.08)
-  );
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-subtle);
+  background: rgba(255, 255, 255, 0.15);
 }
+
+.collapsed-header {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.collapsed-header .user-avatar {
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.collapsed-header .user-avatar:hover {
+  opacity: 0.8;
+}
+
+
 
 .search-container {
-  padding: 1.25rem;
+  padding: 0.75rem 1rem;
   position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .search-container input {
   width: 100%;
-  padding: 10px 35px 10px 12px;
-  border-radius: 3px;
+  padding: 8px 30px 8px 10px;
+  border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1), 
-    rgba(255, 255, 255, 0.05)
-  );
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-color);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-subtle);
 }
 
 .search-container input::placeholder {
@@ -520,45 +518,35 @@ if (typeof window !== 'undefined') {
 
 .search-container input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.08)
-  );
-  box-shadow: 
-    var(--shadow-moderate),
-    0 0 0 2px rgba(76, 175, 80, 0.2);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .clear-search-btn {
   position: absolute;
-  right: 1.75rem;
+  right: 1.25rem;
   top: 50%;
   transform: translateY(-50%);
-  background: linear-gradient(135deg, 
-    rgba(239, 68, 68, 0.8), 
-    rgba(239, 68, 68, 0.6)
-  );
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 3px;
-  width: 20px;
-  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-color);
   cursor: pointer;
-  font-size: 0.7rem;
-  opacity: 0.8;
+  font-size: 0.65rem;
+  opacity: 0.6;
   transition: var(--transition-smooth);
 }
 
 .clear-search-btn:hover {
   opacity: 1;
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: var(--shadow-subtle);
+  background: rgba(255, 255, 255, 0.3);
 }
+
 
 .sidebar-nav {
   flex: 1;
@@ -594,12 +582,11 @@ if (typeof window !== 'undefined') {
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .menu-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: rgba(255, 255, 255, 0.2);
   margin: 0.75rem 1rem;
   opacity: 0.6;
 }
@@ -614,13 +601,9 @@ if (typeof window !== 'undefined') {
 .menu-icon-divider {
   width: 24px;
   height: 3px;
-  background: linear-gradient(90deg, 
-    var(--primary-color), 
-    rgba(76, 175, 80, 0.6)
-  );
+  background: var(--primary-color);
   border-radius: 3px;
   opacity: 0.7;
-  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
 }
 
 .nav-list {
@@ -638,12 +621,8 @@ if (typeof window !== 'undefined') {
   border-radius: 3px;
   margin: 0 0.75rem 0.25rem 0.75rem;
   position: relative;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.05), 
-    rgba(255, 255, 255, 0.02)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .sidebar.collapsed .nav-item {
@@ -654,53 +633,32 @@ if (typeof window !== 'undefined') {
 }
 
 .nav-item:hover {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1), 
-    rgba(255, 255, 255, 0.05)
-  );
+  background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-subtle);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border-color: rgba(76, 175, 80, 0.3);
-  box-shadow: var(--shadow-moderate);
-  position: relative;
-  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
 }
 
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: active-shine 2s ease-in-out infinite;
+
+
+.nav-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
-@keyframes active-shine {
-  0% { left: -100%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
-}
 
-.settings-btn {
-  position: absolute;
-  right: 12px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.08)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+.add-btn {
+  background: transparent;
+  border: none;
   color: inherit;
   cursor: pointer;
-  font-size: 0.8rem;
   padding: 4px;
   width: 24px;
   height: 24px;
@@ -709,75 +667,52 @@ if (typeof window !== 'undefined') {
   justify-content: center;
   opacity: 0.7;
   transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
-  z-index: 2;
 }
 
-.settings-btn:hover {
+.add-btn:hover {
   opacity: 1;
-  transform: rotate(90deg) scale(1.1);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2), 
-    rgba(255, 255, 255, 0.12)
-  );
-  box-shadow: var(--shadow-subtle);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
-.nav-item.active .settings-btn {
+.nav-item.active .add-btn {
   color: white;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2), 
-    rgba(255, 255, 255, 0.1)
-  );
-  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .submenu-container {
-  overflow: hidden;
-  margin: 0.5rem 0 0.75rem 0;
+  margin: 0.25rem 0;
 }
 
 .submenu-item {
-  margin-left: 2rem;
+  margin-left: 1.5rem;
   font-size: 0.85rem;
-  position: relative;
 }
 
-.submenu-item::before {
-  content: '';
-  position: absolute;
-  left: -1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 60%;
-  background: linear-gradient(180deg, 
-    var(--primary-color), 
-    rgba(76, 175, 80, 0.3)
-  );
-  border-radius: 1px;
-  opacity: 0.6;
-}
 
 .submenu-item .nav-item {
-  padding: 0.5rem 1rem;
-  margin: 0 0 0.1rem 0;
-  border-radius: 3px;
+  padding: 0.4rem 1rem;
+  margin: 0 0 0.05rem 0;
+  border-radius: 4px;
   font-size: 0.85rem;
+  background: transparent;
+  border: none;
+}
+
+.submenu-item .nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-icon {
-  font-size: 1.25rem;
-  width: 26px;
-  text-align: center;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   position: relative;
   z-index: 1;
 }
 
 .submenu-icon {
-  font-size: 1rem;
-  width: 20px;
+  width: 16px;
+  height: 16px;
 }
 
 .nav-label {
@@ -791,46 +726,48 @@ if (typeof window !== 'undefined') {
   z-index: 1;
 }
 
-/* Animation for submenu items */
+/* Simplified submenu animations */
 .submenu-enter-active,
 .submenu-leave-active {
-  transition: all 0.3s;
+  transition: opacity 0.2s;
 }
 
 .submenu-enter-from,
 .submenu-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
-}
-
-.submenu-move {
-  transition: transform 0.3s;
 }
 
 .sidebar-footer {
-  padding: 1.25rem;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08), 
-    rgba(255, 255, 255, 0.04)
-  );
+  padding: 0.5rem 0;
+  background: transparent;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
 }
 
-.sidebar-footer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    var(--primary-color), 
-    rgba(76, 175, 80, 0.6)
-  );
-  opacity: 0.6;
-  box-shadow: 0 0 6px rgba(76, 175, 80, 0.3);
+.footer-actions,
+.collapsed-footer {
+  padding: 0 0.75rem;
 }
+
+.footer-actions .nav-item {
+  margin: 0 0 0.1rem 0;
+  padding: 0.5rem 1rem;
+}
+
+.collapsed-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.collapsed-footer .nav-item {
+  margin: 0;
+  padding: 0.5rem;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+}
+
 
 .sidebar.collapsed .user-icon {
   display: flex;
@@ -840,38 +777,29 @@ if (typeof window !== 'undefined') {
 }
 
 .sidebar.collapsed .user-icon:hover {
-  transform: translateY(-2px);
+  opacity: 0.8;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1), 
-    rgba(255, 255, 255, 0.05)
-  );
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   padding: 0.75rem;
   transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
 }
 
 .user-info:hover {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.08)
-  );
+  background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-subtle);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 3px;
-  background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
+  border-radius: 6px;
+  background: var(--primary-color);
   color: white;
   display: flex;
   align-items: center;
@@ -879,28 +807,20 @@ if (typeof window !== 'undefined') {
   font-weight: 700;
   font-size: 1.1rem;
   flex-shrink: 0;
-  box-shadow: var(--shadow-moderate);
   border: 2px solid rgba(255, 255, 255, 0.2);
-  position: relative;
+}
+
+.user-name {
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.25px;
+  color: var(--text-color);
 }
 
-.user-avatar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: avatar-shine 3s ease-in-out infinite;
-}
 
-@keyframes avatar-shine {
-  0% { left: -100%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
-}
 
 .user-details {
   margin-left: 14px;
@@ -919,10 +839,7 @@ if (typeof window !== 'undefined') {
 }
 
 .logout-btn {
-  background: linear-gradient(135deg, 
-    rgba(239, 68, 68, 0.8), 
-    rgba(239, 68, 68, 0.6)
-  );
+  background: rgba(239, 68, 68, 0.8);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 3px;
   color: white;
@@ -933,15 +850,44 @@ if (typeof window !== 'undefined') {
   opacity: 0.8;
   text-align: left;
   transition: var(--transition-smooth);
-  backdrop-filter: blur(10px);
   letter-spacing: 0.25px;
 }
 
 .logout-btn:hover {
   opacity: 1;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-subtle);
-  filter: brightness(1.1);
+  background: rgba(239, 68, 68, 0.9);
+}
+
+.sidebar-toggle-section {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar.collapsed .toggle-btn {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  margin: 0 auto;
 }
 
 /* Mobile responsiveness */
@@ -950,12 +896,24 @@ if (typeof window !== 'undefined') {
     transform: translateX(-100%);
     position: fixed;
     z-index: 1001;
-    border-radius: 3px;
-    box-shadow: var(--shadow-dark-xl);
+    border-radius: 0;
+    width: 280px;
   }
   
   .sidebar.active {
     transform: translateX(0);
+  }
+  
+  .sidebar-header {
+    padding: 1rem;
+  }
+  
+  .user-header {
+    gap: 10px;
+  }
+  
+  .header-actions {
+    gap: 6px;
   }
   
   .nav-item {
@@ -963,35 +921,31 @@ if (typeof window !== 'undefined') {
     margin: 0 1rem 0.25rem 1rem;
   }
   
-  .user-info {
-    padding: 1rem;
+  .search-container {
+    padding: 0.75rem 1rem;
   }
+  
+  .footer-actions,
+  .collapsed-footer {
+    padding: 0 1rem;
+  }
+  
+  .footer-actions .nav-item {
+    padding: 0.75rem 1rem;
+    margin: 0 0 0.1rem 0;
+  }
+  
 }
 
 /* Prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .nav-item,
-  .settings-btn,
-  .toggle-btn,
+  .add-btn,
+  .action-btn,
   .user-info,
-  .user-avatar,
-  .logout-btn {
-    animation: none;
+  .user-avatar {
     transition: none;
-  }
-  
-  .nav-item:hover,
-  .settings-btn:hover,
-  .toggle-btn:hover,
-  .user-info:hover,
-  .logout-btn:hover {
-    transform: none;
-  }
-  
-  .nav-item.active::before,
-  .user-avatar::before {
-    animation: none;
   }
 }
 

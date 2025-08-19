@@ -54,11 +54,27 @@ onMounted(() => {
 .login-container {
   max-width: 400px;
   margin: 100px auto;
-  padding: 20px;
-  background-color: var(--card-bg);
-  border-radius: 4px;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   text-align: center;
-  box-shadow: var(--shadow);
+}
+
+.login-container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+.login-container p {
+  color: var(--text-color);
+  opacity: 0.8;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  font-weight: 500;
 }
 
 .login-button {
@@ -66,28 +82,28 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 240px;
-  margin: 20px auto 0;
-  padding: 10px 12px;
-  background-color: white;
-  color: #757575;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  max-width: 280px;
+  margin: 0 auto;
+  padding: 0.875rem 1rem;
+  background: white;
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  font-size: 0.875rem;
   font-weight: 500;
-  font-family: "Roboto", sans-serif;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .login-button:hover {
-  background-color: #f1f1f1;
+  background: #f8f9fa;
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .google-icon-wrapper {
   width: 18px;
   height: 18px;
-  margin-right: 24px;
+  margin-right: 0.75rem;
 }
 
 .google-icon {
@@ -96,6 +112,7 @@ onMounted(() => {
 }
 
 .login-button-text {
-  padding-right: 24px;
+  flex: 1;
+  text-align: center;
 }
 </style>
