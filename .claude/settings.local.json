@@ -19,7 +19,11 @@
       "Bash(npm ls:*)",
       "Read(//c/Users/mikke/**)",
       "Bash(wc:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Read(//c/Users/mikke/Downloads/**)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

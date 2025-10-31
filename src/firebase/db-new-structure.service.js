@@ -376,26 +376,17 @@ export function useFirestoreNewStructure() {
       const mediaType = getStatusForMediaType();
       const listRef = doc(db, `users/${userId}/data`, 'lists');
 
-      console.warn(`[DB-NEW] subscribeToItems: mediaType=${mediaType}, userId=${userId}`);
-
       return onSnapshot(
         listRef,
         (docSnap) => {
           try {
             if (!docSnap.exists()) {
-              console.warn('[DB-NEW] Lists document does not exist');
               callback({ success: true, data: [] });
               return;
             }
 
             const listsData = docSnap.data();
-            console.warn('[DB-NEW] listsData keys:', Object.keys(listsData || {}));
             const mediaTypeData = listsData[mediaType] || {};
-            console.warn(`[DB-NEW] mediaTypeData for ${mediaType}:`, {
-              exists: !!listsData[mediaType],
-              keys: Object.keys(mediaTypeData),
-              count: Object.values(mediaTypeData).reduce((sum, items) => sum + (Array.isArray(items) ? items.length : 0), 0)
-            });
 
             // Flatten all status lists and restore status field to each item
             const items = [];
@@ -408,7 +399,6 @@ export function useFirestoreNewStructure() {
               }
             }
 
-            console.warn(`[DB-NEW] Total items loaded: ${items.length}`);
             callback({ success: true, data: items });
           } catch (parseError) {
             error(`Error parsing snapshot for ${mediaType}:`, parseError);

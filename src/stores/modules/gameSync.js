@@ -55,7 +55,6 @@ export function useGameSync(mediaTypeStore, userStore) {
     if (isDestroyed.value) return;
     
     syncTimer = createTimer(() => {
-      console.warn('Sync timer triggered');
       syncWithFirebase();
       syncTimer = null;
     }, SYNC_DELAY);
@@ -137,15 +136,11 @@ export function useGameSync(mediaTypeStore, userStore) {
  
   function queueChange(type, id, data) {
     if (isDestroyed.value) {
-      console.warn('Sync module destroyed, ignoring queue change');
       return;
     }
-    
-    console.warn(`Queuing ${type} operation for id: ${id}`);
 
     // Add operations should not use queue
     if (type === 'add') {
-      console.warn('Add operations should not use queueChange. Use gamesService.addItem directly.');
       return;
     }
 
@@ -180,16 +175,13 @@ export function useGameSync(mediaTypeStore, userStore) {
  
   async function syncWithFirebase() {
     if (pendingChanges.value.length === 0 || isDestroyed.value) {
-      console.warn('No pending changes to sync or module destroyed');
       return;
     }
 
     if (!userStore.currentUser) {
-      console.warn('No user logged in');
       return;
     }
 
-    console.warn(`Syncing ${pendingChanges.value.length} changes`);
     updateSyncStatus('syncing', 'saving', null, false);
 
     try {
@@ -200,7 +192,6 @@ export function useGameSync(mediaTypeStore, userStore) {
 
       // Check if module was destroyed during async operation
       if (isDestroyed.value) {
-        console.warn('Module destroyed during sync, aborting');
         return;
       }
 
@@ -216,12 +207,10 @@ export function useGameSync(mediaTypeStore, userStore) {
 
       // Check again after async operation
       if (isDestroyed.value) {
-        console.warn('Module destroyed after sync completion');
         return;
       }
 
       if (result.success) {
-        console.warn(`Successfully synced ${result.count} changes`);
         updateSyncStatus('success', 'saved');
       } else {
         console.error('Failed to sync changes');
@@ -251,7 +240,6 @@ export function useGameSync(mediaTypeStore, userStore) {
         userId,
         (result) => {
           if (isDestroyed.value) {
-            console.warn('Module destroyed, ignoring subscription callback');
             return;
           }
           callback(result);
@@ -336,7 +324,7 @@ export function useGameSync(mediaTypeStore, userStore) {
       try {
         unsubscribeFn();
       } catch (error) {
-        console.warn('Error unsubscribing:', error);
+        console.error('Error unsubscribing:', error);
       }
     });
     activeSubscriptions.clear();

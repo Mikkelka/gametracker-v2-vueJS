@@ -198,8 +198,6 @@ export function useGameNotes(games, gameSync, userStore) {
 
   
   function cleanup() {
-    console.warn('Cleaning up game notes module...');
-    
     isDestroyed.value = true;
     notesCache.value.clear();
   }
