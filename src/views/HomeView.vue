@@ -362,17 +362,13 @@ async function confirmDelete() {
   if (gameToDelete.value) {
     try {
       const gameId = gameToDelete.value;
-      console.log('Deleting game:', gameId);
-
       const result = await gameStore.deleteGame(gameId);
 
       if (result) {
-        console.log('Game deleted successfully');
-        activeEditMenu.value = null; // Luk også edit-menuen efter sletning
+        activeEditMenu.value = null;
         gameToDelete.value = null;
         showDeleteConfirmModal.value = false;
       } else {
-        console.error('Failed to delete game - result was false');
         alert('Kunne ikke slette spillet. Prøv igen.');
       }
     } catch (error) {

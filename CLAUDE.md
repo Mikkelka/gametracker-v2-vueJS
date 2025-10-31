@@ -62,3 +62,16 @@ Each module is independently initialized and managed, with proper cleanup on use
 - Firebase collections are dynamically determined by media type
 - Store modules handle their own lifecycle and cleanup
 - Real-time synchronization with optimistic updates
+
+### Critical: Item ID Requirements
+**All items (games, movies, books) MUST have an `id` property.** This is essential for:
+- Event handling (menu actions, delete operations)
+- Component key binding and re-rendering
+- Firebase operations (finding items for updates/deletes)
+
+**Where IDs are generated:**
+1. **New items** (`gameOperations.js`): Generated as `Date.now().toString()` when creating new items
+2. **Loaded items** (`db-new-structure.service.js`): Ensured via fallback `id: item.id || \`item-${Date.now()}-${Math.random()}\`` in both `subscribeToItems()` and `getItems()`
+3. **Imported items** (`useDataImport.js`): Ensured via same fallback during import process
+
+If items lack IDs, the delete operation fails silently because `props.game.id` becomes `undefined` in GameCard, causing the entire event chain to break.

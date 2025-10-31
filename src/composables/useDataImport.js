@@ -318,6 +318,7 @@ export function useDataImport() {
           for (const [status, items] of Object.entries(lists)) {
             listData[mediaType][status] = items.map(item => ({
               ...item,
+              id: item.id || `item-${Date.now()}-${Math.random()}`,
               userId: userId,
               createdAt: item.createdAt || Date.now(),
               updatedAt: item.updatedAt || Date.now()

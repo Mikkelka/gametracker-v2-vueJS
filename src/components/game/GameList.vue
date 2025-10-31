@@ -82,13 +82,13 @@ const filteredGames = computed(() => {
 });
 
 // Show edit menu
-function onEditMenu(gameId, x, y) {
-  emit('edit-menu', gameId, x, y);
+function onEditMenu(gameId, x, y, element) {
+  emit('edit-menu', gameId, x, y, element);
 }
 
 // Show platform menu
-function onPlatformMenu(gameId, platform, x, y) {
-  emit('platform-menu', gameId, platform, x, y);
+function onPlatformMenu(gameId, platform, x, y, element) {
+  emit('platform-menu', gameId, platform, x, y, element);
 }
 
 // Beregn om listen skal vises baseret på indstillinger

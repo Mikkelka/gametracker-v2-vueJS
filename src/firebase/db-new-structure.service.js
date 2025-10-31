@@ -70,7 +70,11 @@ export function useFirestoreNewStructure() {
       for (const status of Object.keys(result.data)) {
         const statusItems = result.data[status];
         if (Array.isArray(statusItems)) {
-          items.push(...statusItems);
+          items.push(...statusItems.map(item => ({
+            ...item,
+            status: status,
+            id: item.id || `item-${Date.now()}-${Math.random()}`
+          })));
         }
       }
 
@@ -394,7 +398,8 @@ export function useFirestoreNewStructure() {
               if (Array.isArray(statusItems)) {
                 items.push(...statusItems.map(item => ({
                   ...item,
-                  status: statusId
+                  status: statusId,
+                  id: item.id || `item-${Date.now()}-${Math.random()}`
                 })));
               }
             }
