@@ -6,19 +6,23 @@ import { useUserStore } from '../../stores/user';
 import { useRouter } from 'vue-router';
 import { useGameStore } from '../../stores/game.store';
 import { useCategoryStore } from '../../stores/category';
-import { 
-  Home, 
-  Search, 
+import {
+  Home,
+  Search,
   ChevronLeft,
   ChevronRight,
-  Gamepad2, 
-  Film, 
-  Book, 
-  Plus, 
-  Settings, 
+  Gamepad2,
+  Film,
+  Book,
+  Plus,
+  Settings,
   LogOut,
-  User 
+  User,
+  Download,
+  Upload
 } from 'lucide-vue-next';
+import { useDataExport } from '../../composables/useDataExport';
+import { useDataImport } from '../../composables/useDataImport';
 
 const props = defineProps({
   collapsed: {
@@ -40,6 +44,18 @@ const isComponentDestroyed = ref(false);
 
 // Få adgang til openModal funktion
 const openModal = inject('openModal', null);
+
+// Export/Import composables
+const { exportAllData, isExporting } = useDataExport();
+const { importAllData, parseJSONFile, isImporting, importProgress } = useDataImport();
+
+// Export/Import UI state
+const showImportDialog = ref(false);
+const fileInput = ref(null);
+const pendingImportData = ref(null);
+const replaceAllData = ref(false);
+const statusMessage = ref(null);
+const statusType = ref(''); // 'success', 'error', 'info'
 
 // Lyt til collapsed prop ændringer
 watch(() => props.collapsed, (newValue) => {
@@ -239,9 +255,102 @@ const isDashboardActive = computed(() => {
 });
 
 
+async function handleExport() {
+  if (isComponentDestroyed.value) return;
+
+  try {
+    statusMessage.value = 'Eksporterer data...';
+    statusType.value = 'info';
+    await exportAllData(userStore.currentUser.uid, userStore.currentUser.email);
+    statusMessage.value = 'Data eksporteret succesfuldt!';
+    statusType.value = 'success';
+    setTimeout(() => {
+      statusMessage.value = null;
+    }, 3000);
+  } catch (error) {
+    statusMessage.value = `Fejl ved eksport: ${error.message}`;
+    statusType.value = 'error';
+  }
+}
+
+function handleImportClick() {
+  if (isComponentDestroyed.value) return;
+  fileInput.value?.click();
+}
+
+async function handleFileSelected(event) {
+  if (isComponentDestroyed.value) return;
+
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    statusMessage.value = 'Læser fil...';
+    statusType.value = 'info';
+
+    const importData = await parseJSONFile(file);
+    pendingImportData.value = importData;
+    showImportDialog.value = true;
+    statusMessage.value = null;
+  } catch (error) {
+    statusMessage.value = `Fejl ved fil-læsning: ${error.message}`;
+    statusType.value = 'error';
+  }
+
+  event.target.value = '';
+}
+
+async function confirmImport() {
+  if (!pendingImportData.value || isComponentDestroyed.value) return;
+
+  try {
+    showImportDialog.value = false;
+    statusMessage.value = 'Importerer data...';
+    statusType.value = 'info';
+
+    const result = await importAllData(
+      pendingImportData.value,
+      replaceAllData.value,
+      userStore.currentUser.uid,
+      userStore.currentUser.email
+    );
+
+    if (result.success) {
+      statusMessage.value = 'Data importeret succesfuldt! Siden vil blive opdateret...';
+      statusType.value = 'success';
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
+  } catch (error) {
+    statusMessage.value = `Fejl ved import: ${error.message}`;
+    statusType.value = 'error';
+  } finally {
+    pendingImportData.value = null;
+  }
+}
+
+function cancelImport() {
+  if (isComponentDestroyed.value) return;
+
+  showImportDialog.value = false;
+  pendingImportData.value = null;
+  replaceAllData.value = false;
+}
+
+function capitalizeMediaType(type) {
+  const labels = {
+    game: 'Spil',
+    movie: 'Film',
+    book: 'Bog'
+  };
+  return labels[type] || type;
+}
+
 async function logout() {
   if (isComponentDestroyed.value) return;
-  
+
   await gameStore.syncWithFirebase?.();
   await userStore.logout();
   router.push({ name: 'login' });
@@ -274,6 +383,15 @@ if (typeof window !== 'undefined') {
 </script>
 
 <template>
+  <!-- Hidden file input -->
+  <input
+    ref="fileInput"
+    type="file"
+    accept=".json"
+    style="display: none"
+    @change="handleFileSelected"
+  />
+
   <aside class="sidebar" :class="{ 'collapsed': isCollapsed }">
     <div class="sidebar-header">
       <div class="user-header" v-if="!isCollapsed">
@@ -386,6 +504,35 @@ if (typeof window !== 'undefined') {
     <!-- Footer -->
     <div class="sidebar-footer">
       <div class="footer-actions" v-if="!isCollapsed">
+        <!-- Status Message -->
+        <div v-if="statusMessage" :class="['status-message', `status-${statusType}`]">
+          {{ statusMessage }}
+        </div>
+
+        <!-- Export/Import Buttons -->
+        <div class="export-import-group">
+          <button
+            class="nav-item btn-icon-text"
+            @click="handleExport"
+            :disabled="isExporting"
+            title="Eksporter alle data"
+          >
+            <Download class="nav-icon" :size="20" />
+            <span class="nav-label">{{ isExporting ? 'Eksporterer...' : 'Eksporter' }}</span>
+          </button>
+
+          <button
+            class="nav-item btn-icon-text"
+            @click="handleImportClick"
+            :disabled="isImporting"
+            title="Importer data"
+          >
+            <Upload class="nav-icon" :size="20" />
+            <span class="nav-label">{{ isImporting ? `Importerer... ${importProgress}%` : 'Importer' }}</span>
+          </button>
+        </div>
+
+        <!-- Settings & Logout -->
         <div class="nav-item" @click="openModal && openModal('settings')">
           <Settings class="nav-icon" :size="20" />
           <span class="nav-label">Indstillinger</span>
@@ -396,11 +543,62 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
       <div class="collapsed-footer" v-else>
+        <button
+          class="nav-item"
+          @click="handleExport"
+          :disabled="isExporting"
+          title="Eksporter data"
+        >
+          <Download class="nav-icon" :size="20" />
+        </button>
+
+        <button
+          class="nav-item"
+          @click="handleImportClick"
+          :disabled="isImporting"
+          title="Importer data"
+        >
+          <Upload class="nav-icon" :size="20" />
+        </button>
+
         <div class="nav-item" @click="openModal && openModal('settings')" title="Indstillinger">
           <Settings class="nav-icon" :size="20" />
         </div>
         <div class="nav-item" @click="logout" title="Log ud">
           <LogOut class="nav-icon" :size="20" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Confirmation Dialog -->
+    <div v-if="showImportDialog" class="modal-overlay" @click="cancelImport">
+      <div class="modal-content" @click.stop>
+        <h2>Bekræft import</h2>
+
+        <div class="import-preview" v-if="pendingImportData">
+          <p>Backup fil indeholder:</p>
+          <ul>
+            <li v-for="(data, mediaType) in pendingImportData.mediaTypes" :key="mediaType">
+              <strong>{{ capitalizeMediaType(mediaType) }}:</strong>
+              {{ data.items?.length || 0 }} elementer,
+              {{ data.categories?.length || 0 }} kategorier,
+              {{ data.notes?.length || 0 }} noter
+            </li>
+          </ul>
+        </div>
+
+        <label class="checkbox-label">
+          <input type="checkbox" v-model="replaceAllData" />
+          Erstat al eksisterende data (hvis ikke valgt, samles data)
+        </label>
+
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-secondary" @click="cancelImport">
+            Annuller
+          </button>
+          <button type="button" class="btn btn-primary" @click="confirmImport">
+            Importer data
+          </button>
         </div>
       </div>
     </div>
@@ -888,6 +1086,207 @@ if (typeof window !== 'undefined') {
   height: 32px;
   padding: 6px;
   margin: 0 auto;
+}
+
+/* Export/Import Styles */
+.status-message {
+  padding: 0.6rem 0.8rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  animation: slideIn 0.3s ease;
+  border-left: 3px solid;
+}
+
+.status-success {
+  background: rgba(72, 187, 120, 0.2);
+  color: #48bb78;
+  border-color: #48bb78;
+}
+
+.status-error {
+  background: rgba(245, 101, 101, 0.2);
+  color: #f56565;
+  border-color: #f56565;
+}
+
+.status-info {
+  background: rgba(100, 150, 255, 0.2);
+  color: #6496ff;
+  border-color: #6496ff;
+}
+
+.export-import-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-icon-text {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+  margin: 0 0.1rem;
+  border-radius: 3px;
+}
+
+.btn-icon-text:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-icon-text:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: var(--bg-color);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 450px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: popIn 0.3s ease;
+}
+
+.modal-content h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.import-preview {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+}
+
+.import-preview p {
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.import-preview ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.import-preview li {
+  padding: 0.4rem 0 0.4rem 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  border-left: 2px solid var(--primary-color);
+  font-size: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.checkbox-label input {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+  flex: 1;
+  min-width: 100px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+  flex: 1;
+  min-width: 80px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Mobile responsiveness */
