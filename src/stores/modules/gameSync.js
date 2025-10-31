@@ -179,6 +179,7 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
 
     if (!userStore.currentUser) {
+      console.warn('No current user for sync');
       return;
     }
 
@@ -187,6 +188,9 @@ export function useGameSync(mediaTypeStore, userStore) {
     try {
       // Take copy of changes and clear list atomically
       const changesToProcess = [...pendingChanges.value];
+      console.log('Processing sync batch with', changesToProcess.length, 'changes:',
+        changesToProcess.map(c => `${c.type}:${c.id}`).join(', '));
+
       pendingChanges.value = [];
       syncTimer = null;
 
@@ -203,10 +207,13 @@ export function useGameSync(mediaTypeStore, userStore) {
       }));
 
       // Execute batch operation
+      console.log('Calling batchUpdate with userId:', userStore.currentUser.uid);
       const result = await gamesService.value.batchUpdate(
         userStore.currentUser.uid,
         batchOperations
       );
+
+      console.log('batchUpdate result:', result);
 
       // Check again after async operation
       if (isDestroyed.value) {
@@ -214,9 +221,10 @@ export function useGameSync(mediaTypeStore, userStore) {
       }
 
       if (result.success) {
+        console.log('Sync successful, synced', result.successCount, 'items');
         updateSyncStatus('success', 'saved');
       } else {
-        console.error('Failed to sync changes');
+        console.error('Failed to sync changes:', result.error);
         // Only restore changes if module is still active
         if (!isDestroyed.value) {
           pendingChanges.value = [...changesToProcess, ...pendingChanges.value];
@@ -225,7 +233,9 @@ export function useGameSync(mediaTypeStore, userStore) {
       }
     } catch (error) {
       console.error('Error syncing with Firebase:', error);
+      console.error('Error details:', error.message, error.code);
       if (!isDestroyed.value) {
+        pendingChanges.value = [...pendingChanges.value]; // Keep changes for retry
         updateSyncStatus('error', 'syncError');
       }
     }

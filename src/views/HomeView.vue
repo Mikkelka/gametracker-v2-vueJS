@@ -356,14 +356,29 @@ function closeNoteModal() {
   editingNoteText.value = '';
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (isComponentDestroyed.value) return;
 
   if (gameToDelete.value) {
-    gameStore.deleteGame(gameToDelete.value);
-    activeEditMenu.value = null; // Luk også edit-menuen efter sletning
-    gameToDelete.value = null;
-    showDeleteConfirmModal.value = false;
+    try {
+      const gameId = gameToDelete.value;
+      console.log('Deleting game:', gameId);
+
+      const result = await gameStore.deleteGame(gameId);
+
+      if (result) {
+        console.log('Game deleted successfully');
+        activeEditMenu.value = null; // Luk også edit-menuen efter sletning
+        gameToDelete.value = null;
+        showDeleteConfirmModal.value = false;
+      } else {
+        console.error('Failed to delete game - result was false');
+        alert('Kunne ikke slette spillet. Prøv igen.');
+      }
+    } catch (error) {
+      console.error('Error in confirmDelete:', error);
+      alert('Fejl ved sletning: ' + error.message);
+    }
   }
 }
 
