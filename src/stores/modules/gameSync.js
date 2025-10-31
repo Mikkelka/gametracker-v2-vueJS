@@ -1,6 +1,6 @@
 // src/stores/modules/gameSync.js
 import { ref, computed } from 'vue';
-import { useFirestoreAdapter } from '../../firebase/db-adapter.service';
+import { useFirestoreNewStructure } from '../../firebase/db-new-structure.service';
 
 
 export function useGameSync(mediaTypeStore, userStore) {
@@ -8,18 +8,18 @@ export function useGameSync(mediaTypeStore, userStore) {
   const pendingChanges = ref([]);
   const isSyncing = ref(false);
   const syncStatus = ref({ status: 'idle', message: '' });
-  
+
   // Memory leak prevention
   const isDestroyed = ref(false);
   const activeTimers = new Set();
   const activeSubscriptions = new Set();
-  
+
   let syncTimer = null;
   const SYNC_DELAY = 5000; // 5 seconds between syncs
 
-  // Service - adapter automatically switches between old and new structure
+  // Service - uses new v3.0 Firebase structure
   const gamesService = computed(() => {
-    return useFirestoreAdapter();
+    return useFirestoreNewStructure();
   });
 
  
@@ -233,9 +233,6 @@ export function useGameSync(mediaTypeStore, userStore) {
     if (!userId || isDestroyed.value) return null;
 
     try {
-      // Check which structure to use
-      await gamesService.value.checkNewStructure(userId);
-
       const unsubscribe = gamesService.value.subscribeToItems(
         userId,
         (result) => {
@@ -300,8 +297,6 @@ export function useGameSync(mediaTypeStore, userStore) {
 
  
   function cleanup() {
-    console.warn('Cleaning up game sync module...');
-    
     isDestroyed.value = true;
     
     // Clear pending changes
