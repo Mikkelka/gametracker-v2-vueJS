@@ -1,6 +1,6 @@
 // src/stores/modules/gameSync.js
 import { ref, computed } from 'vue';
-import { useFirestoreCollection } from '../../firebase/db.service';
+import { useFirestoreAdapter } from '../../firebase/db-adapter.service';
 
 
 export function useGameSync(mediaTypeStore, userStore) {
@@ -17,12 +17,9 @@ export function useGameSync(mediaTypeStore, userStore) {
   let syncTimer = null;
   const SYNC_DELAY = 5000; // 5 seconds between syncs
 
-  // Service
+  // Service - adapter automatically switches between old and new structure
   const gamesService = computed(() => {
-    const collectionName = mediaTypeStore.currentType === 'game'
-      ? 'games'
-      : mediaTypeStore.config.collections.items;
-    return useFirestoreCollection(collectionName);
+    return useFirestoreAdapter();
   });
 
  
@@ -242,11 +239,14 @@ export function useGameSync(mediaTypeStore, userStore) {
     }
   }
 
-  
-  function setupGamesListener(userId, callback) {
+
+  async function setupGamesListener(userId, callback) {
     if (!userId || isDestroyed.value) return null;
 
     try {
+      // Check which structure to use
+      await gamesService.value.checkNewStructure(userId);
+
       const unsubscribe = gamesService.value.subscribeToItems(
         userId,
         (result) => {

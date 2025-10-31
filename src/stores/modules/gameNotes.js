@@ -17,6 +17,29 @@ export function useGameNotes(games, gameSync, userStore) {
     return game?.hasNote || false;
   }
 
+  /**
+   * Initialize hasNote property for all games by querying Firebase
+   * Call this when games first load to mark which ones have notes
+   */
+  async function initializeHasNoteFlags() {
+    if (isDestroyed.value || !userStore.currentUser) return;
+
+    try {
+      const result = await notesService.getGameIdsWithNotes(userStore.currentUser.uid);
+
+      if (result.success && result.data) {
+        const gameIdsWithNotes = new Set(result.data);
+
+        // Initialize hasNote flag for all games
+        games.value.forEach(game => {
+          game.hasNote = gameIdsWithNotes.has(game.id);
+        });
+      }
+    } catch (error) {
+      console.error('Error initializing note flags:', error);
+    }
+  }
+
   
   async function loadNote(gameId) {
     if (isDestroyed.value || !userStore.currentUser) return null;
@@ -193,6 +216,7 @@ export function useGameNotes(games, gameSync, userStore) {
 
     // Methods
     hasNote,
+    initializeHasNoteFlags,
     loadNote,
     saveNote,
     deleteNote,

@@ -36,11 +36,13 @@ export const useGameStore = defineStore('game', () => {
   });
 
   const gamesByStatus = computed(() => {
+    console.warn('[GAME-STORE] gamesByStatus computed called');
     const grouped = {};
     statusList.value.forEach(status => {
       grouped[status.id] = filteredGames.value
         .filter(game => game.status === status.id)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
+      console.warn(`[GAME-STORE] Status ${status.id}: ${grouped[status.id].length} items`);
     });
     return grouped;
   });
@@ -58,10 +60,13 @@ export const useGameStore = defineStore('game', () => {
         unsubscribe = null;
       }
 
-      // Setup real-time listener
-      unsubscribe = gameSync.setupGamesListener(
+      // Setup real-time listener (now async due to structure detection)
+      unsubscribe = await gameSync.setupGamesListener(
         userStore.currentUser.uid,
         (result) => {
+          console.warn('[GAME-STORE] Callback received, result.success:', result.success);
+          console.warn('[GAME-STORE] Result data length:', result.data?.length);
+
           if (gameSync.isDestroyed.value) {
             console.warn('Store destroyed, ignoring subscription callback');
             return;
@@ -71,12 +76,17 @@ export const useGameStore = defineStore('game', () => {
             // Sort games by status and order
             const statusOrder = statusList.value.map(status => status.id);
 
+            console.warn('[GAME-STORE] Sorting', result.data.length, 'games');
             games.value = result.data.sort((a, b) => {
               if (a.status !== b.status) {
                 return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
               }
               return (a.order || 0) - (b.order || 0);
             });
+            console.warn('[GAME-STORE] Games updated, total:', games.value.length);
+
+            // Initialize hasNote flags for all games
+            gameNotes.initializeHasNoteFlags();
           } else {
             console.error('Error loading games:', result.error);
           }

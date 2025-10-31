@@ -1,11 +1,15 @@
 // src/firebase/notes.service.js
 import { db } from './firebase';
-import { 
-  doc, 
+import {
+  doc,
   getDoc,
-  setDoc, 
-  deleteDoc, 
-  serverTimestamp
+  setDoc,
+  deleteDoc,
+  serverTimestamp,
+  collection,
+  getDocs,
+  query,
+  where
 } from 'firebase/firestore';
 import { useMediaTypeStore } from '../stores/mediaType';
 
@@ -91,10 +95,31 @@ export function useNotesService() {
       return { id: gameId };
     }, `Error deleting note for game ${gameId}`);
   }
-  
+
+  /**
+   * Get all game IDs that have notes for the current user
+   * Used to initialize hasNote property on games
+   */
+  async function getGameIdsWithNotes(userId) {
+    return safeOperation(async () => {
+      const collectionPath = getNotesCollectionPath();
+      const notesRef = collection(db, collectionPath);
+      const q = query(notesRef, where('userId', '==', userId));
+      const snapshot = await getDocs(q);
+
+      const gameIds = [];
+      snapshot.forEach(doc => {
+        gameIds.push(doc.id);
+      });
+
+      return gameIds;
+    }, 'Error getting game IDs with notes');
+  }
+
   return {
     getNote,
     saveNote,
-    deleteNote
+    deleteNote,
+    getGameIdsWithNotes
   };
 }
