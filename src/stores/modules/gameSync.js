@@ -203,7 +203,10 @@ export function useGameSync(mediaTypeStore, userStore) {
       }));
 
       // Execute batch operation
-      const result = await gamesService.value.batchUpdate(batchOperations);
+      const result = await gamesService.value.batchUpdate(
+        userStore.currentUser.uid,
+        batchOperations
+      );
 
       // Check again after async operation
       if (isDestroyed.value) {
@@ -261,10 +264,11 @@ export function useGameSync(mediaTypeStore, userStore) {
     if (isDestroyed.value || !userStore.currentUser) return null;
 
     try {
-      const result = await gamesService.value.addItem({
-        ...gameData,
-        userId: userStore.currentUser.uid
-      });
+      const result = await gamesService.value.addItem(
+        userStore.currentUser.uid,
+        gameData,
+        gameData.status || 'upcoming'
+      );
 
       return result.success ? result.data : null;
     } catch (error) {
@@ -287,7 +291,10 @@ export function useGameSync(mediaTypeStore, userStore) {
         }
       }));
 
-      const result = await gamesService.value.batchUpdate(batchOperations);
+      const result = await gamesService.value.batchUpdate(
+        userStore.currentUser.uid,
+        batchOperations
+      );
       return result.success;
     } catch (error) {
       console.error('Error importing games:', error);
