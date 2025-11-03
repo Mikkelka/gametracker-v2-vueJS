@@ -4,6 +4,8 @@ import { useGameStore } from '../stores/game.store';
 import { useCategoryStore } from '../stores/category';
 import { useMediaTypeStore } from '../stores/mediaType';
 import { useFirestoreNewStructure } from '../firebase/db-new-structure.service';
+import { db } from '../firebase/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export function useDataExport() {
   const isExporting = ref(false);
@@ -58,7 +60,6 @@ export function useDataExport() {
 
       // Get all lists at once from users/{uid}/data/lists
       // We need to read it directly since we want all media types at once
-      const { doc, getDoc, db } = await import('../firebase/firebase');
       const listRef = doc(db, `users/${userId}/data`, 'lists');
       const listSnap = await getDoc(listRef);
 
