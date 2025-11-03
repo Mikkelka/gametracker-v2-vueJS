@@ -330,17 +330,43 @@ export function useFirestoreNewStructure() {
             mediaTypeData[status].push(itemData);
             successCount++;
           } else if (op.type === 'update') {
-            // Find and update item
+            // Find item in current status
+            let foundInStatus = null;
+            let foundIndex = -1;
+            let currentItem = null;
+
             for (const status of Object.keys(mediaTypeData)) {
               const index = mediaTypeData[status].findIndex(item => item.id === op.id);
               if (index >= 0) {
-                mediaTypeData[status][index] = {
-                  ...mediaTypeData[status][index],
-                  ...itemData
-                };
-                successCount++;
+                foundInStatus = status;
+                foundIndex = index;
+                currentItem = mediaTypeData[status][index];
                 break;
               }
+            }
+
+            if (foundIndex >= 0) {
+              const updatedItem = {
+                ...currentItem,
+                ...itemData
+              };
+
+              // Check if status changed
+              const newStatus = itemData.status || currentItem.status;
+              if (newStatus !== foundInStatus) {
+                // Status changed - remove from old array and add to new array
+                mediaTypeData[foundInStatus].splice(foundIndex, 1);
+
+                if (!Array.isArray(mediaTypeData[newStatus])) {
+                  mediaTypeData[newStatus] = [];
+                }
+                mediaTypeData[newStatus].push(updatedItem);
+              } else {
+                // Status unchanged - update in place
+                mediaTypeData[foundInStatus][foundIndex] = updatedItem;
+              }
+
+              successCount++;
             }
           } else if (op.type === 'delete') {
             // Remove from all lists
