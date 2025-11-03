@@ -165,8 +165,9 @@ export function useDataImport() {
   }
 
   /**
-   * Import data for a specific media type (v2.0 format → v3.0 structure)
-   * Reads v2.0 backup format and writes to v3.0 structure
+   * Import data for a specific media type (v2.0 items/categories → v3.0 structure)
+   * Reads v2.0 items and categories, writes to v3.0 structure
+   * Note: v2.0 notes are no longer imported (no longer supported)
    */
   async function importMediaTypeData(userId, mediaType, importData, replace = false) {
     const mediaTypeStore = useMediaTypeStore();
@@ -184,12 +185,11 @@ export function useDataImport() {
 
       const typeData = importData.mediaTypes[mediaType];
       if (!typeData || (!typeData.items?.length && !typeData.categories?.length)) {
-        return { itemsImported: 0, categoriesImported: 0, notesImported: 0 };
+        return { itemsImported: 0, categoriesImported: 0 };
       }
 
       let categoriesImported = 0;
       let itemsImported = 0;
-      let notesImported = 0;
 
       const categoryName = {
         game: 'platforms',
@@ -259,61 +259,11 @@ export function useDataImport() {
 
         // Write to v3.0 lists
         await setDoc(listRef, listsData, { merge: true });
-
-        // Import notes to v3.0 notes structure
-        if (typeData.notes && typeData.notes.length > 0) {
-          const notesRef = doc(db, `users/${userId}/data`, 'notes');
-          const notesSnap = await getDoc(notesRef);
-          const notesData = notesSnap.exists() ? notesSnap.data() : {};
-
-          // Ensure media type object exists
-          if (!notesData[mediaType]) {
-            notesData[mediaType] = {};
-          }
-
-          for (const note of typeData.notes) {
-            // Map v2.0 note to v3.0 format
-            notesData[mediaType][note.itemId] = {
-              text: note.note || note.text || '',
-              userId: userId,
-              createdAt: note.createdAt || Date.now(),
-              updatedAt: note.updatedAt || Date.now()
-            };
-
-            notesImported++;
-          }
-
-          // Write to v3.0 notes
-          await setDoc(notesRef, notesData, { merge: true });
-
-          // Update hasNote flags for imported items
-          const listRef = doc(db, `users/${userId}/data`, 'lists');
-          const listSnap = await getDoc(listRef);
-          if (listSnap.exists()) {
-            const listsData = listSnap.data();
-            const mediaTypeData = listsData[mediaType] || {};
-
-            // Mark items with notes
-            for (const noteItemId of Object.keys(notesData[mediaType])) {
-              for (const statusArray of Object.values(mediaTypeData)) {
-                if (Array.isArray(statusArray)) {
-                  const item = statusArray.find(i => i.id === noteItemId);
-                  if (item) {
-                    item.hasNote = true;
-                  }
-                }
-              }
-            }
-
-            await setDoc(listRef, listsData, { merge: true });
-          }
-        }
       }
 
       return {
         itemsImported,
-        categoriesImported,
-        notesImported
+        categoriesImported
       };
     } catch (error) {
       console.error(`Error importing ${mediaType} data:`, error);
