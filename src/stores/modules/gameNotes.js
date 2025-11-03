@@ -25,14 +25,14 @@ export function useGameNotes(games, gameSync, userStore) {
     if (isDestroyed.value || !userStore.currentUser) return;
 
     try {
-      const result = await notesService.getGameIdsWithNotes(userStore.currentUser.uid);
+      const result = await notesService.getItemIdsWithNotes(userStore.currentUser.uid);
 
       if (result.success && result.data) {
-        const gameIdsWithNotes = new Set(result.data);
+        const itemIdsWithNotes = new Set(result.data);
 
         // Initialize hasNote flag for all games
         games.value.forEach(game => {
-          game.hasNote = gameIdsWithNotes.has(game.id);
+          game.hasNote = itemIdsWithNotes.has(game.id);
         });
       }
     } catch (error) {
@@ -47,17 +47,17 @@ export function useGameNotes(games, gameSync, userStore) {
     // Check cache first
     if (notesCache.value.has(gameId)) {
       const cachedNote = notesCache.value.get(gameId);
-      return cachedNote?.note || null;
+      return cachedNote?.text || null;
     }
 
     try {
       // Load from Firebase
-      const result = await notesService.getNote(gameId);
-      
+      const result = await notesService.getNote(gameId, userStore.currentUser.uid);
+
       if (result.success && result.data) {
         // Cache the result
         notesCache.value.set(gameId, result.data);
-        return result.data.note;
+        return result.data.text;
       } else {
         // Cache empty result to avoid repeated requests
         notesCache.value.set(gameId, null);
@@ -126,7 +126,7 @@ export function useGameNotes(games, gameSync, userStore) {
       gameSync.updateSyncStatus('syncing', 'noteDeleting'); // ← Ændret
   
       // Delete from Firebase
-      const result = await notesService.deleteNote(gameId);
+      const result = await notesService.deleteNote(gameId, userStore.currentUser.uid);
   
       if (result.success) {
         // Remove from cache

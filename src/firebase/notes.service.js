@@ -1,35 +1,37 @@
 // src/firebase/notes.service.js
+// v3.0 structure: users/{uid}/data/notes document
+// Structure: { game: { [itemId]: { text, userId, updatedAt, createdAt } }, movie: {...}, book: {...} }
+
 import { db } from './firebase';
 import {
   doc,
   getDoc,
   setDoc,
-  deleteDoc,
-  serverTimestamp,
-  collection,
-  getDocs,
-  query,
-  where
+  serverTimestamp
 } from 'firebase/firestore';
 import { useMediaTypeStore } from '../stores/mediaType';
 
 export function useNotesService() {
-  function getNotesCollectionPath() {
+  /**
+   * Get the notes document reference for a user
+   */
+  function getNotesRef(userId) {
+    return doc(db, `users/${userId}/data`, 'notes');
+  }
+
+  /**
+   * Get current media type
+   */
+  function getMediaType() {
     try {
       const mediaTypeStore = useMediaTypeStore();
-      const mediaType = mediaTypeStore.currentType;
-      
-      if (mediaType === 'game') {
-        return 'notes';
-      } else {
-        return `mediaTypes/${mediaType}/notes`;
-      }
+      return mediaTypeStore.currentType;
     } catch (error) {
-      console.warn('MediaTypeStore not available, defaulting to notes collection', error);
-      return 'notes';
+      console.warn('MediaTypeStore not available, defaulting to game', error);
+      return 'game';
     }
   }
-  
+
   async function safeOperation(operation, errorMsg) {
     try {
       const result = await operation();
@@ -39,87 +41,137 @@ export function useNotesService() {
       return { success: false, error: error.message || errorMsg };
     }
   }
-  
-  async function getNote(gameId) {
+
+  /**
+   * Get note for a specific item (game, movie, book)
+   */
+  async function getNote(itemId, userId) {
     return safeOperation(async () => {
-      const collectionPath = getNotesCollectionPath();
-      const docRef = doc(db, collectionPath, gameId);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
+      const mediaType = getMediaType();
+      const notesRef = getNotesRef(userId);
+      const notesSnap = await getDoc(notesRef);
+
+      if (!notesSnap.exists()) {
+        return null;
+      }
+
+      const notesData = notesSnap.data();
+      const mediaTypeNotes = notesData[mediaType] || {};
+      const note = mediaTypeNotes[itemId];
+
+      if (note) {
         return {
-          id: docSnap.id,
-          ...docSnap.data()
+          id: itemId,
+          ...note
         };
       }
-      
-      return null; // No note exists
-    }, `Error getting note for game ${gameId}`);
+
+      return null; // No note exists for this item
+    }, `Error getting note for item ${itemId}`);
   }
-  
- 
-  async function saveNote(gameId, noteText, userId) {
-    if (!gameId || !userId) {
-      return { success: false, error: 'Game ID and User ID are required' };
+
+  /**
+   * Save note for a specific item
+   */
+  async function saveNote(itemId, noteText, userId) {
+    if (!itemId || !userId) {
+      return { success: false, error: 'Item ID and User ID are required' };
     }
-    
+
     return safeOperation(async () => {
-      const collectionPath = getNotesCollectionPath();
-      const docRef = doc(db, collectionPath, gameId);
-      
+      const mediaType = getMediaType();
+      const notesRef = getNotesRef(userId);
+
+      // Get current notes document
+      const notesSnap = await getDoc(notesRef);
+      const notesData = notesSnap.exists() ? notesSnap.data() : {};
+
+      // Ensure media type object exists
+      if (!notesData[mediaType]) {
+        notesData[mediaType] = {};
+      }
+
+      // Create/update note
       const noteData = {
-        gameId,
+        text: noteText.trim(),
         userId,
-        note: noteText.trim(),
         updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp() 
+        createdAt: notesData[mediaType][itemId]?.createdAt || serverTimestamp()
       };
-      
-      await setDoc(docRef, noteData, { merge: true });
-      
-      return { 
-        id: gameId,
+
+      notesData[mediaType][itemId] = noteData;
+
+      // Write back entire notes document
+      await setDoc(notesRef, notesData, { merge: true });
+
+      return {
+        id: itemId,
         ...noteData,
         createdAt: noteData.createdAt || new Date(),
         updatedAt: noteData.updatedAt || new Date()
       };
-    }, `Error saving note for game ${gameId}`);
-  }
-  
-
-  async function deleteNote(gameId) {
-    return safeOperation(async () => {
-      const collectionPath = getNotesCollectionPath();
-      const docRef = doc(db, collectionPath, gameId);
-      await deleteDoc(docRef);
-      return { id: gameId };
-    }, `Error deleting note for game ${gameId}`);
+    }, `Error saving note for item ${itemId}`);
   }
 
   /**
-   * Get all game IDs that have notes for the current user
-   * Used to initialize hasNote property on games
+   * Delete note for a specific item
    */
-  async function getGameIdsWithNotes(userId) {
+  async function deleteNote(itemId, userId) {
     return safeOperation(async () => {
-      const collectionPath = getNotesCollectionPath();
-      const notesRef = collection(db, collectionPath);
-      const q = query(notesRef, where('userId', '==', userId));
-      const snapshot = await getDocs(q);
+      const mediaType = getMediaType();
+      const notesRef = getNotesRef(userId);
 
-      const gameIds = [];
-      snapshot.forEach(doc => {
-        gameIds.push(doc.id);
-      });
+      // Get current notes document
+      const notesSnap = await getDoc(notesRef);
+      if (!notesSnap.exists()) {
+        return { id: itemId }; // No notes document, nothing to delete
+      }
 
-      return gameIds;
-    }, 'Error getting game IDs with notes');
+      const notesData = notesSnap.data();
+
+      // Remove note for this item
+      if (notesData[mediaType] && notesData[mediaType][itemId]) {
+        delete notesData[mediaType][itemId];
+
+        // Clean up empty media type objects
+        if (Object.keys(notesData[mediaType]).length === 0) {
+          delete notesData[mediaType];
+        }
+
+        // Write back entire notes document
+        await setDoc(notesRef, notesData, { merge: true });
+      }
+
+      return { id: itemId };
+    }, `Error deleting note for item ${itemId}`);
+  }
+
+  /**
+   * Get all item IDs that have notes for the current user and media type
+   * Used to initialize hasNote property on items
+   */
+  async function getItemIdsWithNotes(userId) {
+    return safeOperation(async () => {
+      const mediaType = getMediaType();
+      const notesRef = getNotesRef(userId);
+      const notesSnap = await getDoc(notesRef);
+
+      if (!notesSnap.exists()) {
+        return []; // No notes document
+      }
+
+      const notesData = notesSnap.data();
+      const mediaTypeNotes = notesData[mediaType] || {};
+
+      // Return all item IDs that have notes for this media type
+      return Object.keys(mediaTypeNotes);
+    }, 'Error getting item IDs with notes');
   }
 
   return {
     getNote,
     saveNote,
     deleteNote,
-    getGameIdsWithNotes
+    getItemIdsWithNotes
   };
 }
