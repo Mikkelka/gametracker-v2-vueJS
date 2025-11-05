@@ -3,7 +3,7 @@
 import { ref } from 'vue';
 import { useSettingsStore } from '../../stores/settings';
 import { useMediaTypeStore } from '../../stores/mediaType';
-import { useUserStore } from '../../stores/user.store';
+import { useUserStore } from '../../stores/user';
 import { fixUndefinedStatus } from '../../utils/dataMigration';
 
 const settingsStore = useSettingsStore();
