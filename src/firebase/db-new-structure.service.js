@@ -352,7 +352,7 @@ export function useFirestoreNewStructure() {
               };
 
               // Check if status changed
-              const newStatus = itemData.status || currentItem.status;
+              const newStatus = op.data.status !== undefined ? op.data.status : foundInStatus;
               if (newStatus !== foundInStatus) {
                 // Status changed - remove from old array and add to new array
                 mediaTypeData[foundInStatus].splice(foundIndex, 1);
