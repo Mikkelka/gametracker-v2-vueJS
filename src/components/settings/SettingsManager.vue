@@ -90,7 +90,7 @@ async function repairMissingItems() {
     <div class="repair-section">
       <h3>Data Reparation</h3>
       <p class="repair-description">
-        Hvis {{ mediaTypeStore.terminology.itemsPlural }} er forsvundet fra UI'en, kan du reparere dem her.
+        Hvis items er forsvundet fra UI'en, kan du reparere dem her.
       </p>
       <button
         type="button"
@@ -98,7 +98,7 @@ async function repairMissingItems() {
         class="btn btn-warning"
         :disabled="isRepairing"
       >
-        {{ isRepairing ? 'Reparerer...' : 'Reparer forsvundne ' + mediaTypeStore.terminology.itemsPlural }}
+        {{ isRepairing ? 'Reparerer...' : 'Reparer forsvundne items' }}
       </button>
       <div v-if="migrationResult" class="migration-result" :class="{ 'success': migrationResult.success, 'error': !migrationResult.success }">
         {{ migrationResult.message }}
