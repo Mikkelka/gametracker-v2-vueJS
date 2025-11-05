@@ -6,6 +6,9 @@
  * New: Pre-grouped arrays by status in Firebase structure
  */
 
+import { db } from '../firebase/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
 /**
  * Transform old export format to new format
  * @param {Object} oldExport - Old format JSON (v2.0)
@@ -386,6 +389,80 @@ export function generateTransformationReport(oldExport, newExport) {
     for (const warning of validation.warnings) {
       report += `  - ${warning}\n`;
     }
+  }
+
+  return report;
+}
+
+/**
+ * Fix items stuck in "undefined" status by moving them to target status
+ * @param {string} userId - User ID
+ * @param {string} mediaType - 'game', 'movie', or 'book'
+ * @param {string} targetStatus - Status to move undefined items to (default: 'completed')
+ * @returns {Promise<Object>} Migration report with count of items moved
+ */
+export async function fixUndefinedStatus(userId, mediaType = 'game', targetStatus = 'completed') {
+  const report = {
+    success: false,
+    itemsMoved: 0,
+    errors: [],
+    message: ''
+  };
+
+  try {
+    // Read the lists document
+    const listsRef = doc(db, `users/${userId}/data`, 'lists');
+    const docSnap = await getDoc(listsRef);
+
+    if (!docSnap.exists()) {
+      report.errors.push('Ingen data fundet');
+      report.message = 'Ingen data fundet';
+      return report;
+    }
+
+    const listsData = docSnap.data();
+    const mediaTypeData = listsData[mediaType] || {};
+
+    // Check if there's an undefined status with items
+    if (!mediaTypeData.undefined || !Array.isArray(mediaTypeData.undefined) || mediaTypeData.undefined.length === 0) {
+      report.success = true;
+      report.message = 'Ingen forsvundne items fundet';
+      return report;
+    }
+
+    // Get items from undefined status
+    const undefinedItems = mediaTypeData.undefined;
+    report.itemsMoved = undefinedItems.length;
+
+    // Initialize target status array if it doesn't exist
+    if (!Array.isArray(mediaTypeData[targetStatus])) {
+      mediaTypeData[targetStatus] = [];
+    }
+
+    // Move items to target status
+    for (const item of undefinedItems) {
+      // Update item status
+      item.status = targetStatus;
+      item.updatedAt = new Date();
+
+      // Add to target status array
+      mediaTypeData[targetStatus].push(item);
+    }
+
+    // Remove undefined array
+    delete mediaTypeData.undefined;
+
+    // Write back to Firebase
+    listsData[mediaType] = mediaTypeData;
+    await setDoc(listsRef, listsData);
+
+    report.success = true;
+    report.message = `${report.itemsMoved} items flyttet til ${targetStatus}`;
+
+  } catch (err) {
+    console.error('Error fixing undefined status:', err);
+    report.errors.push(err.message);
+    report.message = `Fejl: ${err.message}`;
   }
 
   return report;
