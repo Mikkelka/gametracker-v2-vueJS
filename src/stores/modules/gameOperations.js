@@ -47,7 +47,7 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
       const result = await gameSync.addGameDirectly(newGame);
 
       if (result && !gameSync.isDestroyed.value) {
-        games.value.push(result);
+        // Don't push to games.value - real-time listener will handle it
         gameSync.updateSyncStatus('success', 'added');
         return result;
       } else {
