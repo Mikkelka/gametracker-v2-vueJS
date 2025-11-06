@@ -306,14 +306,13 @@ export function useFirestoreNewStructure() {
       // Process each operation
       for (const op of operations) {
         try {
-          const itemData = {
-            ...op.data,
-            userId: userId,
-            createdAt: op.data.createdAt || new Date(),
-            updatedAt: new Date()
-          };
-
           if (op.type === 'set') {
+            const itemData = {
+              ...op.data,
+              userId: userId,
+              createdAt: op.data?.createdAt || new Date(),
+              updatedAt: new Date()
+            };
             // Remove from all lists first
             for (const status of Object.keys(mediaTypeData)) {
               const index = mediaTypeData[status].findIndex(item => item.id === op.id);
@@ -330,6 +329,12 @@ export function useFirestoreNewStructure() {
             mediaTypeData[status].push(itemData);
             successCount++;
           } else if (op.type === 'update') {
+            const itemData = {
+              ...op.data,
+              userId: userId,
+              updatedAt: new Date()
+            };
+
             // Find item in current status
             let foundInStatus = null;
             let foundIndex = -1;
