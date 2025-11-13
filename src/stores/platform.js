@@ -32,7 +32,25 @@ export const usePlatformStore = defineStore('platform', () => {
 
   // Computed for at få kategoritekst baseret på medietype
   const categoryLabel = computed(() => mediaTypeStore.config.categoryName);
-  
+
+  // Platform cache - optimized lookups for GameCard performance
+  const platformMap = computed(() => {
+    return new Map(platforms.value.map(p => [p.name, p]));
+  });
+
+  const platformColorMap = computed(() => {
+    return new Map(platforms.value.map(p => [p.name, p.color]));
+  });
+
+  // Helper functions for fast platform lookups
+  function getPlatformColor(platformName) {
+    return platformColorMap.value.get(platformName);
+  }
+
+  function getPlatform(platformName) {
+    return platformMap.value.get(platformName);
+  }
+
   // Indlæs platforme/kategorier for brugeren fra metadata
   async function loadPlatforms() {
     const userStore = useUserStore();
@@ -276,8 +294,13 @@ export const usePlatformStore = defineStore('platform', () => {
     platforms,
     isLoading,
     error,
-    categoryLabel, 
-    // categories,
+    categoryLabel,
+    // Platform cache
+    platformMap,
+    platformColorMap,
+    getPlatformColor,
+    getPlatform,
+    // Actions
     loadPlatforms,
     addPlatform,
     updatePlatformColor,

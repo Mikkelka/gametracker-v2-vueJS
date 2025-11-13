@@ -141,6 +141,9 @@ onMounted(async () => {
   addTrackedEventListener(document, "click", handleClickOutside);
   addTrackedEventListener(window, "scroll", handleScroll);
   addTrackedEventListener(window, "app-search", handleAppSearch);
+
+  // Emergency cleanup on browser close/refresh
+  window.addEventListener("beforeunload", cleanup);
 });
 
 // Comprehensive cleanup function
@@ -169,23 +172,18 @@ function cleanup() {
 }
 
 onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", cleanup);
   cleanup();
 });
 
-// Emergency cleanup
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", cleanup);
-}
-
 // Watch for sync status changes with component state check
 watch(
-  () => gameStore.syncStatus,
+  () => gameStore.syncStatus.status,
   (newStatus) => {
     if (!isComponentDestroyed.value) {
       console.warn("Sync status changed:", newStatus);
     }
-  },
-  { deep: true }
+  }
 );
 
 // Søgefunktion

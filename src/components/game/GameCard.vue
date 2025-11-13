@@ -16,9 +16,9 @@ const _gameStore = useGameStore();
 const platformStore = usePlatformStore();
 
 // Computed property der altid henter den aktuelle platformfarve
+// Optimized: Uses cached Map lookup instead of array.find()
 const platformColor = computed(() => {
-  const platform = platformStore.platforms.find(p => p.name === props.game.platform);
-  return platform ? platform.color : props.game.platformColor;
+  return platformStore.getPlatformColor(props.game.platform) || props.game.platformColor;
 });
 
 // Håndter klik på redigeringsknappen

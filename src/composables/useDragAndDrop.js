@@ -1,6 +1,7 @@
 // vue/src/composables/useDragAndDrop.js
 import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { useGameStore } from '../stores/game.store';
+import { SCROLL_ZONE_SIZE, SCROLL_SPEED, SCROLL_THRESHOLD } from '../utils/constants.js';
 
 export function useDragAndDrop() {
   const gameStore = useGameStore();
@@ -230,10 +231,6 @@ export function useDragAndDrop() {
 
   function handleAutoScroll(event) {
     if (isDestroyed.value) return;
-    
-    const scrollZoneSize = 60;
-    const scrollSpeed = 10;
-    const scrollThreshold = 20;
 
     // Stop eksisterende interval først
     clearScrollInterval();
@@ -243,8 +240,8 @@ export function useDragAndDrop() {
     const distanceToBottom = window.innerHeight - event.clientY;
 
     // Scroll op
-    if (distanceToTop < scrollZoneSize) {
-      const speed = Math.max(1, (scrollZoneSize - distanceToTop) / scrollThreshold) * scrollSpeed;
+    if (distanceToTop < SCROLL_ZONE_SIZE) {
+      const speed = Math.max(1, (SCROLL_ZONE_SIZE - distanceToTop) / SCROLL_THRESHOLD) * SCROLL_SPEED;
       scrollInterval.value = setInterval(() => {
         if (isDestroyed.value) {
           clearScrollInterval();
@@ -254,8 +251,8 @@ export function useDragAndDrop() {
       }, 16);
     }
     // Scroll ned
-    else if (distanceToBottom < scrollZoneSize) {
-      const speed = Math.max(1, (scrollZoneSize - distanceToBottom) / scrollThreshold) * scrollSpeed;
+    else if (distanceToBottom < SCROLL_ZONE_SIZE) {
+      const speed = Math.max(1, (SCROLL_ZONE_SIZE - distanceToBottom) / SCROLL_THRESHOLD) * SCROLL_SPEED;
       scrollInterval.value = setInterval(() => {
         if (isDestroyed.value) {
           clearScrollInterval();

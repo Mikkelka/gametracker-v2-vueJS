@@ -1,6 +1,7 @@
 // src/stores/modules/gameSync.js
 import { ref, computed } from 'vue';
 import { useFirestoreNewStructure } from '../../firebase/db-new-structure.service';
+import { SYNC_DELAY } from '../../utils/constants.js';
 
 
 export function useGameSync(mediaTypeStore, userStore) {
@@ -15,7 +16,6 @@ export function useGameSync(mediaTypeStore, userStore) {
   const activeSubscriptions = new Set();
 
   let syncTimer = null;
-  const SYNC_DELAY = 5000; // 5 seconds between syncs
 
   // Service - uses new v3.0 Firebase structure
   const gamesService = computed(() => {
