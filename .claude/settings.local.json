@@ -23,7 +23,9 @@
       "Read(//c/Users/mikke/Downloads/**)",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(firebase login:*)"
     ],
     "deny": []
   }

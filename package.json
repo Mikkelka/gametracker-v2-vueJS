@@ -8,10 +8,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "lines": "./tokei --output json | node -e \"const data=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log('![Lines of Code](https://img.shields.io/badge/lines%20of%20code-' + data.Total.code + '%20lines-blue)');\""
+    "lines": "./tokei --output json | node -e \"const data=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log('![Lines of Code](https://img.shields.io/badge/lines%20of%20code-' + data.Total.code + '%20lines-blue)');\"",
+    "deploy": "firebase deploy"
   },
   "dependencies": {
-    "firebase": "^11.6.1",
+    "firebase": "^11.10.0",
     "lucide-vue-next": "^0.539.0",
     "pinia": "^3.0.2",
     "vue": "^3.5.13",
