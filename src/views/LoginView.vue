@@ -1,6 +1,6 @@
 <!-- vue/src/views/LoginView.vue -->
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 
@@ -17,6 +17,16 @@ async function loginWithGoogle() {
 onMounted(() => {
   document.title = 'GameTrack - Login';
 });
+
+watch(
+  () => [userStore.isLoggedIn, userStore.isLoading],
+  ([isLoggedIn, isLoading]) => {
+    if (!isLoading && isLoggedIn) {
+      router.replace({ name: 'dashboard' });
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>

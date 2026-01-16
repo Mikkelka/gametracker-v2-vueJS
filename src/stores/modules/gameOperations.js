@@ -134,7 +134,8 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
 
       let newOrder;
       if (specificPosition !== null) {
-        newOrder = gameValidation.validateOrder(specificPosition);
+        const parsedOrder = Number(specificPosition);
+        newOrder = Number.isFinite(parsedOrder) ? parsedOrder : 0;
       } else {
         // Place at end of list
         const maxOrder = Math.max(
@@ -151,30 +152,27 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
       game.order = newOrder;
       game.updatedAt = Date.now();
 
-      // Queue change for batch sync
-      gameSync.queueChange('update', gameId, {
-        status: newStatus,
-        order: newOrder,
-        updatedAt: Date.now()
-      });
-
       // If specific position, reorder other games
       if (specificPosition !== null) {
         const gamesInSameList = games.value
-          .filter(g => g.status === newStatus && g.id !== gameId)
+          .filter(g => g.status === newStatus)
           .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        [...gamesInSameList, game]
-          .sort((a, b) => (a.order || 0) - (b.order || 0))
-          .forEach((g, index) => {
-            if (g.id !== gameId) {
-              g.order = index;
-              gameSync.queueChange('update', g.id, {
-                order: index,
-                updatedAt: Date.now()
-              });
-            }
+        gamesInSameList.forEach((g, index) => {
+          g.order = index;
+          gameSync.queueChange('update', g.id, {
+            status: newStatus,
+            order: index,
+            updatedAt: Date.now()
           });
+        });
+      } else {
+        // Queue change for batch sync
+        gameSync.queueChange('update', gameId, {
+          status: newStatus,
+          order: newOrder,
+          updatedAt: Date.now()
+        });
       }
 
       gameSync.updateSyncStatus('success', 'moved');
