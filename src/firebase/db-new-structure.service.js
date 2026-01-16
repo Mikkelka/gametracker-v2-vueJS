@@ -7,15 +7,20 @@ import {
   doc,
   getDoc,
   setDoc,
-  writeBatch,
-  onSnapshot,
-  serverTimestamp,
-  updateDoc
+  onSnapshot
 } from 'firebase/firestore';
 import { useMediaTypeStore } from '../stores/mediaType';
-import { warn, error } from '../utils/logger';
+import { warn, error as logError } from '../utils/logger';
 
 export function useFirestoreNewStructure() {
+  const createItemId = () =>
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `item-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  const resolveItemId = (item, status, index) =>
+    item?.id || (status !== undefined ? `item-${status}-${index}` : null);
+
   const requestStats = {
     lastRequestTime: Date.now(),
     requestsThisHour: 0,
@@ -49,7 +54,7 @@ export function useFirestoreNewStructure() {
 
       return { success: true, data: mediaTypeData };
     } catch (error) {
-      error(`Error getting items by status for ${getStatusForMediaType()}:`, error);
+      logError(`Error getting items by status for ${getStatusForMediaType()}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -70,17 +75,19 @@ export function useFirestoreNewStructure() {
       for (const status of Object.keys(result.data)) {
         const statusItems = result.data[status];
         if (Array.isArray(statusItems)) {
-          items.push(...statusItems.map(item => ({
-            ...item,
-            status: status,
-            id: item.id || `item-${Date.now()}-${Math.random()}`
-          })));
+          items.push(
+            ...statusItems.map((item, index) => ({
+              ...item,
+              status: status,
+              id: resolveItemId(item, status, index)
+            }))
+          );
         }
       }
 
       return { success: true, data: items };
     } catch (error) {
-      error(`Error getting items for ${getStatusForMediaType()}:`, error);
+      logError(`Error getting items for ${getStatusForMediaType()}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -107,7 +114,7 @@ export function useFirestoreNewStructure() {
 
       return { success: false, error: 'Item not found' };
     } catch (error) {
-      error(`Error getting item ${itemId}:`, error);
+      logError(`Error getting item ${itemId}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -120,8 +127,10 @@ export function useFirestoreNewStructure() {
       const mediaType = getStatusForMediaType();
       const listRef = doc(db, `users/${userId}/data`, 'lists');
 
+      const newItemId = itemData.id || createItemId();
       const newItem = {
         ...itemData,
+        id: newItemId,
         userId: userId,
         createdAt: itemData.createdAt || new Date(),
         updatedAt: itemData.updatedAt || new Date()
@@ -155,7 +164,7 @@ export function useFirestoreNewStructure() {
         }
       };
     } catch (error) {
-      error(`Error adding item to ${getStatusForMediaType()}:`, error);
+      logError(`Error adding item to ${getStatusForMediaType()}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -228,7 +237,7 @@ export function useFirestoreNewStructure() {
         data: updatedItem
       };
     } catch (error) {
-      error(`Error updating item ${itemId}:`, error);
+      logError(`Error updating item ${itemId}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -270,7 +279,7 @@ export function useFirestoreNewStructure() {
 
       return { success: true, data: { id: itemId } };
     } catch (error) {
-      error(`Error deleting item ${itemId}:`, error);
+      logError(`Error deleting item ${itemId}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -307,15 +316,17 @@ export function useFirestoreNewStructure() {
       for (const op of operations) {
         try {
           if (op.type === 'set') {
+            const itemId = op.id || op.data?.id || createItemId();
             const itemData = {
               ...op.data,
+              id: itemId,
               userId: userId,
               createdAt: op.data?.createdAt || new Date(),
               updatedAt: new Date()
             };
             // Remove from all lists first
             for (const status of Object.keys(mediaTypeData)) {
-              const index = mediaTypeData[status].findIndex(item => item.id === op.id);
+              const index = mediaTypeData[status].findIndex(item => item.id === itemId);
               if (index >= 0) {
                 mediaTypeData[status].splice(index, 1);
               }
@@ -398,7 +409,7 @@ export function useFirestoreNewStructure() {
         successCount: successCount
       };
     } catch (error) {
-      error(`Error in batch update for ${getStatusForMediaType()}:`, error);
+      logError(`Error in batch update for ${getStatusForMediaType()}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -427,27 +438,29 @@ export function useFirestoreNewStructure() {
             const items = [];
             for (const [statusId, statusItems] of Object.entries(mediaTypeData)) {
               if (Array.isArray(statusItems)) {
-                items.push(...statusItems.map(item => ({
-                  ...item,
-                  status: statusId,
-                  id: item.id || `item-${Date.now()}-${Math.random()}`
-                })));
+                items.push(
+                  ...statusItems.map((item, index) => ({
+                    ...item,
+                    status: statusId,
+                    id: resolveItemId(item, statusId, index)
+                  }))
+                );
               }
             }
 
             callback({ success: true, data: items });
           } catch (parseError) {
-            error(`Error parsing snapshot for ${mediaType}:`, parseError);
+            logError(`Error parsing snapshot for ${mediaType}:`, parseError);
             callback({ success: false, error: parseError });
           }
         },
         (snapshotError) => {
-          error(`Snapshot listener error for ${mediaType}:`, snapshotError);
+          logError(`Snapshot listener error for ${mediaType}:`, snapshotError);
           callback({ success: false, error: snapshotError });
         }
       );
     } catch (error) {
-      error(`Error setting up listener for ${getStatusForMediaType()}:`, error);
+      logError(`Error setting up listener for ${getStatusForMediaType()}:`, error);
       callback({ success: false, error });
       return () => {};
     }
@@ -476,17 +489,17 @@ export function useFirestoreNewStructure() {
 
             callback({ success: true, data: mediaTypeData });
           } catch (parseError) {
-            error(`Error parsing status snapshot for ${mediaType}:`, parseError);
+            logError(`Error parsing status snapshot for ${mediaType}:`, parseError);
             callback({ success: false, error: parseError });
           }
         },
         (snapshotError) => {
-          error(`Status snapshot listener error for ${mediaType}:`, snapshotError);
+          logError(`Status snapshot listener error for ${mediaType}:`, snapshotError);
           callback({ success: false, error: snapshotError });
         }
       );
     } catch (error) {
-      error(`Error setting up status listener for ${getStatusForMediaType()}:`, error);
+      logError(`Error setting up status listener for ${getStatusForMediaType()}:`, error);
       callback({ success: false, error });
       return () => {};
     }
@@ -520,7 +533,7 @@ export function useFirestoreNewStructure() {
 
       return { success: true, data: categories };
     } catch (error) {
-      error(`Error getting metadata:`, error);
+      logError(`Error getting metadata:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -556,17 +569,17 @@ export function useFirestoreNewStructure() {
 
             callback({ success: true, data: categories });
           } catch (parseError) {
-            error(`Error parsing metadata snapshot:`, parseError);
+            logError(`Error parsing metadata snapshot:`, parseError);
             callback({ success: false, error: parseError });
           }
         },
         (snapshotError) => {
-          error(`Metadata snapshot listener error:`, snapshotError);
+          logError(`Metadata snapshot listener error:`, snapshotError);
           callback({ success: false, error: snapshotError });
         }
       );
     } catch (error) {
-      error(`Error setting up metadata listener:`, error);
+      logError(`Error setting up metadata listener:`, error);
       callback({ success: false, error });
       return () => {};
     }

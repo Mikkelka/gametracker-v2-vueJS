@@ -3,15 +3,9 @@
 // Structure: { game: { [itemId]: { text, userId, updatedAt, createdAt } }, movie: {...}, book: {...} }
 
 import { db } from './firebase';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteField,
-  serverTimestamp
-} from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore';
 import { useMediaTypeStore } from '../stores/mediaType';
+import { debug, warn as logWarn } from '../utils/logger';
 
 export function useNotesService() {
   /**
@@ -80,6 +74,10 @@ export function useNotesService() {
       return { success: false, error: 'Item ID and User ID are required' };
     }
 
+    if (typeof noteText !== 'string') {
+      return { success: false, error: 'Note text must be a string' };
+    }
+
     return safeOperation(async () => {
       const mediaType = getMediaType();
       const notesRef = getNotesRef(userId);
@@ -123,32 +121,32 @@ export function useNotesService() {
       const mediaType = getMediaType();
       const notesRef = getNotesRef(userId);
 
-      console.log(`[deleteNote] Deleting note for itemId: ${itemId}, mediaType: ${mediaType}`);
+      debug(`[deleteNote] Deleting note for itemId: ${itemId}, mediaType: ${mediaType}`);
 
       // Get current notes document
       const notesSnap = await getDoc(notesRef);
       if (!notesSnap.exists()) {
-        console.log(`[deleteNote] Notes document does not exist`);
+        debug(`[deleteNote] Notes document does not exist`);
         return { id: itemId }; // No notes document, nothing to delete
       }
 
       const notesData = notesSnap.data();
-      console.log(`[deleteNote] Current notesData:`, notesData);
+      debug(`[deleteNote] Current notesData:`, notesData);
 
       // Remove note for this item using deleteField for proper deletion
       if (notesData[mediaType] && notesData[mediaType][itemId]) {
-        console.log(`[deleteNote] Found note to delete for ${mediaType}/${itemId}`);
+        debug(`[deleteNote] Found note to delete for ${mediaType}/${itemId}`);
 
         // Use updateDoc with deleteField to properly remove the nested property
         const updateData = {};
         updateData[`${mediaType}.${itemId}`] = deleteField();
 
-        console.log(`[deleteNote] Deleting field: ${mediaType}.${itemId}`);
+        debug(`[deleteNote] Deleting field: ${mediaType}.${itemId}`);
         await updateDoc(notesRef, updateData);
-        console.log(`[deleteNote] Successfully deleted note from Firebase`);
+        debug(`[deleteNote] Successfully deleted note from Firebase`);
       } else {
-        console.log(`[deleteNote] Note not found for ${mediaType}/${itemId}`);
-        console.log(`[deleteNote] Available ${mediaType} notes:`, Object.keys(notesData[mediaType] || {}));
+        logWarn(`[deleteNote] Note not found for ${mediaType}/${itemId}`);
+        debug(`[deleteNote] Available ${mediaType} notes:`, Object.keys(notesData[mediaType] || {}));
       }
 
       return { id: itemId };
