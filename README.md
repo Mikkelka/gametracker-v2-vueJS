@@ -6,7 +6,7 @@
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](#licens)
 
-![Lines of Code](https://img.shields.io/badge/lines%20of%20code-3088%20lines-blue)
+![Lines of Code](https://img.shields.io/badge/lines%20of%20code-8909%20lines-blue)
 
 MediaTrack er en webapp til at holde styr på din personlige samling af medier. Applikationen giver dig mulighed for at kategorisere spil, film og bøger efter status, organisere dem efter relevante kategorier, og holde styr på dine fremskridt.
 
