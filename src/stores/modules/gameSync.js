@@ -235,7 +235,7 @@ export function useGameSync(mediaTypeStore, userStore) {
       console.error('Error syncing with Firebase:', error);
       console.error('Error details:', error.message, error.code);
       if (!isDestroyed.value) {
-        pendingChanges.value = [...pendingChanges.value]; // Keep changes for retry
+        pendingChanges.value = [...changesToProcess, ...pendingChanges.value];
         updateSyncStatus('error', 'syncError');
       }
     }

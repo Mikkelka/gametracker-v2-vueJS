@@ -197,14 +197,14 @@ export function useDragAndDrop() {
     
     const gamesInSameList = gameStore.games
       .filter(g => g.status === game.status)
-      .sort((a, b) => {
-        if (a.id === game.id) return (a.order = newOrder) - b.order;
-        if (b.id === game.id) return a.order - (b.order = newOrder);
-        return a.order - b.order;
-      })
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const reindexedGames = gamesInSameList
+      .map(g => (g.id === game.id ? { ...g, order: newOrder } : { ...g }))
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
       .map((g, index) => ({ id: g.id, order: index, status: game.status }));
     
-    await gameStore.updateGameOrder(gamesInSameList);
+    await gameStore.updateGameOrder(reindexedGames);
   }
 
   async function handleDifferentListMove(game, dropTarget, newStatus, event) {
@@ -266,6 +266,10 @@ export function useDragAndDrop() {
     }
   }
 
+  const handleBeforeUnload = () => {
+    cleanup();
+  };
+
   // Comprehensive cleanup function
   function cleanup() {
     isDestroyed.value = true;
@@ -278,6 +282,9 @@ export function useDragAndDrop() {
     document.removeEventListener('dragover', handleDragOver);
     document.removeEventListener('dragleave', handleDragLeave);
     document.removeEventListener('drop', handleDrop);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
   }
 
   onMounted(() => {
@@ -289,16 +296,14 @@ export function useDragAndDrop() {
     document.addEventListener('dragover', handleDragOver);
     document.addEventListener('dragleave', handleDragLeave);
     document.addEventListener('drop', handleDrop);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
   });
 
   onBeforeUnmount(() => {
     cleanup();
   });
-
-  // Emergency cleanup on window unload
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', cleanup);
-  }
 
   return {
     // Eksporter cleanup function så parent components kan bruge den hvis nødvendigt

@@ -32,7 +32,6 @@ export function useGameOperations(games, gameSync, gameValidation, mediaTypeStor
       );
 
       const newGame = {
-        id: Date.now().toString(),
         title: cleanTitle,
         platform: validatedPlatform.name,
         platformColor: validatedPlatform.color,
