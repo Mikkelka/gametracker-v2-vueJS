@@ -8,6 +8,7 @@ export const useUserStore = defineStore('user', () => {
   const currentUser = ref(null);
   const displayName = ref(null);
   const isLoading = ref(true);
+  let authUnsubscribe = null;
   
   // Computed properties
   const isLoggedIn = computed(() => currentUser.value !== null);
@@ -17,8 +18,12 @@ export const useUserStore = defineStore('user', () => {
   
   // Indlæs bruger ved startup
   async function initUser() {
+    if (authUnsubscribe) {
+      return currentUser.value;
+    }
+
     return new Promise((resolve) => {
-      const unsubscribe = authService.initAuthListener(async (user) => {
+      authUnsubscribe = authService.initAuthListener(async (user) => {
         isLoading.value = true;
         
         if (user) {
@@ -30,7 +35,6 @@ export const useUserStore = defineStore('user', () => {
         }
         
         isLoading.value = false;
-        unsubscribe();
         resolve(user);
       });
     });
@@ -62,6 +66,10 @@ export const useUserStore = defineStore('user', () => {
       if (result.success) {
         currentUser.value = null;
         displayName.value = null;
+        if (authUnsubscribe) {
+          authUnsubscribe();
+          authUnsubscribe = null;
+        }
         return true;
       }
       

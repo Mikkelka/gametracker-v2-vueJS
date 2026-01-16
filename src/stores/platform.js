@@ -10,6 +10,10 @@ import { useFirestoreNewStructure } from '../firebase/db-new-structure.service';
 
 // Behold dette eksportnavn for bagudkompatibilitet
 export const usePlatformStore = defineStore('platform', () => {
+  const createCategoryId = () =>
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `category-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   // State
   const platforms = ref([]);
   const isLoading = ref(true);
@@ -104,7 +108,7 @@ export const usePlatformStore = defineStore('platform', () => {
 
       // Opret ny kategori
       const newCategory = {
-        id: Date.now().toString(),
+        id: createCategoryId(),
         name: name.trim(),
         color: color || '#4caf50',
         userId: userStore.currentUser.uid,
