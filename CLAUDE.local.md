@@ -1,3 +1,0 @@
-- Call me Mikkel (Danish preference for name)
-- Workflow reminder: When a problem is solved, end the message with: github commit: [commit name]
-- Undgaa unødvendige Bash tests - mikkel tester selv og giver fejl feedback. Brug kun Bash hvis vi er stuck
